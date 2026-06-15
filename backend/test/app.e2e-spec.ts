@@ -12,7 +12,7 @@ describe('App e2e', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it('GET / returns backend sanity check', async () => {
