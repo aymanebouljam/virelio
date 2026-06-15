@@ -208,7 +208,6 @@ describe('Vendors e2e', () => {
       );
     });
   });
-
   describe('POST /vendors', () => {
     it('creates a vendor and returns it from GET /vendors', async () => {
       const input = {
@@ -330,6 +329,60 @@ describe('Vendors e2e', () => {
       expect(vendorsList.some((vendor) => vendor.email === inputB.email)).toBe(
         false,
       );
+    });
+  });
+  describe('PATCH /vendors/:id', () => {
+    it('updates an existing vendor', async () => {
+      const createInput = {
+        name: 'Atlas Office Supplies',
+        email: 'contact@atlasoffice.com',
+        phone: '+212600000001',
+        website: 'https://atlasoffice.com',
+        notes: 'Office supplies vendor',
+      };
+
+      const updateInput = {
+        phone: '+21266666666',
+        website: 'https://new-atlas.com',
+      };
+
+      const expectedVendor = {
+        ...createInput,
+        ...updateInput,
+      };
+
+      const createResponse = await request(http)
+        .post('/vendors')
+        .send(createInput)
+        .expect(201);
+      const createdVendor = createResponse.body as VendorResponse;
+      expect(createdVendor).toMatchObject({
+        ...createInput,
+        archivedAt: null,
+      });
+
+      const updateResponse = await request(http)
+        .patch(`/vendors/${createdVendor.id}`)
+        .send(updateInput)
+        .expect(200);
+
+      expect(updateResponse.body).toMatchObject({
+        id: createdVendor.id,
+        ...expectedVendor,
+        archivedAt: null,
+      });
+
+      const getResponse = await request(http)
+        .get(`/vendors/${createdVendor.id}`)
+        .expect(200);
+
+      const vendor = getResponse.body as VendorResponse;
+
+      expect(vendor).toMatchObject({
+        id: createdVendor.id,
+        ...expectedVendor,
+        archivedAt: null,
+      });
     });
   });
 });
