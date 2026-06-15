@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { CreateVendorDto } from './dto/create-vendor.dto';
 import { VendorsService } from './vendors.service';
 import { UpdateVendorDto } from './dto/update-vendor.dto';
@@ -19,7 +27,7 @@ export class VendorsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     return this.vendorsService.findOne(id);
   }
   // POST
@@ -30,16 +38,19 @@ export class VendorsController {
   }
   // PATCH
   @Patch(':id/archive')
-  archive(@Param('id') id: string) {
+  archive(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     return this.vendorsService.archive(id);
   }
 
   @Patch(':id/restore')
-  restore(@Param('id') id: string) {
+  restore(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     return this.vendorsService.restore(id);
   }
   @Patch(':id')
-  update(@Param('id') id: string, @Body() body: UpdateVendorDto) {
+  update(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() body: UpdateVendorDto,
+  ) {
     return this.vendorsService.update(id, body);
   }
 }
