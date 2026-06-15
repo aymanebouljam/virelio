@@ -39,7 +39,7 @@ describe('Vendors e2e', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    await app?.close();
   });
 
   describe('GET /vendors', () => {
