@@ -89,6 +89,46 @@ describe('Vendors e2e', () => {
         false,
       );
     });
+    it('lists the most recently created active vendors first', async () => {
+      const inputA = {
+        name: 'Atlas Office Supplies',
+        email: 'contact@atlasoffice.com',
+        phone: '+212600000001',
+        website: 'https://atlasoffice.com',
+        notes: 'Office supplies vendor',
+      };
+
+      const createResponseA = await request(http)
+        .post('/vendors')
+        .send(inputA)
+        .expect(201);
+      const vendorA = createResponseA.body as VendorResponse;
+      await prisma.vendor.update({
+        where: { id: vendorA.id },
+        data: { createdAt: new Date('2026-01-01T00:00:00.000Z') },
+      });
+
+      const inputB = {
+        name: 'Northstar Business Solutions',
+        email: 'contact@northstar.ma',
+        phone: '+212661234567',
+        website: 'https://northstar.ma',
+        notes: 'Business equipment and workplace essentials supplier',
+      };
+
+      const createResponseB = await request(http)
+        .post('/vendors')
+        .send(inputB)
+        .expect(201);
+      const vendorB = createResponseB.body as VendorResponse;
+      await prisma.vendor.update({
+        where: { id: vendorB.id },
+        data: { createdAt: new Date('2026-01-02T00:00:00.000Z') },
+      });
+      const listResponse = await request(http).get('/vendors').expect(200);
+      const vendors = listResponse.body as VendorResponse[];
+      expect(vendors.map(({ id }) => id)).toEqual([vendorB.id, vendorA.id]);
+    });
   });
   describe('GET /vendors/:id', () => {
     it('returns the vendor when it exists and is active', async () => {
@@ -206,6 +246,55 @@ describe('Vendors e2e', () => {
       expect(vendorsList.some((vendor) => vendor.name === inputB.name)).toBe(
         false,
       );
+    });
+    it('lists the most recently archived vendors first', async () => {
+      const inputA = {
+        name: 'Atlas Office Supplies',
+        email: 'contact@atlasoffice.com',
+        phone: '+212600000001',
+        website: 'https://atlasoffice.com',
+        notes: 'Office supplies vendor',
+      };
+
+      const createResponseA = await request(http)
+        .post('/vendors')
+        .send(inputA)
+        .expect(201);
+      const vendorA = createResponseA.body as VendorResponse;
+      await request(http).patch(`/vendors/${vendorA.id}/archive`).expect(200);
+
+      await prisma.vendor.update({
+        where: { id: vendorA.id },
+        data: { archivedAt: new Date('2026-01-01T00:00:00.000Z') },
+      });
+
+      const inputB = {
+        name: 'Northstar Business Solutions',
+        email: 'contact@northstar.ma',
+        phone: '+212661234567',
+        website: 'https://northstar.ma',
+        notes: 'Business equipment and workplace essentials supplier',
+      };
+
+      const createResponseB = await request(http)
+        .post('/vendors')
+        .send(inputB)
+        .expect(201);
+      const vendorB = createResponseB.body as VendorResponse;
+      await request(http).patch(`/vendors/${vendorB.id}/archive`).expect(200);
+
+      await prisma.vendor.update({
+        where: { id: vendorB.id },
+        data: { archivedAt: new Date('2026-01-02T00:00:00.000Z') },
+      });
+      const listArchivedResponse = await request(http)
+        .get('/vendors/archived')
+        .expect(200);
+      const archivedVendors = listArchivedResponse.body as VendorResponse[];
+      expect(archivedVendors.map(({ id }) => id)).toEqual([
+        vendorB.id,
+        vendorA.id,
+      ]);
     });
   });
   describe('POST /vendors', () => {
@@ -440,7 +529,6 @@ describe('Vendors e2e', () => {
       const error = response.body as ErrorResponse;
       expect(error.message).toBe('Validation failed (uuid v 4 is expected)');
     });
-
     it('returns 404 when the vendor does not exist', async () => {
       const input = {
         name: 'Atlas Office Supplies',
@@ -456,7 +544,6 @@ describe('Vendors e2e', () => {
       const error = response.body as ErrorResponse;
       expect(error.message).toBe('Vendor not found');
     });
-
     it.each([
       ['name', 'Sahara Tech Solutions'],
       ['email', 'contact@saharatech.ma'],
@@ -509,5 +596,166 @@ describe('Vendors e2e', () => {
         ]);
       },
     );
+  });
+  describe('PATCH /vendors/:id/archive', () => {
+    it('archives an active vendor', async () => {
+      const input = {
+        name: 'Atlas Office Supplies',
+        email: 'contact@atlasoffice.com',
+        phone: '+212600000001',
+        website: 'https://atlasoffice.com',
+        notes: 'Office supplies vendor',
+      };
+
+      const createResponse = await request(http)
+        .post('/vendors')
+        .send(input)
+        .expect(201);
+      const createdVendor = createResponse.body as VendorResponse;
+      expect(createdVendor).toMatchObject({
+        ...input,
+        archivedAt: null,
+      });
+      await request(http)
+        .patch(`/vendors/${createdVendor.id}/archive`)
+        .expect(200);
+      const archivedResponse = await request(http)
+        .get(`/vendors/archived`)
+        .expect(200);
+      const archivedVendor = archivedResponse.body as VendorResponse[];
+      expect(archivedVendor[0].id).toBe(createdVendor.id);
+      expect(archivedVendor[0].archivedAt).not.toBeNull();
+    });
+    it('returns 400 when the vendor ID is not a valid UUID', async () => {
+      const archiveResponse = await request(http)
+        .patch('/vendors/not-a-uuid/archive')
+        .expect(400);
+      const error = archiveResponse.body as ErrorResponse;
+      expect(error.message).toBe('Validation failed (uuid v 4 is expected)');
+    });
+    it('returns 404 when the vendor does not exist', async () => {
+      const archiveResponse = await request(http)
+        .patch(`/vendors/${randomUUID()}/archive`)
+        .expect(404);
+      const error = archiveResponse.body as ErrorResponse;
+      expect(error.message).toBe('Vendor not found');
+    });
+    it('returns 409 when the vendor is already archived', async () => {
+      const input = {
+        name: 'Atlas Office Supplies',
+        email: 'contact@atlasoffice.com',
+        phone: '+212600000001',
+        website: 'https://atlasoffice.com',
+        notes: 'Office supplies vendor',
+      };
+
+      const createResponse = await request(http)
+        .post('/vendors')
+        .send(input)
+        .expect(201);
+      const createdVendor = createResponse.body as VendorResponse;
+      await request(http)
+        .patch(`/vendors/${createdVendor.id}/archive`)
+        .expect(200);
+      const archiveResponse = await request(http)
+        .patch(`/vendors/${createdVendor.id}/archive`)
+        .expect(409);
+      expect(archiveResponse.body).toEqual({
+        message: 'Resource archived',
+        errors: [
+          {
+            field: 'archivedAt',
+            constraints: {
+              exists: 'This vendor is already archived',
+            },
+          },
+        ],
+      });
+    });
+  });
+  describe('PATCH /vendors/:id/restore', () => {
+    it('restores an archived vendor', async () => {
+      const input = {
+        name: 'Atlas Office Supplies',
+        email: 'contact@atlasoffice.com',
+        phone: '+212600000001',
+        website: 'https://atlasoffice.com',
+        notes: 'Office supplies vendor',
+      };
+
+      const createResponse = await request(http)
+        .post('/vendors')
+        .send(input)
+        .expect(201);
+      const createdVendor = createResponse.body as VendorResponse;
+      expect(createdVendor).toMatchObject({
+        ...input,
+        archivedAt: null,
+      });
+      await request(http)
+        .patch(`/vendors/${createdVendor.id}/archive`)
+        .expect(200);
+      const archivedResponse = await request(http)
+        .get(`/vendors/archived`)
+        .expect(200);
+      const archivedVendor = archivedResponse.body as VendorResponse[];
+      expect(archivedVendor[0].id).toBe(createdVendor.id);
+      expect(archivedVendor[0].archivedAt).not.toBeNull();
+      await request(http)
+        .patch(`/vendors/${createdVendor.id}/restore`)
+        .expect(200);
+      const restoreResponse = await request(http)
+        .get(`/vendors/${createdVendor.id}`)
+        .expect(200);
+      const restoredVendor = restoreResponse.body as VendorResponse;
+      expect(restoredVendor).toMatchObject({
+        id: createdVendor.id,
+        ...input,
+        archivedAt: null,
+      });
+    });
+    it('returns 404 when the vendor does not exist', async () => {
+      const restoreResponse = await request(http)
+        .patch(`/vendors/${randomUUID()}/restore`)
+        .expect(404);
+      const error = restoreResponse.body as ErrorResponse;
+      expect(error.message).toBe('Vendor not found');
+    });
+    it('returns 409 when the vendor is already active', async () => {
+      const input = {
+        name: 'Atlas Office Supplies',
+        email: 'contact@atlasoffice.com',
+        phone: '+212600000001',
+        website: 'https://atlasoffice.com',
+        notes: 'Office supplies vendor',
+      };
+
+      const createResponse = await request(http)
+        .post('/vendors')
+        .send(input)
+        .expect(201);
+      const createdVendor = createResponse.body as VendorResponse;
+      const restoreResponse = await request(http)
+        .patch(`/vendors/${createdVendor.id}/restore`)
+        .expect(409);
+      expect(restoreResponse.body).toEqual({
+        message: 'Resource not archived',
+        errors: [
+          {
+            field: 'archivedAt',
+            constraints: {
+              exists: 'This vendor is not archived',
+            },
+          },
+        ],
+      });
+    });
+    it('returns 400 when the vendor ID is not a valid UUID', async () => {
+      const restoreResponse = await request(http)
+        .patch('/vendors/not-a-uuid/restore')
+        .expect(400);
+      const error = restoreResponse.body as ErrorResponse;
+      expect(error.message).toBe('Validation failed (uuid v 4 is expected)');
+    });
   });
 });
