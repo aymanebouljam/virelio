@@ -1,4 +1,4 @@
-import type { INestApplication } from '@nestjs/common';
+import { HttpStatus, type INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import type { Server } from 'node:http';
 import { createTestApp } from './test-app';
@@ -16,11 +16,11 @@ describe('App e2e', () => {
   });
 
   it('GET / returns backend sanity check', async () => {
-    await request(http).get('/').expect(200).expect('Hello World!');
+    await request(http).get('/').expect(HttpStatus.OK).expect('Hello World!');
   });
 
   it('GET /health returns backend health', async () => {
-    await request(http).get('/health').expect(200).expect({
+    await request(http).get('/health').expect(HttpStatus.OK).expect({
       status: 'ok',
       service: 'backend',
     });
