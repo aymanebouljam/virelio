@@ -168,4 +168,50 @@ export class VendorsService {
       },
     });
   }
+
+  async remove(id: string) {
+    const vendor = await this.findOneIncludingArchived(id);
+
+    if (vendor.archivedAt === null) {
+      throw new ConflictException({
+        message: 'Resource not archived',
+        errors: [
+          {
+            field: 'archivedAt',
+            constraints: {
+              exists: 'This vendor should be archived in order to be deleted',
+            },
+          },
+        ],
+      });
+    }
+
+    try {
+      return await this.prisma.vendor.delete({
+        where: { id },
+      });
+    } catch (error: unknown) {
+      const cause = (
+        error as {
+          cause?: {
+            originalCode?: string;
+            code?: string;
+          };
+        }
+      )?.cause;
+
+      if (
+        cause?.originalCode === '23001' ||
+        cause?.code === '23001' ||
+        cause?.originalCode === '23503' ||
+        cause?.code === '23503'
+      ) {
+        throw new ConflictException({
+          message: 'Vendor cannot be deleted because it has expenses',
+        });
+      }
+
+      throw error;
+    }
+  }
 }
