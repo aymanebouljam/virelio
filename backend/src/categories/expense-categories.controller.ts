@@ -7,8 +7,8 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
-import type { CreateExpenseCategoryDto } from './dto/create-expense-category.dto';
-import type { UpdateExpenseCategoryDto } from './dto/update-expense-category.dto';
+import { CreateExpenseCategoryDto } from './dto/create-expense-category.dto';
+import { UpdateExpenseCategoryDto } from './dto/update-expense-category.dto';
 import { ExpenseCategoriesService } from './expense-categories.service';
 
 @Controller('expense-categories')
