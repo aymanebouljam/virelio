@@ -1,7 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -52,5 +55,12 @@ export class VendorsController {
     @Body() body: UpdateVendorDto,
   ) {
     return this.vendorsService.update(id, body);
+  }
+
+  // Delete
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+    return this.vendorsService.remove(id);
   }
 }

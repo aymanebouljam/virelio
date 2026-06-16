@@ -15,6 +15,7 @@ describe('VendorsService', () => {
   const findUniqueOrThrowMock = jest.fn();
   const createMock = jest.fn();
   const updateMock = jest.fn();
+  const removeMock = jest.fn();
 
   const prisma = {
     vendor: {
@@ -23,6 +24,7 @@ describe('VendorsService', () => {
       findUniqueOrThrow: findUniqueOrThrowMock,
       create: createMock,
       update: updateMock,
+      delete: removeMock,
     },
   } as unknown as PrismaService;
 
@@ -31,6 +33,7 @@ describe('VendorsService', () => {
     service = new VendorsService(prisma);
   });
 
+  // READ
   it('findAll returns active vendors ordered by createdAt desc', async () => {
     const vendors = [{ id: '1', name: 'Atlas', archivedAt: null }];
     findManyMock.mockResolvedValue(vendors);
@@ -125,6 +128,8 @@ describe('VendorsService', () => {
     });
   });
 
+  // Create
+
   it('create returns new stored vendor', async () => {
     const input = { name: 'Atlas', email: 'atlas@example.com' };
     const vendor = { ...input, id: '1', archivedAt: null };
@@ -149,6 +154,8 @@ describe('VendorsService', () => {
     );
     expect(createMock).toHaveBeenCalledWith({ data: input });
   });
+
+  // update
 
   it('update returns updated vendor', async () => {
     const input = { email: 'atlas@example.com' };
@@ -300,5 +307,74 @@ describe('VendorsService', () => {
     });
 
     expect(updateMock).not.toHaveBeenCalled();
+  });
+
+  // Delete
+  it('returns removed archived vendor record on success', async () => {
+    const archivedVendor = {
+      id: '1',
+      name: 'Atlas',
+      archivedAt: new Date(),
+    };
+
+    findUniqueOrThrowMock.mockResolvedValueOnce(archivedVendor);
+    removeMock.mockResolvedValueOnce(archivedVendor);
+
+    const result = await service.remove('1');
+    expect(result).toEqual(archivedVendor);
+
+    expect(findUniqueOrThrowMock).toHaveBeenCalledWith({
+      where: { id: '1' },
+    });
+    expect(removeMock).toHaveBeenCalledWith({
+      where: { id: '1' },
+    });
+  });
+
+  it('remove rejects non archived vendor', async () => {
+    const activeVendor = {
+      id: '1',
+      name: 'Atlas',
+      archivedAt: null,
+    };
+
+    findUniqueOrThrowMock.mockResolvedValue(activeVendor);
+
+    await expect(service.remove('1')).rejects.toBeInstanceOf(ConflictException);
+
+    expect(findUniqueOrThrowMock).toHaveBeenCalledWith({
+      where: { id: '1' },
+    });
+    expect(removeMock).not.toHaveBeenCalled();
+  });
+
+  it('remove rejects deletion when the vendor is linked to expenses', async () => {
+    const archivedVendor = {
+      id: '1',
+      name: 'Atlas',
+      archivedAt: new Date(),
+    };
+
+    findUniqueOrThrowMock.mockResolvedValueOnce(archivedVendor);
+    removeMock.mockRejectedValueOnce(
+      new Error('Foreign key constraint failed', {
+        cause: {
+          originalCode: '23001',
+        },
+      }),
+    );
+
+    await expect(service.remove('1')).rejects.toMatchObject({
+      response: {
+        message: 'Vendor cannot be deleted because it has expenses',
+      },
+    });
+
+    expect(findUniqueOrThrowMock).toHaveBeenCalledWith({
+      where: { id: '1' },
+    });
+    expect(removeMock).toHaveBeenCalledWith({
+      where: { id: '1' },
+    });
   });
 });

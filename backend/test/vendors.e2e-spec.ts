@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { createTestApp, resetDatabase } from './test-app';
-import { type INestApplication } from '@nestjs/common';
+import { HttpStatus, type INestApplication } from '@nestjs/common';
 import type { Server } from 'node:http';
 import type { PrismaService } from '../prisma/prisma.service';
 import { randomUUID } from 'node:crypto';
@@ -44,7 +44,9 @@ describe('Vendors e2e', () => {
 
   describe('GET /vendors', () => {
     it('returns empty list initially', async () => {
-      const listResponse = await request(http).get('/vendors').expect(200);
+      const listResponse = await request(http)
+        .get('/vendors')
+        .expect(HttpStatus.OK);
       expect(listResponse.body).toEqual([]);
     });
     it('returns active vendors only', async () => {
@@ -756,6 +758,134 @@ describe('Vendors e2e', () => {
         .expect(400);
       const error = restoreResponse.body as ErrorResponse;
       expect(error.message).toBe('Validation failed (uuid v 4 is expected)');
+    });
+  });
+  describe('DELETE /vendors/:id', () => {
+    it('deletes an archived vendor', async () => {
+      const input = {
+        name: 'Atlas Office Supplies',
+        email: 'contact@atlasoffice.com',
+        phone: '+212600000001',
+        website: 'https://atlasoffice.com',
+        notes: 'Office supplies vendor',
+      };
+      const createResponse = await request(http)
+        .post('/vendors')
+        .send(input)
+        .expect(201);
+      const createdVendor = createResponse.body as VendorResponse;
+      await request(http)
+        .patch(`/vendors/${createdVendor.id}/archive`)
+        .expect(200);
+
+      await request(http).delete(`/vendors/${createdVendor.id}`).expect(204);
+
+      const deletedVendor = await prisma.vendor.findUnique({
+        where: { id: createdVendor.id },
+      });
+      expect(deletedVendor).toBeNull();
+    });
+    it('returns 404 when the vendor does not exist', async () => {
+      const deleteResponse = await request(http)
+        .delete(`/vendors/${randomUUID()}`)
+        .expect(404);
+      const error = deleteResponse.body as ErrorResponse;
+      expect(error.message).toBe('Vendor not found');
+    });
+    it('returns 409 when the vendor is still active', async () => {
+      const input = {
+        name: 'Atlas Office Supplies',
+        email: 'contact@atlasoffice.com',
+        phone: '+212600000001',
+        website: 'https://atlasoffice.com',
+        notes: 'Office supplies vendor',
+      };
+      const createResponse = await request(http)
+        .post('/vendors')
+        .send(input)
+        .expect(201);
+      const createdVendor = createResponse.body as VendorResponse;
+
+      const deleteResponse = await request(http)
+        .delete(`/vendors/${createdVendor.id}`)
+        .expect(409);
+
+      const error = deleteResponse.body as ErrorResponse;
+      expect(error).toMatchObject({
+        message: 'Resource not archived',
+        errors: [
+          {
+            field: 'archivedAt',
+            constraints: {
+              exists: 'This vendor should be archived in order to be deleted',
+            },
+          },
+        ],
+      });
+      const persistedVendor = await prisma.vendor.findUnique({
+        where: { id: createdVendor.id },
+      });
+      expect(persistedVendor).toMatchObject({
+        id: createdVendor.id,
+        ...input,
+        archivedAt: null,
+      });
+    });
+    it('returns 400 when the vendor ID is not a valid UUID', async () => {
+      const deleteResponse = await request(http)
+        .delete('/vendors/not-a-uuid')
+        .expect(400);
+      const error = deleteResponse.body as ErrorResponse;
+      expect(error.message).toBe('Validation failed (uuid v 4 is expected)');
+    });
+    it('returns 409 when the vendor is still linked to expenses', async () => {
+      const input = {
+        name: 'Atlas Office Supplies',
+        email: 'contact@atlasoffice.com',
+        phone: '+212600000001',
+        website: 'https://atlasoffice.com',
+        notes: 'Office supplies vendor',
+      };
+      const createResponse = await request(http)
+        .post('/vendors')
+        .send(input)
+        .expect(201);
+      const createdVendor = createResponse.body as VendorResponse;
+      await prisma.expense.create({
+        data: {
+          vendorId: createdVendor.id,
+          description: 'Office supplies purchase',
+          amount: 1250.5,
+          expenseDate: new Date('2026-01-15T00:00:00.000Z'),
+          notes: 'Monthly stationery and printer supplies',
+        },
+      });
+
+      await request(http)
+        .patch(`/vendors/${createdVendor.id}/archive`)
+        .expect(200);
+
+      const deleteResponse = await request(http)
+        .delete(`/vendors/${createdVendor.id}`)
+        .expect(409);
+
+      const error = deleteResponse.body as ErrorResponse;
+      expect(error).toMatchObject({
+        message: 'Vendor cannot be deleted because it has expenses',
+      });
+      const persistedVendor = await prisma.vendor.findUnique({
+        where: { id: createdVendor.id },
+      });
+      expect(persistedVendor).toMatchObject({
+        id: createdVendor.id,
+        ...input,
+      });
+      expect(persistedVendor?.archivedAt).not.toBeNull();
+      const persistedExpense = await prisma.expense.findFirst({
+        where: { vendorId: createdVendor.id },
+      });
+
+      expect(persistedExpense).not.toBeNull();
     });
   });
 });
