@@ -61,12 +61,12 @@ describe('Vendors e2e', () => {
       const createResponse = await request(http)
         .post('/vendors')
         .send(inputA)
-        .expect(201);
+        .expect(HttpStatus.CREATED);
 
       const createdVendor = createResponse.body as VendorResponse;
       const archivedResponse = await request(http)
         .patch(`/vendors/${createdVendor.id}/archive`)
-        .expect(200);
+        .expect(HttpStatus.OK);
 
       const archivedVendor = archivedResponse.body as VendorResponse;
       expect(archivedVendor.name).toBe(inputA.name);
@@ -80,9 +80,14 @@ describe('Vendors e2e', () => {
         notes: 'Business equipment and workplace essentials supplier',
       };
 
-      await request(http).post('/vendors').send(inputB).expect(201);
+      await request(http)
+        .post('/vendors')
+        .send(inputB)
+        .expect(HttpStatus.CREATED);
 
-      const listResponse = await request(http).get('/vendors').expect(200);
+      const listResponse = await request(http)
+        .get('/vendors')
+        .expect(HttpStatus.OK);
       const vendorsList = listResponse.body as VendorResponse[];
       expect(vendorsList).toHaveLength(1);
       expect(vendorsList[0]).toMatchObject(inputB);
@@ -103,7 +108,7 @@ describe('Vendors e2e', () => {
       const createResponseA = await request(http)
         .post('/vendors')
         .send(inputA)
-        .expect(201);
+        .expect(HttpStatus.CREATED);
       const vendorA = createResponseA.body as VendorResponse;
       await prisma.vendor.update({
         where: { id: vendorA.id },
@@ -121,13 +126,15 @@ describe('Vendors e2e', () => {
       const createResponseB = await request(http)
         .post('/vendors')
         .send(inputB)
-        .expect(201);
+        .expect(HttpStatus.CREATED);
       const vendorB = createResponseB.body as VendorResponse;
       await prisma.vendor.update({
         where: { id: vendorB.id },
         data: { createdAt: new Date('2026-01-02T00:00:00.000Z') },
       });
-      const listResponse = await request(http).get('/vendors').expect(200);
+      const listResponse = await request(http)
+        .get('/vendors')
+        .expect(HttpStatus.OK);
       const vendors = listResponse.body as VendorResponse[];
       expect(vendors.map(({ id }) => id)).toEqual([vendorB.id, vendorA.id]);
     });
@@ -145,13 +152,13 @@ describe('Vendors e2e', () => {
       const createResponse = await request(http)
         .post('/vendors')
         .send(input)
-        .expect(201);
+        .expect(HttpStatus.CREATED);
 
       const createdVendor = createResponse.body as VendorResponse;
 
       const findOneResponse = await request(http)
         .get(`/vendors/${createdVendor.id}`)
-        .expect(200);
+        .expect(HttpStatus.OK);
       const vendor = findOneResponse.body as VendorResponse;
       expect(vendor).toMatchObject(input);
       expect(vendor.id).toBe(createdVendor.id);
@@ -160,14 +167,14 @@ describe('Vendors e2e', () => {
     it('returns 400 when the vendor ID is not a valid UUID', async () => {
       const response = await request(http)
         .get('/vendors/not-a-uuid')
-        .expect(400);
+        .expect(HttpStatus.BAD_REQUEST);
       const error = response.body as ErrorResponse;
       expect(error.message).toBe('Validation failed (uuid v 4 is expected)');
     });
     it('returns 404 when the vendor does not exist', async () => {
       const response = await request(http)
         .get(`/vendors/${randomUUID()}`)
-        .expect(404);
+        .expect(HttpStatus.NOT_FOUND);
       const error = response.body as ErrorResponse;
       expect(error.message).toBe('Vendor not found');
     });
@@ -183,16 +190,16 @@ describe('Vendors e2e', () => {
       const createResponse = await request(http)
         .post('/vendors')
         .send(input)
-        .expect(201);
+        .expect(HttpStatus.CREATED);
 
       const createdVendor = createResponse.body as VendorResponse;
 
       await request(http)
         .patch(`/vendors/${createdVendor.id}/archive`)
-        .expect(200);
+        .expect(HttpStatus.OK);
       const response = await request(http)
         .get(`/vendors/${createdVendor.id}`)
-        .expect(404);
+        .expect(HttpStatus.NOT_FOUND);
 
       const error = response.body as ErrorResponse;
       expect(error.message).toBe('Vendor not found');
@@ -202,7 +209,7 @@ describe('Vendors e2e', () => {
     it('returns an empty array when no archived vendors exist', async () => {
       const listResponse = await request(http)
         .get('/vendors/archived')
-        .expect(200);
+        .expect(HttpStatus.OK);
       expect(listResponse.body).toEqual([]);
     });
     it('returns archived vendors only', async () => {
@@ -217,12 +224,12 @@ describe('Vendors e2e', () => {
       const createResponse = await request(http)
         .post('/vendors')
         .send(inputA)
-        .expect(201);
+        .expect(HttpStatus.CREATED);
 
       const createdVendor = createResponse.body as VendorResponse;
       const archivedResponse = await request(http)
         .patch(`/vendors/${createdVendor.id}/archive`)
-        .expect(200);
+        .expect(HttpStatus.OK);
 
       const archivedVendor = archivedResponse.body as VendorResponse;
       expect(archivedVendor.name).toBe(inputA.name);
@@ -236,11 +243,14 @@ describe('Vendors e2e', () => {
         notes: 'Business equipment and workplace essentials supplier',
       };
 
-      await request(http).post('/vendors').send(inputB).expect(201);
+      await request(http)
+        .post('/vendors')
+        .send(inputB)
+        .expect(HttpStatus.CREATED);
 
       const listResponse = await request(http)
         .get('/vendors/archived')
-        .expect(200);
+        .expect(HttpStatus.OK);
       const vendorsList = listResponse.body as VendorResponse[];
       expect(vendorsList).toHaveLength(1);
       expect(vendorsList[0]).toMatchObject(inputA);
@@ -261,9 +271,11 @@ describe('Vendors e2e', () => {
       const createResponseA = await request(http)
         .post('/vendors')
         .send(inputA)
-        .expect(201);
+        .expect(HttpStatus.CREATED);
       const vendorA = createResponseA.body as VendorResponse;
-      await request(http).patch(`/vendors/${vendorA.id}/archive`).expect(200);
+      await request(http)
+        .patch(`/vendors/${vendorA.id}/archive`)
+        .expect(HttpStatus.OK);
 
       await prisma.vendor.update({
         where: { id: vendorA.id },
@@ -281,9 +293,11 @@ describe('Vendors e2e', () => {
       const createResponseB = await request(http)
         .post('/vendors')
         .send(inputB)
-        .expect(201);
+        .expect(HttpStatus.CREATED);
       const vendorB = createResponseB.body as VendorResponse;
-      await request(http).patch(`/vendors/${vendorB.id}/archive`).expect(200);
+      await request(http)
+        .patch(`/vendors/${vendorB.id}/archive`)
+        .expect(HttpStatus.OK);
 
       await prisma.vendor.update({
         where: { id: vendorB.id },
@@ -291,7 +305,7 @@ describe('Vendors e2e', () => {
       });
       const listArchivedResponse = await request(http)
         .get('/vendors/archived')
-        .expect(200);
+        .expect(HttpStatus.OK);
       const archivedVendors = listArchivedResponse.body as VendorResponse[];
       expect(archivedVendors.map(({ id }) => id)).toEqual([
         vendorB.id,
@@ -312,7 +326,7 @@ describe('Vendors e2e', () => {
       const createResponse = await request(http)
         .post('/vendors')
         .send(input)
-        .expect(201);
+        .expect(HttpStatus.CREATED);
 
       const createdVendor = createResponse.body as VendorResponse;
 
@@ -326,7 +340,9 @@ describe('Vendors e2e', () => {
       expect(Number.isNaN(Date.parse(createdVendor.createdAt))).toBe(false);
       expect(Number.isNaN(Date.parse(createdVendor.updatedAt))).toBe(false);
 
-      const listResponse = await request(http).get('/vendors').expect(200);
+      const listResponse = await request(http)
+        .get('/vendors')
+        .expect(HttpStatus.OK);
 
       const vendorsList = listResponse.body as VendorResponse[];
 
@@ -348,7 +364,7 @@ describe('Vendors e2e', () => {
       const response = await request(http)
         .post('/vendors')
         .send(input)
-        .expect(400);
+        .expect(HttpStatus.BAD_REQUEST);
 
       const error = response.body as ErrorResponse;
 
@@ -365,7 +381,9 @@ describe('Vendors e2e', () => {
       expect(typeof nameError.constraints.isString).toBe('string');
       expect(typeof nameError.constraints.isNotEmpty).toBe('string');
 
-      const listResponse = await request(http).get('/vendors').expect(200);
+      const listResponse = await request(http)
+        .get('/vendors')
+        .expect(HttpStatus.OK);
 
       const vendorsList = listResponse.body as VendorResponse[];
 
@@ -390,7 +408,7 @@ describe('Vendors e2e', () => {
         const createResponse = await request(http)
           .post('/vendors')
           .send(inputA)
-          .expect(201);
+          .expect(HttpStatus.CREATED);
         const createdVendor = createResponse.body as VendorResponse;
 
         const inputB = {
@@ -405,7 +423,7 @@ describe('Vendors e2e', () => {
         const response = await request(http)
           .post('/vendors')
           .send(inputB)
-          .expect(409);
+          .expect(HttpStatus.CONFLICT);
 
         const error = response.body as ErrorResponse;
 
@@ -418,7 +436,9 @@ describe('Vendors e2e', () => {
             },
           },
         ]);
-        const listResponse = await request(http).get('/vendors').expect(200);
+        const listResponse = await request(http)
+          .get('/vendors')
+          .expect(HttpStatus.OK);
 
         const vendorsList = listResponse.body as VendorResponse[];
 
@@ -454,7 +474,7 @@ describe('Vendors e2e', () => {
       const createResponse = await request(http)
         .post('/vendors')
         .send(createInput)
-        .expect(201);
+        .expect(HttpStatus.CREATED);
       const createdVendor = createResponse.body as VendorResponse;
       expect(createdVendor).toMatchObject({
         ...createInput,
@@ -464,7 +484,7 @@ describe('Vendors e2e', () => {
       const updateResponse = await request(http)
         .patch(`/vendors/${createdVendor.id}`)
         .send(updateInput)
-        .expect(200);
+        .expect(HttpStatus.OK);
 
       expect(updateResponse.body).toMatchObject({
         id: createdVendor.id,
@@ -474,7 +494,7 @@ describe('Vendors e2e', () => {
 
       const getResponse = await request(http)
         .get(`/vendors/${createdVendor.id}`)
-        .expect(200);
+        .expect(HttpStatus.OK);
 
       const vendor = getResponse.body as VendorResponse;
 
@@ -496,7 +516,7 @@ describe('Vendors e2e', () => {
       const createResponse = await request(http)
         .post('/vendors')
         .send(input)
-        .expect(201);
+        .expect(HttpStatus.CREATED);
       const createdVendor = createResponse.body as VendorResponse;
       expect(createdVendor).toMatchObject({
         ...input,
@@ -505,7 +525,7 @@ describe('Vendors e2e', () => {
       const updateResponse = await request(http)
         .patch(`/vendors/${createdVendor.id}`)
         .send({})
-        .expect(400);
+        .expect(HttpStatus.BAD_REQUEST);
       const error = updateResponse.body as ErrorResponse;
       expect(error.message).toBe('Validation failed');
       expect(error.errors[0]).toEqual({
@@ -527,7 +547,7 @@ describe('Vendors e2e', () => {
       const response = await request(http)
         .patch('/vendors/not-a-uuid')
         .send(input)
-        .expect(400);
+        .expect(HttpStatus.BAD_REQUEST);
       const error = response.body as ErrorResponse;
       expect(error.message).toBe('Validation failed (uuid v 4 is expected)');
     });
@@ -542,7 +562,7 @@ describe('Vendors e2e', () => {
       const response = await request(http)
         .patch(`/vendors/${randomUUID()}`)
         .send(input)
-        .expect(404);
+        .expect(HttpStatus.NOT_FOUND);
       const error = response.body as ErrorResponse;
       expect(error.message).toBe('Vendor not found');
     });
@@ -565,7 +585,7 @@ describe('Vendors e2e', () => {
         const createResponse = await request(http)
           .post('/vendors')
           .send(inputA)
-          .expect(201);
+          .expect(HttpStatus.CREATED);
 
         const createdVendor = createResponse.body as VendorResponse;
 
@@ -577,14 +597,17 @@ describe('Vendors e2e', () => {
           notes: 'IT hardware and technical support provider',
         };
 
-        await request(http).post('/vendors').send(inputB).expect(201);
+        await request(http)
+          .post('/vendors')
+          .send(inputB)
+          .expect(HttpStatus.CREATED);
 
         const response = await request(http)
           .patch(`/vendors/${createdVendor.id}`)
           .send({
             [field]: value,
           })
-          .expect(409);
+          .expect(HttpStatus.CONFLICT);
 
         const error = response.body as ErrorResponse;
         expect(error.message).toBe('Validation failed');
@@ -612,7 +635,7 @@ describe('Vendors e2e', () => {
       const createResponse = await request(http)
         .post('/vendors')
         .send(input)
-        .expect(201);
+        .expect(HttpStatus.CREATED);
       const createdVendor = createResponse.body as VendorResponse;
       expect(createdVendor).toMatchObject({
         ...input,
@@ -620,10 +643,10 @@ describe('Vendors e2e', () => {
       });
       await request(http)
         .patch(`/vendors/${createdVendor.id}/archive`)
-        .expect(200);
+        .expect(HttpStatus.OK);
       const archivedResponse = await request(http)
         .get(`/vendors/archived`)
-        .expect(200);
+        .expect(HttpStatus.OK);
       const archivedVendor = archivedResponse.body as VendorResponse[];
       expect(archivedVendor[0].id).toBe(createdVendor.id);
       expect(archivedVendor[0].archivedAt).not.toBeNull();
@@ -631,14 +654,14 @@ describe('Vendors e2e', () => {
     it('returns 400 when the vendor ID is not a valid UUID', async () => {
       const archiveResponse = await request(http)
         .patch('/vendors/not-a-uuid/archive')
-        .expect(400);
+        .expect(HttpStatus.BAD_REQUEST);
       const error = archiveResponse.body as ErrorResponse;
       expect(error.message).toBe('Validation failed (uuid v 4 is expected)');
     });
     it('returns 404 when the vendor does not exist', async () => {
       const archiveResponse = await request(http)
         .patch(`/vendors/${randomUUID()}/archive`)
-        .expect(404);
+        .expect(HttpStatus.NOT_FOUND);
       const error = archiveResponse.body as ErrorResponse;
       expect(error.message).toBe('Vendor not found');
     });
@@ -654,14 +677,14 @@ describe('Vendors e2e', () => {
       const createResponse = await request(http)
         .post('/vendors')
         .send(input)
-        .expect(201);
+        .expect(HttpStatus.CREATED);
       const createdVendor = createResponse.body as VendorResponse;
       await request(http)
         .patch(`/vendors/${createdVendor.id}/archive`)
-        .expect(200);
+        .expect(HttpStatus.OK);
       const archiveResponse = await request(http)
         .patch(`/vendors/${createdVendor.id}/archive`)
-        .expect(409);
+        .expect(HttpStatus.CONFLICT);
       expect(archiveResponse.body).toEqual({
         message: 'Resource archived',
         errors: [
@@ -688,7 +711,7 @@ describe('Vendors e2e', () => {
       const createResponse = await request(http)
         .post('/vendors')
         .send(input)
-        .expect(201);
+        .expect(HttpStatus.CREATED);
       const createdVendor = createResponse.body as VendorResponse;
       expect(createdVendor).toMatchObject({
         ...input,
@@ -696,19 +719,19 @@ describe('Vendors e2e', () => {
       });
       await request(http)
         .patch(`/vendors/${createdVendor.id}/archive`)
-        .expect(200);
+        .expect(HttpStatus.OK);
       const archivedResponse = await request(http)
         .get(`/vendors/archived`)
-        .expect(200);
+        .expect(HttpStatus.OK);
       const archivedVendor = archivedResponse.body as VendorResponse[];
       expect(archivedVendor[0].id).toBe(createdVendor.id);
       expect(archivedVendor[0].archivedAt).not.toBeNull();
       await request(http)
         .patch(`/vendors/${createdVendor.id}/restore`)
-        .expect(200);
+        .expect(HttpStatus.OK);
       const restoreResponse = await request(http)
         .get(`/vendors/${createdVendor.id}`)
-        .expect(200);
+        .expect(HttpStatus.OK);
       const restoredVendor = restoreResponse.body as VendorResponse;
       expect(restoredVendor).toMatchObject({
         id: createdVendor.id,
@@ -719,7 +742,7 @@ describe('Vendors e2e', () => {
     it('returns 404 when the vendor does not exist', async () => {
       const restoreResponse = await request(http)
         .patch(`/vendors/${randomUUID()}/restore`)
-        .expect(404);
+        .expect(HttpStatus.NOT_FOUND);
       const error = restoreResponse.body as ErrorResponse;
       expect(error.message).toBe('Vendor not found');
     });
@@ -735,11 +758,11 @@ describe('Vendors e2e', () => {
       const createResponse = await request(http)
         .post('/vendors')
         .send(input)
-        .expect(201);
+        .expect(HttpStatus.CREATED);
       const createdVendor = createResponse.body as VendorResponse;
       const restoreResponse = await request(http)
         .patch(`/vendors/${createdVendor.id}/restore`)
-        .expect(409);
+        .expect(HttpStatus.CONFLICT);
       expect(restoreResponse.body).toEqual({
         message: 'Resource not archived',
         errors: [
@@ -755,7 +778,7 @@ describe('Vendors e2e', () => {
     it('returns 400 when the vendor ID is not a valid UUID', async () => {
       const restoreResponse = await request(http)
         .patch('/vendors/not-a-uuid/restore')
-        .expect(400);
+        .expect(HttpStatus.BAD_REQUEST);
       const error = restoreResponse.body as ErrorResponse;
       expect(error.message).toBe('Validation failed (uuid v 4 is expected)');
     });
@@ -772,13 +795,15 @@ describe('Vendors e2e', () => {
       const createResponse = await request(http)
         .post('/vendors')
         .send(input)
-        .expect(201);
+        .expect(HttpStatus.CREATED);
       const createdVendor = createResponse.body as VendorResponse;
       await request(http)
         .patch(`/vendors/${createdVendor.id}/archive`)
-        .expect(200);
+        .expect(HttpStatus.OK);
 
-      await request(http).delete(`/vendors/${createdVendor.id}`).expect(204);
+      await request(http)
+        .delete(`/vendors/${createdVendor.id}`)
+        .expect(HttpStatus.NO_CONTENT);
 
       const deletedVendor = await prisma.vendor.findUnique({
         where: { id: createdVendor.id },
@@ -788,7 +813,7 @@ describe('Vendors e2e', () => {
     it('returns 404 when the vendor does not exist', async () => {
       const deleteResponse = await request(http)
         .delete(`/vendors/${randomUUID()}`)
-        .expect(404);
+        .expect(HttpStatus.NOT_FOUND);
       const error = deleteResponse.body as ErrorResponse;
       expect(error.message).toBe('Vendor not found');
     });
@@ -803,12 +828,12 @@ describe('Vendors e2e', () => {
       const createResponse = await request(http)
         .post('/vendors')
         .send(input)
-        .expect(201);
+        .expect(HttpStatus.CREATED);
       const createdVendor = createResponse.body as VendorResponse;
 
       const deleteResponse = await request(http)
         .delete(`/vendors/${createdVendor.id}`)
-        .expect(409);
+        .expect(HttpStatus.CONFLICT);
 
       const error = deleteResponse.body as ErrorResponse;
       expect(error).toMatchObject({
@@ -834,7 +859,7 @@ describe('Vendors e2e', () => {
     it('returns 400 when the vendor ID is not a valid UUID', async () => {
       const deleteResponse = await request(http)
         .delete('/vendors/not-a-uuid')
-        .expect(400);
+        .expect(HttpStatus.BAD_REQUEST);
       const error = deleteResponse.body as ErrorResponse;
       expect(error.message).toBe('Validation failed (uuid v 4 is expected)');
     });
@@ -849,7 +874,7 @@ describe('Vendors e2e', () => {
       const createResponse = await request(http)
         .post('/vendors')
         .send(input)
-        .expect(201);
+        .expect(HttpStatus.CREATED);
       const createdVendor = createResponse.body as VendorResponse;
       await prisma.expense.create({
         data: {
@@ -863,11 +888,11 @@ describe('Vendors e2e', () => {
 
       await request(http)
         .patch(`/vendors/${createdVendor.id}/archive`)
-        .expect(200);
+        .expect(HttpStatus.OK);
 
       const deleteResponse = await request(http)
         .delete(`/vendors/${createdVendor.id}`)
-        .expect(409);
+        .expect(HttpStatus.CONFLICT);
 
       const error = deleteResponse.body as ErrorResponse;
       expect(error).toMatchObject({
