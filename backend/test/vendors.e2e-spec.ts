@@ -280,56 +280,65 @@ describe('Vendors e2e', () => {
 
       expect(vendorsList).toHaveLength(0);
     });
-    it('rejects duplicate vendor creation and returns 409', async () => {
-      const inputA = {
-        name: 'Atlas Office Supplies',
-        email: 'contact@atlasoffice.com',
-        phone: '+212600000001',
-        website: 'https://atlasoffice.com',
-        notes: 'Office supplies vendor',
-      };
+    it.each([
+      ['name', 'Atlas Office Supplies'],
+      ['email', 'contact@atlasoffice.com'],
+      ['phone', '+212600000001'],
+      ['website', 'https://atlasoffice.com'],
+    ] as const)(
+      'rejects creation when %s is already in use and returns 409',
+      async (field, value) => {
+        const inputA = {
+          name: 'Atlas Office Supplies',
+          email: 'contact@atlasoffice.com',
+          phone: '+212600000001',
+          website: 'https://atlasoffice.com',
+          notes: 'Office supplies vendor',
+        };
 
-      await request(http).post('/vendors').send(inputA).expect(201);
+        const createResponse = await request(http)
+          .post('/vendors')
+          .send(inputA)
+          .expect(201);
+        const createdVendor = createResponse.body as VendorResponse;
 
-      const inputB = {
-        name: 'Atlas Office Supplies',
-        email: 'hello@atlasoffice.ma',
-        phone: '+212612345678',
-        website: 'https://www.atlasoffice.ma',
-        notes: 'Preferred stationery and office equipment supplier',
-      };
+        const inputB = {
+          name: 'Rif Medical Supplies',
+          email: 'contact@rifmedical.ma',
+          phone: '+212634567890',
+          website: 'https://www.rifmedical.ma',
+          notes: 'Medical equipment and clinic supplies provider',
+          [field]: value,
+        };
 
-      const response = await request(http)
-        .post('/vendors')
-        .send(inputB)
-        .expect(409);
+        const response = await request(http)
+          .post('/vendors')
+          .send(inputB)
+          .expect(409);
 
-      const error = response.body as ErrorResponse;
+        const error = response.body as ErrorResponse;
 
-      expect(error.message).toBe('Validation failed');
-      const nameError = error.errors.find(
-        (validationError) => validationError.field === 'name',
-      );
+        expect(error.message).toBe('Validation failed');
+        expect(error.errors).toEqual([
+          {
+            field,
+            constraints: {
+              isUnique: `A vendor with this ${field} already exists`,
+            },
+          },
+        ]);
+        const listResponse = await request(http).get('/vendors').expect(200);
 
-      expect(nameError).toBeDefined();
-      if (!nameError) {
-        throw new Error('Expected validation error for "name"');
-      }
+        const vendorsList = listResponse.body as VendorResponse[];
 
-      expect(nameError.constraints.isUnique).toBe(
-        'A vendor with this name already exists',
-      );
-
-      const listResponse = await request(http).get('/vendors').expect(200);
-
-      const vendorsList = listResponse.body as VendorResponse[];
-
-      expect(vendorsList).toHaveLength(1);
-      expect(vendorsList[0]).toMatchObject(inputA);
-      expect(vendorsList.some((vendor) => vendor.email === inputB.email)).toBe(
-        false,
-      );
-    });
+        expect(vendorsList).toHaveLength(1);
+        expect(vendorsList[0]).toMatchObject({
+          id: createdVendor.id,
+          ...inputA,
+          archivedAt: null,
+        });
+      },
+    );
   });
   describe('PATCH /vendors/:id', () => {
     it('updates an existing vendor', async () => {
@@ -342,7 +351,7 @@ describe('Vendors e2e', () => {
       };
 
       const updateInput = {
-        phone: '+21266666666',
+        phone: '+212600000099',
         website: 'https://new-atlas.com',
       };
 
@@ -384,5 +393,121 @@ describe('Vendors e2e', () => {
         archivedAt: null,
       });
     });
+    it('returns 400 when the request body is empty', async () => {
+      const input = {
+        name: 'Atlas Office Supplies',
+        email: 'contact@atlasoffice.com',
+        phone: '+212600000001',
+        website: 'https://atlasoffice.com',
+        notes: 'Office supplies vendor',
+      };
+
+      const createResponse = await request(http)
+        .post('/vendors')
+        .send(input)
+        .expect(201);
+      const createdVendor = createResponse.body as VendorResponse;
+      expect(createdVendor).toMatchObject({
+        ...input,
+        archivedAt: null,
+      });
+      const updateResponse = await request(http)
+        .patch(`/vendors/${createdVendor.id}`)
+        .send({})
+        .expect(400);
+      const error = updateResponse.body as ErrorResponse;
+      expect(error.message).toBe('Validation failed');
+      expect(error.errors[0]).toEqual({
+        field: 'body',
+        constraints: {
+          isNotEmpty: 'Update body cannot be empty',
+        },
+      });
+    });
+
+    it('returns 400 when the vendor ID is not a valid UUID', async () => {
+      const input = {
+        name: 'Atlas Office Supplies',
+        email: 'contact@atlasoffice.com',
+        phone: '+212600000001',
+        website: 'https://atlasoffice.com',
+        notes: 'Office supplies vendor',
+      };
+      const response = await request(http)
+        .patch('/vendors/not-a-uuid')
+        .send(input)
+        .expect(400);
+      const error = response.body as ErrorResponse;
+      expect(error.message).toBe('Validation failed (uuid v 4 is expected)');
+    });
+
+    it('returns 404 when the vendor does not exist', async () => {
+      const input = {
+        name: 'Atlas Office Supplies',
+        email: 'contact@atlasoffice.com',
+        phone: '+212600000001',
+        website: 'https://atlasoffice.com',
+        notes: 'Office supplies vendor',
+      };
+      const response = await request(http)
+        .patch(`/vendors/${randomUUID()}`)
+        .send(input)
+        .expect(404);
+      const error = response.body as ErrorResponse;
+      expect(error.message).toBe('Vendor not found');
+    });
+
+    it.each([
+      ['name', 'Sahara Tech Solutions'],
+      ['email', 'contact@saharatech.ma'],
+      ['phone', '+212623456789'],
+      ['website', 'https://www.saharatech.ma'],
+    ] as const)(
+      'returns 409 when %s is already in use',
+      async (field, value) => {
+        const inputA = {
+          name: 'Atlas Office Supplies',
+          email: 'contact@atlasoffice.com',
+          phone: '+212600000001',
+          website: 'https://atlasoffice.com',
+          notes: 'Office supplies vendor',
+        };
+
+        const createResponse = await request(http)
+          .post('/vendors')
+          .send(inputA)
+          .expect(201);
+
+        const createdVendor = createResponse.body as VendorResponse;
+
+        const inputB = {
+          name: 'Sahara Tech Solutions',
+          email: 'contact@saharatech.ma',
+          phone: '+212623456789',
+          website: 'https://www.saharatech.ma',
+          notes: 'IT hardware and technical support provider',
+        };
+
+        await request(http).post('/vendors').send(inputB).expect(201);
+
+        const response = await request(http)
+          .patch(`/vendors/${createdVendor.id}`)
+          .send({
+            [field]: value,
+          })
+          .expect(409);
+
+        const error = response.body as ErrorResponse;
+        expect(error.message).toBe('Validation failed');
+        expect(error.errors).toEqual([
+          {
+            field,
+            constraints: {
+              isUnique: `A vendor with this ${field} already exists`,
+            },
+          },
+        ]);
+      },
+    );
   });
 });
