@@ -225,9 +225,6 @@ export class VendorsService {
           message: 'Vendor cannot be deleted because it has expenses',
         });
       }
-      console.error('remove error', JSON.stringify(error, null, 2));
-      console.error('remove error raw', error);
-
       throw error;
     }
   }

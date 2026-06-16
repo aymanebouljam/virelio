@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { fetchArchivedVendors, restoreVendor } from '@/lib/vendors/api'
+import { fetchArchivedVendors, removeVendor, restoreVendor } from '@/lib/vendors/api'
 import { ApiError } from '@/lib/api'
 import { vendorSchema, type Vendor } from '@/lib/vendors/schema'
 
@@ -9,6 +9,7 @@ const loading = ref(true)
 const error = ref('')
 const actionError = ref('')
 const restoringId = ref<string | null>(null)
+const removingId = ref<string | null>(null)
 
 async function loadArchivedVendors() {
   try {
@@ -42,13 +43,29 @@ async function restore(vendor: Vendor) {
         return
       }
 
-      const updatedVendor = result.data as Vendor
-      vendors.value = vendors.value.filter((vendor) => vendor.id !== updatedVendor.id)
+      const restoredVendor = result.data as Vendor
+      vendors.value = vendors.value.filter((vendor) => vendor.id !== restoredVendor.id)
     }
   } catch (err) {
     actionError.value = err instanceof ApiError ? err.message : 'Restoring vendor failed'
   } finally {
     restoringId.value = null
+  }
+}
+
+async function remove(vendor: Vendor) {
+  actionError.value = ''
+  removingId.value = vendor.id
+
+  try {
+    if (confirm('Are you sure you want to remove this vendor?')) {
+      await removeVendor(vendor.id)
+      vendors.value = vendors.value.filter((vendor) => vendor.id !== removingId.value)
+    }
+  } catch (err) {
+    actionError.value = err instanceof ApiError ? err.message : 'Removing vendor failed'
+  } finally {
+    removingId.value = null
   }
 }
 
@@ -146,6 +163,14 @@ onMounted(loadArchivedVendors)
                 @click="restore(vendor)"
               >
                 {{ restoringId === vendor.id ? 'Restoring...' : 'Restore' }}
+              </button>
+              <button
+                type="button"
+                :disabled="removingId === vendor.id"
+                class="inline-flex items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-60"
+                @click="remove(vendor)"
+              >
+                {{ removingId === vendor.id ? 'Removing...' : 'Remove' }}
               </button>
 
               <span
