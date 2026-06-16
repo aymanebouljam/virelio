@@ -377,4 +377,32 @@ describe('VendorsService', () => {
       where: { id: '1' },
     });
   });
+  it('remove rejects deletion when the vendor is linked to expenses through driver adapter metadata', async () => {
+    const archivedVendor = {
+      id: '1',
+      name: 'Atlas',
+      archivedAt: new Date(),
+    };
+
+    findUniqueOrThrowMock.mockResolvedValueOnce(archivedVendor);
+    removeMock.mockRejectedValueOnce({
+      meta: {
+        driverAdapterError: {
+          cause: {
+            code: '23503',
+          },
+        },
+      },
+    });
+
+    await expect(service.remove('1')).rejects.toMatchObject({
+      response: {
+        message: 'Vendor cannot be deleted because it has expenses',
+      },
+    });
+
+    expect(removeMock).toHaveBeenCalledWith({
+      where: { id: '1' },
+    });
+  });
 });

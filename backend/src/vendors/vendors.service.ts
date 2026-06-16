@@ -191,25 +191,42 @@ export class VendorsService {
         where: { id },
       });
     } catch (error: unknown) {
-      const cause = (
-        error as {
-          cause?: {
-            originalCode?: string;
-            code?: string;
+      const prismaError = error as {
+        cause?: {
+          originalCode?: string;
+          code?: string;
+        };
+        meta?: {
+          driverAdapterError?: {
+            cause?: {
+              originalCode?: string;
+              code?: string;
+              constraint?: {
+                fields?: unknown;
+              };
+            };
           };
-        }
-      )?.cause;
+        };
+        message?: string;
+      };
 
-      if (
-        cause?.originalCode === '23001' ||
-        cause?.code === '23001' ||
-        cause?.originalCode === '23503' ||
-        cause?.code === '23503'
-      ) {
+      const directCause = prismaError.cause;
+      const adapterCause = prismaError.meta?.driverAdapterError?.cause;
+
+      const codes = [
+        directCause?.originalCode,
+        directCause?.code,
+        adapterCause?.originalCode,
+        adapterCause?.code,
+      ];
+
+      if (codes.includes('23001') || codes.includes('23503')) {
         throw new ConflictException({
           message: 'Vendor cannot be deleted because it has expenses',
         });
       }
+      console.error('remove error', JSON.stringify(error, null, 2));
+      console.error('remove error raw', error);
 
       throw error;
     }
