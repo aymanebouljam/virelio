@@ -27,3 +27,7 @@ export async function fetchArchivedVendors() {
 export async function restoreVendor(id: string) {
   return (await apiConfig({ path: 'vendors', method: 'PATCH', id, action: 'restore' })) as Vendor
 }
+
+export async function removeVendor(id: string) {
+  return (await apiConfig({ path: 'vendors', method: 'DELETE', id })) as null
+}
