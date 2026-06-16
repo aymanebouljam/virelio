@@ -173,4 +173,61 @@ export class ExpenseCategoriesService {
       },
     });
   }
+  async remove(id: string) {
+    const category = await this.findOneIncludingArchived(id);
+
+    if (category.archivedAt === null) {
+      throw new ConflictException({
+        message: 'Resource not archived',
+        errors: [
+          {
+            field: 'archivedAt',
+            constraints: {
+              exists:
+                'This expense category should be archived in order to be deleted',
+            },
+          },
+        ],
+      });
+    }
+
+    try {
+      return await this.prisma.expenseCategory.delete({
+        where: { id },
+      });
+    } catch (error: unknown) {
+      const prismaError = error as {
+        cause?: {
+          originalCode?: string;
+          code?: string;
+        };
+        meta?: {
+          driverAdapterError?: {
+            cause?: {
+              originalCode?: string;
+              code?: string;
+            };
+          };
+        };
+      };
+
+      const directCause = prismaError.cause;
+      const adapterCause = prismaError.meta?.driverAdapterError?.cause;
+
+      const codes = [
+        directCause?.originalCode,
+        directCause?.code,
+        adapterCause?.originalCode,
+        adapterCause?.code,
+      ];
+
+      if (codes.includes('23001') || codes.includes('23503')) {
+        throw new ConflictException({
+          message: 'Expense category cannot be deleted because it has expenses',
+        });
+      }
+
+      throw error;
+    }
+  }
 }

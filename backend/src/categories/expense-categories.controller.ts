@@ -1,7 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -53,5 +56,11 @@ export class ExpenseCategoriesController {
   @Patch(':id/restore')
   restore(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     return this.expenseCategoriesService.restore(id);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+    return this.expenseCategoriesService.remove(id);
   }
 }

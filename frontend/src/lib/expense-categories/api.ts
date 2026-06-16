@@ -46,3 +46,11 @@ export async function restoreExpenseCategory(id: string) {
     action: 'restore',
   })) as ExpenseCategory
 }
+
+export async function removeExpenseCategory(id: string): Promise<null> {
+  return (await apiConfig({
+    path: 'expense-categories',
+    method: 'DELETE',
+    id,
+  })) as null
+}
