@@ -149,6 +149,7 @@ async function submitForm() {
 
     resetForm()
   } catch (err) {
+    console.error(err)
     normalizeError(err)
   } finally {
     submitting.value = false
@@ -312,9 +313,6 @@ onMounted(loadCategories)
                 <h3 class="text-base font-semibold tracking-tight text-stone-900">
                   {{ category.name }}
                 </h3>
-                <p class="mt-1 text-sm text-stone-500">
-                  {{ category.color || 'No color set' }}
-                </p>
               </div>
             </div>
 
