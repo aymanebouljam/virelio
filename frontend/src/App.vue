@@ -51,6 +51,21 @@
           >
             Archived Categories
           </RouterLink>
+          <RouterLink
+            to="/expenses"
+            class="rounded-2xl px-4 py-3 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
+            active-class="bg-stone-900 text-white hover:bg-stone-900 hover:text-white"
+          >
+            Expenses
+          </RouterLink>
+
+          <RouterLink
+            to="/expenses/archived"
+            class="rounded-2xl px-4 py-3 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
+            active-class="bg-stone-900 text-white hover:bg-stone-900 hover:text-white"
+          >
+            Archived Expenses
+          </RouterLink>
         </nav>
       </aside>
 

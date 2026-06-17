@@ -5,6 +5,8 @@ import ArchivedVendorsPage from '@/pages/ArchivedVendorsPage.vue'
 import VendorDetailsPage from '@/pages/VendorDetailsPage.vue'
 import ExpenseCategoriesPage from '@/pages/ExpenseCategoriesPage.vue'
 import ArchivedExpenseCategoriesPage from '@/pages/ArchivedExpenseCategoriesPage.vue'
+import ExpensesPage from '@/pages/ExpensesPage.vue'
+import ArchivedExpensesPage from '@/pages/ArchivedExpensesPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -18,6 +20,16 @@ const router = createRouter({
       path: '/expense-categories/archived',
       name: 'expenseCategoriesArchived',
       component: ArchivedExpenseCategoriesPage,
+    },
+    {
+      path: '/expenses',
+      name: 'expenses',
+      component: ExpensesPage,
+    },
+    {
+      path: '/expenses/archived',
+      name: 'expensesArchived',
+      component: ArchivedExpensesPage,
     },
   ],
 })
