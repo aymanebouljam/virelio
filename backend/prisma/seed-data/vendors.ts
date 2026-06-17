@@ -1,13 +1,4 @@
-import { PrismaClient } from '../../generated/prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-import 'dotenv/config';
-
-const adapter = new PrismaPg({
-  connectionString: process.env['DATABASE_URL'],
-});
-const prisma = new PrismaClient({ adapter });
-
-const vendors = [
+export const vendors = [
   {
     name: 'Atlas Office Supplies',
     email: 'contact@atlasoffice.com',
@@ -79,19 +70,3 @@ const vendors = [
     notes: 'Cleaning products and hygiene supplies.',
   },
 ];
-
-async function main() {
-  await prisma.vendor.createMany({
-    data: vendors,
-    skipDuplicates: true,
-  });
-}
-
-main()
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
