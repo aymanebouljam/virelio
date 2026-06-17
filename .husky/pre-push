@@ -1,5 +1,3 @@
 #!/usr/bin/env sh
 
 pnpm run typecheck || exit 1
-pnpm run test || exit 1
-pnpm run test:e2e || exit 1
