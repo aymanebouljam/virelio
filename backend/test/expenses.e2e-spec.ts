@@ -35,6 +35,15 @@ type ExpenseResponse = {
     updatedAt?: string;
     archivedAt?: string | null;
   } | null;
+  proofs?: {
+    id: string;
+    expenseId: string;
+    originalName: string;
+    mimeType: string;
+    sizeBytes: number;
+    storagePath: string;
+    createdAt: string;
+  }[];
 };
 
 type ErrorResponse = {
