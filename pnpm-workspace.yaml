@@ -2,8 +2,12 @@ packages:
   - "backend"
   - "frontend"
 allowBuilds:
-  '@nestjs/core': true
-  '@prisma/engines': true
+  "@nestjs/core": true
+  "@prisma/engines": true
   esbuild: true
   prisma: true
   unrs-resolver: true
+overrides:
+  multer: 2.2.0
+  "@hono/node-server": 1.19.13
+  js-yaml: 4.2.0
