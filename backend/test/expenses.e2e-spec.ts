@@ -532,6 +532,76 @@ describe('Expenses e2e', () => {
       const error = response.body as ErrorResponse;
       expect(error.message).toBe('Expense not found');
     });
+
+    it('returns 400 when the expense ID is not a valid UUID', async () => {
+      const response = await request(http)
+        .patch('/expenses/not-a-uuid')
+        .send({
+          description: 'Updated description',
+        })
+        .expect(HttpStatus.BAD_REQUEST);
+
+      const error = response.body as ErrorResponse;
+      expect(error.message).toBe('Validation failed (uuid v 4 is expected)');
+    });
+
+    it('returns 404 when updated vendor does not exist', async () => {
+      const vendor = await createVendor();
+      const category = await createCategory();
+
+      const createResponse = await request(http)
+        .post('/expenses')
+        .send({
+          vendorId: vendor.id,
+          categoryId: category.id,
+          description: 'Office supplies',
+          amount: 1250.5,
+          expenseDate: '2026-01-15T00:00:00.000Z',
+          notes: 'Monthly stationery',
+        })
+        .expect(HttpStatus.CREATED);
+
+      const createdExpense = createResponse.body as ExpenseResponse;
+
+      const response = await request(http)
+        .patch(`/expenses/${createdExpense.id}`)
+        .send({
+          vendorId: randomUUID(),
+        })
+        .expect(HttpStatus.NOT_FOUND);
+
+      const error = response.body as ErrorResponse;
+      expect(error.message).toBe('Vendor not found');
+    });
+
+    it('returns 404 when updated category does not exist', async () => {
+      const vendor = await createVendor();
+      const category = await createCategory();
+
+      const createResponse = await request(http)
+        .post('/expenses')
+        .send({
+          vendorId: vendor.id,
+          categoryId: category.id,
+          description: 'Office supplies',
+          amount: 1250.5,
+          expenseDate: '2026-01-15T00:00:00.000Z',
+          notes: 'Monthly stationery',
+        })
+        .expect(HttpStatus.CREATED);
+
+      const createdExpense = createResponse.body as ExpenseResponse;
+
+      const response = await request(http)
+        .patch(`/expenses/${createdExpense.id}`)
+        .send({
+          categoryId: randomUUID(),
+        })
+        .expect(HttpStatus.NOT_FOUND);
+
+      const error = response.body as ErrorResponse;
+      expect(error.message).toBe('Expense category not found');
+    });
   });
 
   describe('PATCH /expenses/:id/archive', () => {
@@ -563,6 +633,61 @@ describe('Expenses e2e', () => {
 
       expect(archivedExpenses[0].id).toBe(createdExpense.id);
       expect(archivedExpenses[0].archivedAt).not.toBeNull();
+    });
+
+    it('returns 400 when the expense ID is not a valid UUID', async () => {
+      const response = await request(http)
+        .patch('/expenses/not-a-uuid/archive')
+        .expect(HttpStatus.BAD_REQUEST);
+
+      const error = response.body as ErrorResponse;
+      expect(error.message).toBe('Validation failed (uuid v 4 is expected)');
+    });
+
+    it('returns 404 when the expense does not exist', async () => {
+      const response = await request(http)
+        .patch(`/expenses/${randomUUID()}/archive`)
+        .expect(HttpStatus.NOT_FOUND);
+
+      const error = response.body as ErrorResponse;
+      expect(error.message).toBe('Expense not found');
+    });
+
+    it('returns 409 when the expense is already archived', async () => {
+      const vendor = await createVendor();
+
+      const createResponse = await request(http)
+        .post('/expenses')
+        .send({
+          vendorId: vendor.id,
+          description: 'Taxi',
+          amount: 220.0,
+          expenseDate: '2026-01-16T00:00:00.000Z',
+          notes: 'Airport transfer',
+        })
+        .expect(HttpStatus.CREATED);
+
+      const createdExpense = createResponse.body as ExpenseResponse;
+
+      await request(http)
+        .patch(`/expenses/${createdExpense.id}/archive`)
+        .expect(HttpStatus.OK);
+
+      const response = await request(http)
+        .patch(`/expenses/${createdExpense.id}/archive`)
+        .expect(HttpStatus.CONFLICT);
+
+      expect(response.body).toEqual({
+        message: 'Resource archived',
+        errors: [
+          {
+            field: 'archivedAt',
+            constraints: {
+              exists: 'This expense is already archived',
+            },
+          },
+        ],
+      });
     });
   });
 
@@ -599,6 +724,123 @@ describe('Expenses e2e', () => {
         id: createdExpense.id,
         archivedAt: null,
       });
+    });
+
+    it('returns 400 when the expense ID is not a valid UUID', async () => {
+      const response = await request(http)
+        .patch('/expenses/not-a-uuid/restore')
+        .expect(HttpStatus.BAD_REQUEST);
+
+      const error = response.body as ErrorResponse;
+      expect(error.message).toBe('Validation failed (uuid v 4 is expected)');
+    });
+
+    it('returns 404 when the expense does not exist', async () => {
+      const response = await request(http)
+        .patch(`/expenses/${randomUUID()}/restore`)
+        .expect(HttpStatus.NOT_FOUND);
+
+      const error = response.body as ErrorResponse;
+      expect(error.message).toBe('Expense not found');
+    });
+
+    it('returns 409 when the expense is already active', async () => {
+      const vendor = await createVendor();
+
+      const createResponse = await request(http)
+        .post('/expenses')
+        .send({
+          vendorId: vendor.id,
+          description: 'Taxi',
+          amount: 220.0,
+          expenseDate: '2026-01-16T00:00:00.000Z',
+          notes: 'Airport transfer',
+        })
+        .expect(HttpStatus.CREATED);
+
+      const createdExpense = createResponse.body as ExpenseResponse;
+
+      const response = await request(http)
+        .patch(`/expenses/${createdExpense.id}/restore`)
+        .expect(HttpStatus.CONFLICT);
+
+      expect(response.body).toEqual({
+        message: 'Resource not archived',
+        errors: [
+          {
+            field: 'archivedAt',
+            constraints: {
+              exists: 'This expense is not archived',
+            },
+          },
+        ],
+      });
+    });
+
+    it('returns 404 when restoring expense whose vendor is archived', async () => {
+      const vendor = await createVendor();
+
+      const createResponse = await request(http)
+        .post('/expenses')
+        .send({
+          vendorId: vendor.id,
+          description: 'Taxi',
+          amount: 220.0,
+          expenseDate: '2026-01-16T00:00:00.000Z',
+          notes: 'Airport transfer',
+        })
+        .expect(HttpStatus.CREATED);
+
+      const createdExpense = createResponse.body as ExpenseResponse;
+
+      await request(http)
+        .patch(`/expenses/${createdExpense.id}/archive`)
+        .expect(HttpStatus.OK);
+
+      await request(http)
+        .patch(`/vendors/${vendor.id}/archive`)
+        .expect(HttpStatus.OK);
+
+      const response = await request(http)
+        .patch(`/expenses/${createdExpense.id}/restore`)
+        .expect(HttpStatus.NOT_FOUND);
+
+      const error = response.body as ErrorResponse;
+      expect(error.message).toBe('Vendor not found');
+    });
+
+    it('returns 404 when restoring expense whose category is archived', async () => {
+      const vendor = await createVendor();
+      const category = await createCategory();
+
+      const createResponse = await request(http)
+        .post('/expenses')
+        .send({
+          vendorId: vendor.id,
+          categoryId: category.id,
+          description: 'Office supplies',
+          amount: 1250.5,
+          expenseDate: '2026-01-15T00:00:00.000Z',
+          notes: 'Monthly stationery',
+        })
+        .expect(HttpStatus.CREATED);
+
+      const createdExpense = createResponse.body as ExpenseResponse;
+
+      await request(http)
+        .patch(`/expenses/${createdExpense.id}/archive`)
+        .expect(HttpStatus.OK);
+
+      await request(http)
+        .patch(`/expense-categories/${category.id}/archive`)
+        .expect(HttpStatus.OK);
+
+      const response = await request(http)
+        .patch(`/expenses/${createdExpense.id}/restore`)
+        .expect(HttpStatus.NOT_FOUND);
+
+      const error = response.body as ErrorResponse;
+      expect(error.message).toBe('Expense category not found');
     });
   });
 
@@ -665,6 +907,24 @@ describe('Expenses e2e', () => {
           },
         ],
       });
+    });
+
+    it('returns 400 when the expense ID is not a valid UUID', async () => {
+      const response = await request(http)
+        .delete('/expenses/not-a-uuid')
+        .expect(HttpStatus.BAD_REQUEST);
+
+      const error = response.body as ErrorResponse;
+      expect(error.message).toBe('Validation failed (uuid v 4 is expected)');
+    });
+
+    it('returns 404 when the expense does not exist', async () => {
+      const response = await request(http)
+        .delete(`/expenses/${randomUUID()}`)
+        .expect(HttpStatus.NOT_FOUND);
+
+      const error = response.body as ErrorResponse;
+      expect(error.message).toBe('Expense not found');
     });
   });
 });
