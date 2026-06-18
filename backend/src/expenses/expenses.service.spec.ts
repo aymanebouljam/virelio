@@ -393,4 +393,313 @@ describe('ExpensesService', () => {
 
     expect(expenseDeleteMock).not.toHaveBeenCalled();
   });
+  it('create throws vendor not found when vendor does not exist', async () => {
+    vendorFindUniqueMock.mockResolvedValueOnce(null);
+
+    await expect(
+      service.create({
+        vendorId: 'vendor-1',
+        categoryId: 'category-1',
+        description: 'Office supplies',
+        amount: 1250.5,
+        expenseDate: '2026-01-15T00:00:00.000Z',
+        notes: 'Monthly stationery',
+      }),
+    ).rejects.toMatchObject({
+      response: {
+        message: 'Vendor not found',
+      },
+    });
+
+    expect(vendorFindUniqueMock).toHaveBeenCalledWith({
+      where: { id: 'vendor-1' },
+    });
+    expect(expenseCategoryFindUniqueMock).not.toHaveBeenCalled();
+    expect(expenseCreateMock).not.toHaveBeenCalled();
+  });
+
+  it('create throws vendor not found when vendor is archived', async () => {
+    vendorFindUniqueMock.mockResolvedValueOnce({
+      id: 'vendor-1',
+      archivedAt: new Date(),
+    });
+
+    await expect(
+      service.create({
+        vendorId: 'vendor-1',
+        categoryId: 'category-1',
+        description: 'Office supplies',
+        amount: 1250.5,
+        expenseDate: '2026-01-15T00:00:00.000Z',
+        notes: 'Monthly stationery',
+      }),
+    ).rejects.toMatchObject({
+      response: {
+        message: 'Vendor not found',
+      },
+    });
+
+    expect(vendorFindUniqueMock).toHaveBeenCalledWith({
+      where: { id: 'vendor-1' },
+    });
+    expect(expenseCategoryFindUniqueMock).not.toHaveBeenCalled();
+    expect(expenseCreateMock).not.toHaveBeenCalled();
+  });
+
+  it('create throws expense category not found when category does not exist', async () => {
+    vendorFindUniqueMock.mockResolvedValueOnce({
+      id: 'vendor-1',
+      archivedAt: null,
+    });
+    expenseCategoryFindUniqueMock.mockResolvedValueOnce(null);
+
+    await expect(
+      service.create({
+        vendorId: 'vendor-1',
+        categoryId: 'category-1',
+        description: 'Office supplies',
+        amount: 1250.5,
+        expenseDate: '2026-01-15T00:00:00.000Z',
+        notes: 'Monthly stationery',
+      }),
+    ).rejects.toMatchObject({
+      response: {
+        message: 'Expense category not found',
+      },
+    });
+
+    expect(vendorFindUniqueMock).toHaveBeenCalledWith({
+      where: { id: 'vendor-1' },
+    });
+    expect(expenseCategoryFindUniqueMock).toHaveBeenCalledWith({
+      where: { id: 'category-1' },
+    });
+    expect(expenseCreateMock).not.toHaveBeenCalled();
+  });
+
+  it('create throws expense category not found when category is archived', async () => {
+    vendorFindUniqueMock.mockResolvedValueOnce({
+      id: 'vendor-1',
+      archivedAt: null,
+    });
+    expenseCategoryFindUniqueMock.mockResolvedValueOnce({
+      id: 'category-1',
+      archivedAt: new Date(),
+    });
+
+    await expect(
+      service.create({
+        vendorId: 'vendor-1',
+        categoryId: 'category-1',
+        description: 'Office supplies',
+        amount: 1250.5,
+        expenseDate: '2026-01-15T00:00:00.000Z',
+        notes: 'Monthly stationery',
+      }),
+    ).rejects.toMatchObject({
+      response: {
+        message: 'Expense category not found',
+      },
+    });
+
+    expect(vendorFindUniqueMock).toHaveBeenCalledWith({
+      where: { id: 'vendor-1' },
+    });
+    expect(expenseCategoryFindUniqueMock).toHaveBeenCalledWith({
+      where: { id: 'category-1' },
+    });
+    expect(expenseCreateMock).not.toHaveBeenCalled();
+  });
+
+  it('update throws vendor not found when updated vendor does not exist', async () => {
+    const existingExpense = {
+      id: 'expense-1',
+      vendorId: 'vendor-1',
+      categoryId: 'category-1',
+      description: 'Office supplies',
+      amount: 1250.5,
+      expenseDate: new Date('2026-01-15T00:00:00.000Z'),
+      archivedAt: null,
+    };
+
+    expenseFindUniqueOrThrowMock.mockResolvedValueOnce(existingExpense);
+    vendorFindUniqueMock.mockResolvedValueOnce(null);
+
+    await expect(
+      service.update('expense-1', { vendorId: 'vendor-2' }),
+    ).rejects.toMatchObject({
+      response: {
+        message: 'Vendor not found',
+      },
+    });
+
+    expect(expenseFindUniqueOrThrowMock).toHaveBeenCalledWith({
+      where: { id: 'expense-1' },
+    });
+    expect(vendorFindUniqueMock).toHaveBeenCalledWith({
+      where: { id: 'vendor-2' },
+    });
+    expect(expenseCategoryFindUniqueMock).not.toHaveBeenCalled();
+    expect(expenseUpdateMock).not.toHaveBeenCalled();
+  });
+
+  it('update throws vendor not found when updated vendor is archived', async () => {
+    const existingExpense = {
+      id: 'expense-1',
+      vendorId: 'vendor-1',
+      categoryId: 'category-1',
+      description: 'Office supplies',
+      amount: 1250.5,
+      expenseDate: new Date('2026-01-15T00:00:00.000Z'),
+      archivedAt: null,
+    };
+
+    expenseFindUniqueOrThrowMock.mockResolvedValueOnce(existingExpense);
+    vendorFindUniqueMock.mockResolvedValueOnce({
+      id: 'vendor-2',
+      archivedAt: new Date(),
+    });
+
+    await expect(
+      service.update('expense-1', { vendorId: 'vendor-2' }),
+    ).rejects.toMatchObject({
+      response: {
+        message: 'Vendor not found',
+      },
+    });
+
+    expect(vendorFindUniqueMock).toHaveBeenCalledWith({
+      where: { id: 'vendor-2' },
+    });
+    expect(expenseCategoryFindUniqueMock).not.toHaveBeenCalled();
+    expect(expenseUpdateMock).not.toHaveBeenCalled();
+  });
+
+  it('update throws expense category not found when updated category does not exist', async () => {
+    const existingExpense = {
+      id: 'expense-1',
+      vendorId: 'vendor-1',
+      categoryId: 'category-1',
+      description: 'Office supplies',
+      amount: 1250.5,
+      expenseDate: new Date('2026-01-15T00:00:00.000Z'),
+      archivedAt: null,
+    };
+
+    expenseFindUniqueOrThrowMock.mockResolvedValueOnce(existingExpense);
+    vendorFindUniqueMock.mockResolvedValueOnce({
+      id: 'vendor-1',
+      archivedAt: null,
+    });
+    expenseCategoryFindUniqueMock.mockResolvedValueOnce(null);
+
+    await expect(
+      service.update('expense-1', { categoryId: 'category-2' }),
+    ).rejects.toMatchObject({
+      response: {
+        message: 'Expense category not found',
+      },
+    });
+
+    expect(vendorFindUniqueMock).toHaveBeenCalledWith({
+      where: { id: 'vendor-1' },
+    });
+    expect(expenseCategoryFindUniqueMock).toHaveBeenCalledWith({
+      where: { id: 'category-2' },
+    });
+    expect(expenseUpdateMock).not.toHaveBeenCalled();
+  });
+
+  it('update throws expense category not found when updated category is archived', async () => {
+    const existingExpense = {
+      id: 'expense-1',
+      vendorId: 'vendor-1',
+      categoryId: 'category-1',
+      description: 'Office supplies',
+      amount: 1250.5,
+      expenseDate: new Date('2026-01-15T00:00:00.000Z'),
+      archivedAt: null,
+    };
+
+    expenseFindUniqueOrThrowMock.mockResolvedValueOnce(existingExpense);
+    vendorFindUniqueMock.mockResolvedValueOnce({
+      id: 'vendor-1',
+      archivedAt: null,
+    });
+    expenseCategoryFindUniqueMock.mockResolvedValueOnce({
+      id: 'category-2',
+      archivedAt: new Date(),
+    });
+
+    await expect(
+      service.update('expense-1', { categoryId: 'category-2' }),
+    ).rejects.toMatchObject({
+      response: {
+        message: 'Expense category not found',
+      },
+    });
+
+    expect(expenseCategoryFindUniqueMock).toHaveBeenCalledWith({
+      where: { id: 'category-2' },
+    });
+    expect(expenseUpdateMock).not.toHaveBeenCalled();
+  });
+
+  it('restore throws vendor not found when vendor is archived', async () => {
+    expenseFindUniqueOrThrowMock.mockResolvedValueOnce({
+      id: 'expense-1',
+      vendorId: 'vendor-1',
+      categoryId: 'category-1',
+      archivedAt: new Date(),
+    });
+
+    vendorFindUniqueMock.mockResolvedValueOnce({
+      id: 'vendor-1',
+      archivedAt: new Date(),
+    });
+
+    await expect(service.restore('expense-1')).rejects.toMatchObject({
+      response: {
+        message: 'Vendor not found',
+      },
+    });
+
+    expect(vendorFindUniqueMock).toHaveBeenCalledWith({
+      where: { id: 'vendor-1' },
+    });
+    expect(expenseCategoryFindUniqueMock).not.toHaveBeenCalled();
+    expect(expenseUpdateMock).not.toHaveBeenCalled();
+  });
+
+  it('restore throws expense category not found when category is archived', async () => {
+    expenseFindUniqueOrThrowMock.mockResolvedValueOnce({
+      id: 'expense-1',
+      vendorId: 'vendor-1',
+      categoryId: 'category-1',
+      archivedAt: new Date(),
+    });
+
+    vendorFindUniqueMock.mockResolvedValueOnce({
+      id: 'vendor-1',
+      archivedAt: null,
+    });
+    expenseCategoryFindUniqueMock.mockResolvedValueOnce({
+      id: 'category-1',
+      archivedAt: new Date(),
+    });
+
+    await expect(service.restore('expense-1')).rejects.toMatchObject({
+      response: {
+        message: 'Expense category not found',
+      },
+    });
+
+    expect(vendorFindUniqueMock).toHaveBeenCalledWith({
+      where: { id: 'vendor-1' },
+    });
+    expect(expenseCategoryFindUniqueMock).toHaveBeenCalledWith({
+      where: { id: 'category-1' },
+    });
+    expect(expenseUpdateMock).not.toHaveBeenCalled();
+  });
 });
