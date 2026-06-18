@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { ZodError } from 'zod'
 import { ApiError } from '@/lib/api'
+import { useRouter } from 'vue-router'
 import { archiveExpense, createExpense, fetchExpenses, updateExpense } from '@/lib/expenses/api'
 import {
   expenseFormSchema,
@@ -19,6 +20,7 @@ import { mapZodErrors } from '@/lib/zod'
 const expenses = ref<Expense[]>([])
 const vendors = ref<Vendor[]>([])
 const categories = ref<ExpenseCategory[]>([])
+const router = useRouter()
 
 const loading = ref(true)
 const error = ref('')
@@ -78,6 +80,9 @@ function resetForm() {
 function openCreateForm() {
   resetForm()
   showForm.value = true
+}
+function openExpense(expense: Expense) {
+  void router.push(`/expenses/${expense.id}`)
 }
 
 function openEditForm(expense: Expense) {
@@ -461,6 +466,14 @@ onMounted(loadExpensesPage)
               <span class="text-sm font-semibold text-stone-900">
                 {{ formatAmount(expense.amount) }}
               </span>
+
+              <button
+                type="button"
+                class="inline-flex items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900"
+                @click="openExpense(expense)"
+              >
+                View
+              </button>
 
               <button
                 type="button"

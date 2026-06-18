@@ -7,6 +7,7 @@ import ExpenseCategoriesPage from '@/pages/ExpenseCategoriesPage.vue'
 import ArchivedExpenseCategoriesPage from '@/pages/ArchivedExpenseCategoriesPage.vue'
 import ExpensesPage from '@/pages/ExpensesPage.vue'
 import ArchivedExpensesPage from '@/pages/ArchivedExpensesPage.vue'
+import ExpenseDetailsPage from '@/pages/ExpenseDetailsPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -50,6 +51,11 @@ const router = createRouter({
       path: '/expenses/archived',
       name: 'expensesArchived',
       component: ArchivedExpensesPage,
+    },
+    {
+      path: '/expenses/:id',
+      name: 'expenseDetails',
+      component: ExpenseDetailsPage,
     },
   ],
 })
