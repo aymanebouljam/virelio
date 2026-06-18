@@ -30,7 +30,7 @@ export class ExpensesController {
 
   @Get(':id')
   findOne(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
-    return this.expensesService.findOne(id);
+    return this.expensesService.findOneDetailed(id);
   }
 
   @Post()

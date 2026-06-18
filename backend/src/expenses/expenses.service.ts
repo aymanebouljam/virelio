@@ -57,6 +57,29 @@ export class ExpensesService {
     }
   }
 
+  async findOneDetailed(id: string) {
+    try {
+      return await this.prisma.expense.findUniqueOrThrow({
+        where: {
+          id,
+          archivedAt: null,
+        },
+        include: {
+          vendor: true,
+          category: true,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throwPrismaNotFound('Expense');
+      }
+      throw error;
+    }
+  }
+
   async findOneIncludingArchived(id: string) {
     try {
       return await this.prisma.expense.findUniqueOrThrow({

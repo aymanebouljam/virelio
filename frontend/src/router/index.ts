@@ -11,11 +11,31 @@ import ArchivedExpensesPage from '@/pages/ArchivedExpensesPage.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    { path: '/', name: 'dashboard', component: DashboardPage },
-    { path: '/vendors', name: 'vendors', component: VendorsPage },
-    { path: '/vendors/archived', name: 'vendorsArchived', component: ArchivedVendorsPage },
-    { path: '/vendors/:id', name: 'vendorDetails', component: VendorDetailsPage },
-    { path: '/expense-categories', name: 'expenseCategories', component: ExpenseCategoriesPage },
+    {
+      path: '/',
+      name: 'dashboard',
+      component: DashboardPage,
+    },
+    {
+      path: '/vendors',
+      name: 'vendors',
+      component: VendorsPage,
+    },
+    {
+      path: '/vendors/archived',
+      name: 'vendorsArchived',
+      component: ArchivedVendorsPage,
+    },
+    {
+      path: '/vendors/:id',
+      name: 'vendorDetails',
+      component: VendorDetailsPage,
+    },
+    {
+      path: '/expense-categories',
+      name: 'expenseCategories',
+      component: ExpenseCategoriesPage,
+    },
     {
       path: '/expense-categories/archived',
       name: 'expenseCategoriesArchived',

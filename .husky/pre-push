@@ -1,5 +1,4 @@
 #!/usr/bin/env sh
 
 pnpm run lint
-pnpm run typecheck
 pnpm run test

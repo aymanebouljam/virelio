@@ -16,6 +16,25 @@ type ExpenseResponse = {
   createdAt: string;
   updatedAt: string;
   archivedAt: string | null;
+  vendor?: {
+    id: string;
+    name: string;
+    email?: string | null;
+    phone?: string | null;
+    website?: string | null;
+    notes?: string | null;
+    createdAt?: string;
+    updatedAt?: string;
+    archivedAt?: string | null;
+  };
+  category?: {
+    id: string;
+    name: string;
+    color: string | null;
+    createdAt?: string;
+    updatedAt?: string;
+    archivedAt?: string | null;
+  } | null;
 };
 
 type ErrorResponse = {
@@ -202,6 +221,15 @@ describe('Expenses e2e', () => {
         amount: '1250.5',
         notes: 'Monthly stationery',
         archivedAt: null,
+        vendor: {
+          id: vendor.id,
+          name: 'Atlas Office Supplies',
+        },
+        category: {
+          id: category.id,
+          name: 'Office',
+          color: '#64748b',
+        },
       });
     });
 

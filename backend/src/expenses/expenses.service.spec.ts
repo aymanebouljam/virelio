@@ -104,6 +104,56 @@ describe('ExpensesService', () => {
     );
   });
 
+  it('findOneDetailed returns active expense with vendor and category', async () => {
+    const expense = {
+      id: 'expense-1',
+      vendorId: 'vendor-1',
+      categoryId: 'category-1',
+      description: 'Office supplies',
+      amount: 1250.5,
+      expenseDate: new Date('2026-01-15T00:00:00.000Z'),
+      archivedAt: null,
+      vendor: {
+        id: 'vendor-1',
+        name: 'Atlas Office Supplies',
+      },
+      category: {
+        id: 'category-1',
+        name: 'Office',
+        color: '#64748b',
+      },
+    };
+
+    expenseFindUniqueOrThrowMock.mockResolvedValueOnce(expense);
+
+    await expect(service.findOneDetailed('expense-1')).resolves.toEqual(
+      expense,
+    );
+    expect(expenseFindUniqueOrThrowMock).toHaveBeenCalledWith({
+      where: {
+        id: 'expense-1',
+        archivedAt: null,
+      },
+      include: {
+        vendor: true,
+        category: true,
+      },
+    });
+  });
+
+  it('findOneDetailed throws not found when expense does not exist', async () => {
+    expenseFindUniqueOrThrowMock.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError('Record not found', {
+        code: 'P2025',
+        clientVersion: 'test',
+      }),
+    );
+
+    await expect(service.findOneDetailed('expense-1')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+  });
+
   it('findOneIncludingArchived returns expense by id', async () => {
     const expense = {
       id: '1',
