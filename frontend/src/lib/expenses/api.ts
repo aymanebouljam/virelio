@@ -1,5 +1,5 @@
 import { apiConfig } from '../api'
-import type { Expense, ExpensePayload } from './schema'
+import type { Expense, ExpenseDetail, ExpensePayload } from './schema'
 
 export async function fetchExpenses() {
   return (await apiConfig({ path: 'expenses' })) as Expense[]
@@ -16,7 +16,7 @@ export async function fetchExpense(id: string) {
   return (await apiConfig({
     path: 'expenses',
     id,
-  })) as Expense
+  })) as ExpenseDetail
 }
 
 export async function createExpense(input: ExpensePayload) {

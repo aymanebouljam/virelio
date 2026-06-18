@@ -38,3 +38,29 @@ export const expenseSchema = z.object({
 })
 
 export type Expense = z.infer<typeof expenseSchema>
+
+export const expenseDetailSchema = expenseSchema.extend({
+  vendor: z.object({
+    id: z.string().trim().min(1),
+    name: z.string().trim().min(1),
+    email: z.string().trim().nullable(),
+    phone: z.string().trim().nullable(),
+    website: z.string().trim().nullable(),
+    notes: z.string().trim().nullable(),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime(),
+    archivedAt: z.iso.datetime().nullable(),
+  }),
+  category: z
+    .object({
+      id: z.string().trim().min(1),
+      name: z.string().trim().min(1).max(120),
+      color: z.string().trim().nullable(),
+      createdAt: z.iso.datetime(),
+      updatedAt: z.iso.datetime(),
+      archivedAt: z.iso.datetime().nullable(),
+    })
+    .nullable(),
+})
+
+export type ExpenseDetail = z.infer<typeof expenseDetailSchema>
