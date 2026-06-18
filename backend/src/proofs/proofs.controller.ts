@@ -1,8 +1,6 @@
 import {
   BadRequestException,
   Controller,
-  HttpCode,
-  HttpStatus,
   Param,
   ParseUUIDPipe,
   Post,
@@ -17,7 +15,6 @@ export class ProofsController {
   constructor(private readonly proofsService: ProofsService) {}
 
   @Post()
-  @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(FileInterceptor('file'))
   uploadProof(
     @Param('expenseId', new ParseUUIDPipe({ version: '4' })) expenseId: string,
