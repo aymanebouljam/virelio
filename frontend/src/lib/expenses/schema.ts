@@ -61,6 +61,17 @@ export const expenseDetailSchema = expenseSchema.extend({
       archivedAt: z.iso.datetime().nullable(),
     })
     .nullable(),
+  proofs: z.array(
+    z.object({
+      id: z.string().trim().min(1),
+      expenseId: z.string().trim().min(1),
+      originalName: z.string().trim().min(1),
+      mimeType: z.string().trim().min(1),
+      sizeBytes: z.number().int().nonnegative(),
+      storagePath: z.string().trim().min(1),
+      createdAt: z.iso.datetime(),
+    }),
+  ),
 })
 
 export type ExpenseDetail = z.infer<typeof expenseDetailSchema>

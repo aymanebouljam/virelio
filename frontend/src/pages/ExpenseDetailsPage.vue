@@ -196,6 +196,31 @@ onMounted(loadExpense)
 
             <p v-else class="mt-3 text-sm text-stone-500">No category assigned.</p>
           </article>
+
+          <article class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
+            <p class="text-sm font-medium text-stone-500">Proof documents</p>
+
+            <div v-if="expense.proofs.length === 0" class="mt-3 text-sm text-stone-500">
+              No proof documents attached.
+            </div>
+
+            <ul v-else class="mt-4 space-y-3">
+              <li
+                v-for="proof in expense.proofs"
+                :key="proof.id"
+                class="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3"
+              >
+                <p class="text-sm font-medium text-stone-900">
+                  {{ proof.originalName }}
+                </p>
+                <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-500">
+                  <span>{{ proof.mimeType }}</span>
+                  <span>{{ proof.sizeBytes }} bytes</span>
+                  <span>{{ formatDateTime(proof.createdAt) }}</span>
+                </div>
+              </li>
+            </ul>
+          </article>
         </div>
       </section>
     </template>

@@ -67,6 +67,7 @@ export class ExpensesService {
         include: {
           vendor: true,
           category: true,
+          proofs: true,
         },
       });
     } catch (error) {

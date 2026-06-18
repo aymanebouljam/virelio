@@ -104,7 +104,7 @@ describe('ExpensesService', () => {
     );
   });
 
-  it('findOneDetailed returns active expense with vendor and category', async () => {
+  it('findOneDetailed returns active expense with vendor and category and proofs', async () => {
     const expense = {
       id: 'expense-1',
       vendorId: 'vendor-1',
@@ -122,6 +122,17 @@ describe('ExpensesService', () => {
         name: 'Office',
         color: '#64748b',
       },
+      proofs: [
+        {
+          id: 'proof-1',
+          expenseId: 'expense-1',
+          originalName: 'invoice.pdf',
+          mimeType: 'application/pdf',
+          sizeBytes: 245760,
+          storagePath: 'proofs/expense-1/invoice.pdf',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        },
+      ],
     };
 
     expenseFindUniqueOrThrowMock.mockResolvedValueOnce(expense);
@@ -137,6 +148,7 @@ describe('ExpensesService', () => {
       include: {
         vendor: true,
         category: true,
+        proofs: true,
       },
     });
   });

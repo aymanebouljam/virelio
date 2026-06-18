@@ -47,6 +47,20 @@ model Expense {
   updatedAt   DateTime  @updatedAt
   archivedAt  DateTime?
 
+  proofs ProofDocument[]
+
   vendor   Vendor           @relation(fields: [vendorId], references: [id], onDelete: Restrict)
   category ExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+}
+
+model ProofDocument {
+  id           String   @id @default(uuid()) @db.Uuid
+  expenseId    String   @db.Uuid
+  originalName String
+  mimeType     String
+  sizeBytes    Int
+  storagePath  String
+  createdAt    DateTime @default(now())
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
 }
