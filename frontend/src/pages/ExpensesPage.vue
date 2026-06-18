@@ -8,6 +8,7 @@ import {
   expenseSchema,
   type Expense,
   type ExpenseFormValues,
+  type ExpensePayload,
 } from '@/lib/expenses/schema'
 import { fetchExpenseCategories } from '@/lib/expense-categories/api'
 import { expenseCategorySchema, type ExpenseCategory } from '@/lib/expense-categories/schema'
@@ -35,7 +36,7 @@ const baseline = ref<ExpenseFormValues>({
   categoryId: '',
   description: '',
   amount: 0,
-  expenseDate: `${today}T00:00:00.000Z`,
+  expenseDate: today,
   notes: '',
 })
 
@@ -44,7 +45,7 @@ const form = ref<ExpenseFormValues>({
   categoryId: '',
   description: '',
   amount: 0,
-  expenseDate: `${today}T00:00:00.000Z`,
+  expenseDate: today,
   notes: '',
 })
 
@@ -62,7 +63,7 @@ function resetForm() {
     categoryId: '',
     description: '',
     amount: 0,
-    expenseDate: `${today}T00:00:00.000Z`,
+    expenseDate: today,
     notes: '',
   }
 
@@ -85,7 +86,7 @@ function openEditForm(expense: Expense) {
     categoryId: expense.categoryId ?? '',
     description: expense.description,
     amount: Number(expense.amount),
-    expenseDate: expense.expenseDate,
+    expenseDate: expense.expenseDate.slice(0, 10),
     notes: expense.notes ?? '',
   }
 
@@ -98,7 +99,7 @@ function openEditForm(expense: Expense) {
   actionError.value = ''
 }
 
-function normalizePayload(input: ExpenseFormValues) {
+function normalizePayload(input: ExpenseFormValues): ExpensePayload {
   return {
     vendorId: input.vendorId,
     categoryId: input.categoryId || undefined,
@@ -352,7 +353,7 @@ onMounted(loadExpensesPage)
             <span class="mb-2 block text-sm font-medium text-stone-700">Expense date</span>
             <input
               v-model="form.expenseDate"
-              type="datetime-local"
+              type="date"
               :class="[
                 'w-full rounded-2xl border bg-white px-4 py-3 text-sm text-stone-900 outline-none transition',
                 formErrors.expenseDate
