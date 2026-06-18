@@ -1,5 +1,5 @@
 import { apiConfig } from '../api'
-import type { Expense, ExpenseFormValues } from './schema'
+import type { Expense, ExpensePayload } from './schema'
 
 export async function fetchExpenses() {
   return (await apiConfig({ path: 'expenses' })) as Expense[]
@@ -19,7 +19,7 @@ export async function fetchExpense(id: string) {
   })) as Expense
 }
 
-export async function createExpense(input: ExpenseFormValues) {
+export async function createExpense(input: ExpensePayload) {
   return (await apiConfig({
     path: 'expenses',
     method: 'POST',
@@ -27,7 +27,7 @@ export async function createExpense(input: ExpenseFormValues) {
   })) as Expense
 }
 
-export async function updateExpense(id: string, input: Partial<ExpenseFormValues>) {
+export async function updateExpense(id: string, input: Partial<ExpensePayload>) {
   return (await apiConfig({
     path: 'expenses',
     method: 'PATCH',

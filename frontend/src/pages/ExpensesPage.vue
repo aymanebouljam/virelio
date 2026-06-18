@@ -8,6 +8,7 @@ import {
   expenseSchema,
   type Expense,
   type ExpenseFormValues,
+  type ExpensePayload,
 } from '@/lib/expenses/schema'
 import { fetchExpenseCategories } from '@/lib/expense-categories/api'
 import { expenseCategorySchema, type ExpenseCategory } from '@/lib/expense-categories/schema'
@@ -98,7 +99,7 @@ function openEditForm(expense: Expense) {
   actionError.value = ''
 }
 
-function normalizePayload(input: ExpenseFormValues) {
+function normalizePayload(input: ExpenseFormValues): ExpensePayload {
   return {
     vendorId: input.vendorId,
     categoryId: input.categoryId || undefined,

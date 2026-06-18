@@ -15,6 +15,15 @@ export const expenseFormSchema = z.object({
 
 export type ExpenseFormValues = z.infer<typeof expenseFormSchema>
 
+export type ExpensePayload = {
+  vendorId: string
+  categoryId?: string
+  description: string
+  amount: number
+  expenseDate: string
+  notes?: string
+}
+
 export const expenseSchema = z.object({
   id: z.string().trim().min(1),
   vendorId: z.string().trim().min(1),
