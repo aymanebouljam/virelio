@@ -25,6 +25,7 @@
     "prisma:validate": "pnpm --filter backend exec prisma validate",
     "prisma:migrate:dev": "pnpm --filter backend exec prisma migrate dev",
     "prisma:migrate:deploy": "pnpm --filter backend exec prisma migrate deploy",
+    "prisma:migrate:test": "pnpm --filter backend prisma:migrate:test",
     "prepare": "husky"
   },
   "devDependencies": {
