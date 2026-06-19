@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { VendorsModule } from './vendors/vendors.module';
 import { ExpenseCategoriesModule } from './categories/expense-categories.module';
 import { ExpensesModule } from './expenses/expenses.module';
+import { ProofsModule } from './proofs/proofs.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { ExpensesModule } from './expenses/expenses.module';
     VendorsModule,
     ExpenseCategoriesModule,
     ExpensesModule,
+    ProofsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
