@@ -1,4 +1,4 @@
-import type { INestApplication } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
@@ -6,7 +6,7 @@ import type { Server } from 'node:http';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface TestApp {
-  app: INestApplication;
+  app: NestExpressApplication;
   http: Server;
   prisma: PrismaService;
 }
@@ -15,15 +15,14 @@ export async function createTestApp(): Promise<TestApp> {
     imports: [AppModule],
   }).compile();
 
-  const app = moduleRef.createNestApplication();
-
+  const app = moduleRef.createNestApplication<NestExpressApplication>();
   configureApp(app);
 
   await app.init();
 
   return {
     app,
-    http: app.getHttpServer() as Server,
+    http: app.getHttpServer(),
     prisma: app.get(PrismaService),
   };
 }

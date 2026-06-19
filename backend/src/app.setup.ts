@@ -1,11 +1,9 @@
-import {
-  BadRequestException,
-  INestApplication,
-  ValidationPipe,
-} from '@nestjs/common';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { getUploadsRoot } from './proofs/proofs-paths';
 
-export function configureApp(app: INestApplication) {
+export function configureApp(app: NestExpressApplication) {
   const configService = app.get(ConfigService);
   const frontendOrigin = configService.getOrThrow<string>('FRONTEND_ORIGIN');
 
@@ -29,4 +27,8 @@ export function configureApp(app: INestApplication) {
       },
     }),
   );
+
+  app.useStaticAssets(getUploadsRoot(), {
+    prefix: '/uploads',
+  });
 }

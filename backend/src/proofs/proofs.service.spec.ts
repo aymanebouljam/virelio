@@ -50,7 +50,7 @@ describe('ProofsService', () => {
       originalName: 'invoice.pdf',
       mimeType: 'application/pdf',
       sizeBytes: 245760,
-      storagePath: expectedPath,
+      storagePath: 'uploads/proofs/expense-1/generated-file-name.pdf',
       createdAt: new Date(),
     };
 
@@ -88,7 +88,7 @@ describe('ProofsService', () => {
         originalName: 'invoice.pdf',
         mimeType: 'application/pdf',
         sizeBytes: 245760,
-        storagePath: expectedPath,
+        storagePath: 'uploads/proofs/expense-1/generated-file-name.pdf',
       },
     });
 

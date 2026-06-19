@@ -96,7 +96,9 @@ describe('Proofs e2e', () => {
         sizeBytes: Buffer.byteLength(content),
       });
 
-      expect(createdProof.storagePath).toContain('uploads');
+      expect(createdProof.storagePath).toMatch(
+        new RegExp(`^uploads/proofs/${expense.id}/[^/]+\\.txt$`),
+      );
 
       const storedProof = await prisma.proofDocument.findUnique({
         where: { id: createdProof.id },
