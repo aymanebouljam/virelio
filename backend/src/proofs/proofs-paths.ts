@@ -1,17 +1,23 @@
-import { join, resolve } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 
-const backendRoot = process.env['BACKEND_ROOT'];
-if (!backendRoot) {
-  throw new Error('BACKEND_ROOT is not defined');
+function getBackendRoot(): string {
+  return process.env['BACKEND_ROOT'] ?? process.cwd();
 }
 
-const uploadsRoot = resolve(
-  backendRoot,
-  process.env['UPLOADS_DIR'] ?? './uploads',
-);
+function getUploadsRoot(): string {
+  const uploadsDir = process.env['UPLOADS_DIR'] ?? 'uploads';
 
-export const tmpUploadDir = join(uploadsRoot, 'tmp');
+  if (isAbsolute(uploadsDir)) {
+    throw new Error('UPLOADS_DIR must be relative to BACKEND_ROOT');
+  }
+
+  return join(getBackendRoot(), uploadsDir);
+}
+
+export function getTmpUploadDir(): string {
+  return join(getUploadsRoot(), 'tmp');
+}
 
 export function getExpenseProofDir(expenseId: string): string {
-  return join(uploadsRoot, 'proofs', expenseId);
+  return join(getUploadsRoot(), 'proofs', expenseId);
 }

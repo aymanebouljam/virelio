@@ -13,7 +13,7 @@ import { randomUUID } from 'node:crypto';
 import { extname } from 'node:path';
 import { diskStorage } from 'multer';
 import { ProofsService } from './proofs.service';
-import { tmpUploadDir } from './proofs-paths';
+import { getTmpUploadDir } from './proofs-paths';
 
 function buildStoredFilename(originalName: string) {
   const extension = extname(originalName);
@@ -29,6 +29,7 @@ export class ProofsController {
     FileInterceptor('file', {
       storage: diskStorage({
         destination: (_req, _file, callback) => {
+          const tmpUploadDir = getTmpUploadDir();
           mkdirSync(tmpUploadDir, { recursive: true });
           callback(null, tmpUploadDir);
         },
