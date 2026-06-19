@@ -2,13 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { mkdir, rename, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { PrismaService } from '../../prisma/prisma.service';
+import { getExpenseProofDir } from './proofs-paths';
 
 @Injectable()
 export class ProofsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async upload(expenseId: string, file: Express.Multer.File) {
-    const expenseDir = join(process.cwd(), 'uploads', 'proofs', expenseId);
+    const expenseDir = getExpenseProofDir(expenseId);
     const finalPath = join(expenseDir, file.filename);
     try {
       const expense = await this.prisma.expense.findUnique({

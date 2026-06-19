@@ -13,8 +13,7 @@ import { randomUUID } from 'node:crypto';
 import { extname } from 'node:path';
 import { diskStorage } from 'multer';
 import { ProofsService } from './proofs.service';
-
-const tmpUploadDir = `${process.cwd()}/uploads/tmp`;
+import { tmpUploadDir } from './proofs-paths';
 
 function buildStoredFilename(originalName: string) {
   const extension = extname(originalName);
