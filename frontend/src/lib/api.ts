@@ -74,7 +74,7 @@ const METHODS_WITH_BODY: HttpMethod[] = ['POST', 'PUT', 'PATCH']
 type ApiConfigOptions = {
   path?: string
   method?: HttpMethod
-  input?: Record<string, unknown>
+  input?: Record<string, unknown> | FormData
   id?: string
   action?: string
   queryParams?: Record<string, string | number | boolean>
@@ -86,7 +86,7 @@ type FetchConfig = {
     Accept: string
     'Content-Type'?: string
   }
-  body?: string
+  body?: string | FormData
 }
 
 export async function apiConfig({
@@ -118,8 +118,12 @@ export async function apiConfig({
   }
 
   if (input !== undefined && METHODS_WITH_BODY.includes(method)) {
-    config.headers['Content-Type'] = 'application/json'
-    config.body = JSON.stringify(input)
+    if (input instanceof FormData) {
+      config.body = input
+    } else {
+      config.headers['Content-Type'] = 'application/json'
+      config.body = JSON.stringify(input)
+    }
   }
 
   const response = await fetch(url, config)

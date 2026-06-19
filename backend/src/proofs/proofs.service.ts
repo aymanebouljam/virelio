@@ -11,6 +11,7 @@ export class ProofsService {
   async upload(expenseId: string, file: Express.Multer.File) {
     const expenseDir = getExpenseProofDir(expenseId);
     const finalPath = join(expenseDir, file.filename);
+    const publicPath = `uploads/proofs/${expenseId}/${file.filename}`;
     try {
       const expense = await this.prisma.expense.findUnique({
         where: {
@@ -37,7 +38,7 @@ export class ProofsService {
           originalName: file.originalname,
           mimeType: file.mimetype,
           sizeBytes: file.size,
-          storagePath: finalPath,
+          storagePath: publicPath,
         },
       });
     } catch (error: unknown) {

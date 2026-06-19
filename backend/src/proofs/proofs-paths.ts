@@ -1,10 +1,10 @@
 import { isAbsolute, join } from 'node:path';
 
-function getBackendRoot(): string {
+export function getBackendRoot(): string {
   return process.env['BACKEND_ROOT'] ?? process.cwd();
 }
 
-function getUploadsRoot(): string {
+export function getUploadsRoot(): string {
   const uploadsDir = process.env['UPLOADS_DIR'] ?? 'uploads';
 
   if (isAbsolute(uploadsDir)) {
