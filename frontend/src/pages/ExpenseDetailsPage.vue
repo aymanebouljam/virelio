@@ -31,6 +31,20 @@ function formatAmount(value: string) {
   return Number.isNaN(amount) ? value : amount.toFixed(2)
 }
 
+function formatFileSize(sizeBytes: number) {
+  if (sizeBytes < 1024) {
+    return `${sizeBytes} B`
+  }
+
+  const sizeKb = sizeBytes / 1024
+  if (sizeKb < 1024) {
+    return `${sizeKb.toFixed(1)} KB`
+  }
+
+  const sizeMb = sizeKb / 1024
+  return `${sizeMb.toFixed(1)} MB`
+}
+
 async function loadExpense() {
   try {
     error.value = ''
@@ -275,7 +289,8 @@ onMounted(loadExpense)
 
                 <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-500">
                   <span>{{ proof.mimeType }}</span>
-                  <span>{{ proof.sizeBytes }} bytes</span>
+                  <span>{{ formatFileSize(proof.sizeBytes) }}</span>
+
                   <span>{{ formatDateTime(proof.createdAt) }}</span>
                 </div>
               </li>
