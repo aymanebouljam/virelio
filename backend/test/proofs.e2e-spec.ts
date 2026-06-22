@@ -6,6 +6,7 @@ import type { Server } from 'node:http';
 import request from 'supertest';
 import type { PrismaService } from '../prisma/prisma.service';
 import { createTestApp, resetDatabase } from './test-app';
+import { getUploadsRoot } from '../src/proofs/proofs-paths';
 
 type ErrorResponse = {
   message: string;
@@ -36,12 +37,12 @@ describe('Proofs e2e', () => {
 
   beforeEach(async () => {
     await resetDatabase(prisma);
-    await rm(join(process.cwd(), 'uploads'), { recursive: true, force: true });
+    await rm(join(getUploadsRoot()), { recursive: true, force: true });
   });
 
   afterAll(async () => {
     await resetDatabase(prisma);
-    await rm(join(process.cwd(), 'uploads'), { recursive: true, force: true });
+    await rm(join(getUploadsRoot()), { recursive: true, force: true });
     await app?.close();
   });
 
@@ -75,6 +76,15 @@ describe('Proofs e2e', () => {
       .expect(HttpStatus.CREATED);
 
     return response.body as { id: string };
+  }
+  const content = 'invoice content';
+  async function createProof(expense: { id: string }) {
+    const response = await request(http)
+      .post(`/expenses/${expense.id}/proofs`)
+      .attach('file', Buffer.from(content), 'invoice.txt')
+      .expect(HttpStatus.CREATED);
+
+    return response.body as ProofResponse;
   }
 
   describe('POST /expenses/:expenseId/proofs', () => {
@@ -151,6 +161,80 @@ describe('Proofs e2e', () => {
 
       const error = response.body as ErrorResponse;
       expect(error.message).toBe('Expense not found');
+    });
+  });
+
+  describe('DELETE /expenses/:expenseId/proofs/:proofId', () => {
+    it('remove a proof for an active expense', async () => {
+      const expense = await createExpense();
+      const createdProof = await createProof(expense);
+      expect(createdProof).toMatchObject({
+        expenseId: expense.id,
+        originalName: 'invoice.txt',
+      });
+
+      await request(http)
+        .delete(`/expenses/${expense.id}/proofs/${createdProof.id}`)
+        .expect(HttpStatus.NO_CONTENT);
+      const proof = await prisma.proofDocument.findUnique({
+        where: {
+          id: createdProof.id,
+        },
+      });
+      expect(proof).toBeNull();
+    });
+    it('returns 400 when the expense ID is not a valid UUID', async () => {
+      const expense = await createExpense();
+      const createdProof = await createProof(expense);
+      expect(createdProof).toMatchObject({
+        expenseId: expense.id,
+        originalName: 'invoice.txt',
+      });
+
+      const response = await request(http)
+        .delete(`/expenses/not-a-uuid/proofs/${createdProof.id}`)
+        .expect(HttpStatus.BAD_REQUEST);
+
+      const error = response.body as ErrorResponse;
+      expect(error.message).toBe('Validation failed (uuid v 4 is expected)');
+    });
+
+    it('returns 400 when the proof document ID is not a valid UUID', async () => {
+      const expense = await createExpense();
+
+      const response = await request(http)
+        .delete(`/expenses/${expense.id}/proofs/not-a-uuid`)
+        .expect(HttpStatus.BAD_REQUEST);
+
+      const error = response.body as ErrorResponse;
+      expect(error.message).toBe('Validation failed (uuid v 4 is expected)');
+    });
+
+    it('returns 404 when the expense does not exist', async () => {
+      const expense = await createExpense();
+      const createdProof = await createProof(expense);
+      expect(createdProof).toMatchObject({
+        expenseId: expense.id,
+        originalName: 'invoice.txt',
+      });
+
+      const response = await request(http)
+        .delete(`/expenses/${randomUUID()}/proofs/${createdProof.id}`)
+        .expect(HttpStatus.NOT_FOUND);
+
+      const error = response.body as ErrorResponse;
+      expect(error.message).toBe('Expense not found');
+    });
+
+    it('returns 404 when the proof document does not exist', async () => {
+      const expense = await createExpense();
+
+      const response = await request(http)
+        .delete(`/expenses/${expense.id}/proofs/${randomUUID()}`)
+        .expect(HttpStatus.NOT_FOUND);
+
+      const error = response.body as ErrorResponse;
+      expect(error.message).toBe('Proof document not found');
     });
   });
 });

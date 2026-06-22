@@ -2,7 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { mkdir, rename, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { PrismaService } from '../../prisma/prisma.service';
-import { getExpenseProofDir } from './proofs-paths';
+import { getAbsoluteProofPath, getExpenseProofDir } from './proofs-paths';
+import { Expense, ProofDocument } from '../../generated/prisma/client';
 
 @Injectable()
 export class ProofsService {
@@ -13,22 +14,7 @@ export class ProofsService {
     const finalPath = join(expenseDir, file.filename);
     const publicPath = `uploads/proofs/${expenseId}/${file.filename}`;
     try {
-      const expense = await this.prisma.expense.findUnique({
-        where: {
-          id: expenseId,
-          archivedAt: null,
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      if (!expense) {
-        throw new NotFoundException({
-          message: 'Expense not found',
-        });
-      }
-
+      await this.assertExpense(expenseId);
       await mkdir(expenseDir, { recursive: true });
       await rename(file.path, finalPath);
 
@@ -49,11 +35,58 @@ export class ProofsService {
     }
   }
 
+  async remove(expenseId: string, proofId: string) {
+    await this.assertExpense(expenseId);
+
+    const proof = await this.assertProofDocument(expenseId, proofId);
+    const absolutePath = getAbsoluteProofPath(proof.storagePath);
+
+    await this.unlinkSafely(absolutePath);
+
+    return this.prisma.proofDocument.delete({
+      where: { id: proofId },
+    });
+  }
+
   private async unlinkSafely(path: string): Promise<void> {
     try {
       await unlink(path);
     } catch {
       //
     }
+  }
+
+  private async assertExpense(expenseId: string): Promise<Expense> {
+    const expense = await this.prisma.expense.findUnique({
+      where: {
+        id: expenseId,
+        archivedAt: null,
+      },
+    });
+
+    if (!expense) {
+      throw new NotFoundException({
+        message: 'Expense not found',
+      });
+    }
+
+    return expense;
+  }
+
+  private async assertProofDocument(
+    expenseId: string,
+    proofId: string,
+  ): Promise<ProofDocument> {
+    const proof = await this.prisma.proofDocument.findUnique({
+      where: { id: proofId, expenseId: expenseId },
+    });
+
+    if (!proof) {
+      throw new NotFoundException({
+        message: 'Proof document not found',
+      });
+    }
+
+    return proof;
   }
 }

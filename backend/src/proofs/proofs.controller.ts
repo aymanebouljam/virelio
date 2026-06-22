@@ -1,6 +1,9 @@
 import {
   BadRequestException,
   Controller,
+  Delete,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Post,
@@ -58,5 +61,14 @@ export class ProofsController {
     }
 
     return this.proofsService.upload(expenseId, file);
+  }
+
+  @Delete(':proofId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  removeProof(
+    @Param('expenseId', new ParseUUIDPipe({ version: '4' })) expenseId: string,
+    @Param('proofId', new ParseUUIDPipe({ version: '4' })) proofId: string,
+  ) {
+    return this.proofsService.remove(expenseId, proofId);
   }
 }
