@@ -21,3 +21,7 @@ export function getTmpUploadDir(): string {
 export function getExpenseProofDir(expenseId: string): string {
   return join(getUploadsRoot(), 'proofs', expenseId);
 }
+
+export function getAbsoluteProofPath(storagePath: string): string {
+  return join(getBackendRoot(), storagePath);
+}

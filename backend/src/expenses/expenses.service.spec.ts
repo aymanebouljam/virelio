@@ -129,7 +129,7 @@ describe('ExpensesService', () => {
           originalName: 'invoice.pdf',
           mimeType: 'application/pdf',
           sizeBytes: 245760,
-          storagePath: 'proofs/expense-1/invoice.pdf',
+          storagePath: 'uploads/proofs/expense-1/invoice.pdf',
           createdAt: new Date('2026-06-18T10:00:00.000Z'),
         },
       ],
