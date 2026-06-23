@@ -20,3 +20,11 @@ export async function uploadExpenseProof(expenseId: string, file: File) {
     input: formData,
   })) as ProofDocument
 }
+
+export async function removeExpenseProof(expenseId: string, proofId: string): Promise<null> {
+  return (await apiConfig({
+    path: `expenses/${expenseId}/proofs`,
+    method: 'DELETE',
+    id: proofId,
+  })) as null
+}
