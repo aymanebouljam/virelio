@@ -7,6 +7,7 @@ import { VendorsModule } from './vendors/vendors.module';
 import { ExpenseCategoriesModule } from './categories/expense-categories.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { ProofsModule } from './proofs/proofs.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { ProofsModule } from './proofs/proofs.module';
     ExpenseCategoriesModule,
     ExpensesModule,
     ProofsModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],
