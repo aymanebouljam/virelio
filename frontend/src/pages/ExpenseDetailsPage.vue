@@ -30,7 +30,7 @@ function formatDateTime(value: string) {
 
 function formatAmount(value: string) {
   const amount = Number(value)
-  return Number.isNaN(amount) ? value : amount.toFixed(2)
+  return Number.isNaN(amount) ? 'N/A' : amount.toFixed(2)
 }
 
 function formatFileSize(sizeBytes: number) {

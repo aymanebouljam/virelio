@@ -8,6 +8,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateExpenseDto {
   @IsUUID('4')
@@ -23,6 +24,7 @@ export class CreateExpenseDto {
   @MaxLength(240)
   description!: string;
 
+  @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.01)
   amount!: number;

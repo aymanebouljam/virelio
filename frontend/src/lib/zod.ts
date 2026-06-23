@@ -1,17 +1,19 @@
-export function mapZodErrors(
-  issues: Array<{ path: PropertyKey[]; message: string }>,
-): Record<string, string> {
+type ValidationIssue = {
+  path: PropertyKey[]
+  message: string
+}
+
+export function mapZodErrors(issues: readonly ValidationIssue[]): Record<string, string> {
   const fieldErrors: Record<string, string> = {}
 
   for (const issue of issues) {
     const field = issue.path[0]
-    if (typeof field !== 'string') {
+
+    if (typeof field !== 'string' || field in fieldErrors) {
       continue
     }
 
-    if (!fieldErrors[field]) {
-      fieldErrors[field] = issue.message
-    }
+    fieldErrors[field] = issue.message
   }
 
   return fieldErrors
