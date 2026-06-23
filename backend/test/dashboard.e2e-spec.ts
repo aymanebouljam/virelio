@@ -75,6 +75,7 @@ describe('Dashboard e2e', () => {
         uncategorizedExpenses: 0,
         proofDocuments: 0,
         recentExpenses: [],
+        recentProofs: [],
         categoryBreakdown: [],
       });
     });

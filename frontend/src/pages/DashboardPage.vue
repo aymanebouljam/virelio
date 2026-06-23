@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { ApiError } from '@/lib/api'
 import { fetchDashboardSummary } from '@/lib/dashboard/api'
-import { formatAmount, formatDate } from '@/lib/formatter'
+import { formatAmount, formatDate, formatFileSize, getProofUrl } from '@/lib/helpers'
 import { dashboardSummarySchema, type DashboardSummary } from '@/lib/dashboard/schema'
 
 const summary = ref<DashboardSummary | null>(null)
@@ -191,6 +191,56 @@ onMounted(loadSummary)
                 <span class="shrink-0 text-sm font-semibold text-stone-900">
                   ${{ formatAmount(category.totalAmount) }}
                 </span>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
+          <h3 class="text-lg font-semibold tracking-tight text-stone-900">Recent proof uploads</h3>
+          <p class="mt-1 text-sm text-stone-500">
+            The latest uploaded receipts and invoices linked to active expenses.
+          </p>
+
+          <div
+            v-if="summary.recentProofs.length === 0"
+            class="mt-6 rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-10 text-center"
+          >
+            <p class="text-sm font-medium text-stone-600">No proof uploads yet</p>
+            <p class="mt-2 text-sm text-stone-500">
+              Upload receipts or invoices from an expense detail page to see them here.
+            </p>
+          </div>
+
+          <div v-else class="mt-6 space-y-3">
+            <div
+              v-for="proof in summary.recentProofs"
+              :key="proof.id"
+              class="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4"
+            >
+              <div class="flex items-start justify-between gap-4">
+                <div class="min-w-0">
+                  <a
+                    :href="getProofUrl(proof.storagePath)"
+                    target="_blank"
+                    rel="noreferrer"
+                    class="text-sm font-semibold text-stone-900 underline decoration-stone-300 underline-offset-4 transition hover:text-stone-700"
+                  >
+                    {{ proof.originalName }}
+                  </a>
+
+                  <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-500">
+                    <span>{{ proof.mimeType }}</span>
+                    <span>{{ formatFileSize(proof.sizeBytes) }}</span>
+                    <span>{{ formatDate(proof.createdAt) }}</span>
+                  </div>
+
+                  <RouterLink
+                    :to="`/expenses/${proof.expenseId}`"
+                    class="mt-2 inline-block text-xs font-medium text-stone-600 transition hover:text-stone-900"
+                  >
+                    {{ proof.expenseDescription }}
+                  </RouterLink>
+                </div>
               </div>
             </div>
           </div>

@@ -5,6 +5,7 @@ import { ApiError } from '@/lib/api'
 import { fetchExpense } from '@/lib/expenses/api'
 import { expenseDetailSchema, type ExpenseDetail } from '@/lib/expenses/schema'
 import { removeExpenseProof, uploadExpenseProof } from '@/lib/proofs/api'
+import { formatAmount, formatDate, formatDateTime, formatFileSize } from '@/lib/helpers'
 
 const route = useRoute()
 const router = useRouter()
@@ -19,33 +20,6 @@ const removingProofId = ref<string | null>(null)
 const uploadError = ref('')
 const proofActionError = ref('')
 const uploading = ref(false)
-
-function formatDate(value: string) {
-  return new Date(value).toLocaleDateString()
-}
-
-function formatDateTime(value: string) {
-  return new Date(value).toLocaleString()
-}
-
-function formatAmount(value: string) {
-  const amount = Number(value)
-  return Number.isNaN(amount) ? 'N/A' : amount.toFixed(2)
-}
-
-function formatFileSize(sizeBytes: number) {
-  if (sizeBytes < 1024) {
-    return `${sizeBytes} B`
-  }
-
-  const sizeKb = sizeBytes / 1024
-  if (sizeKb < 1024) {
-    return `${sizeKb.toFixed(1)} KB`
-  }
-
-  const sizeMb = sizeKb / 1024
-  return `${sizeMb.toFixed(1)} MB`
-}
 
 async function loadExpense() {
   try {
