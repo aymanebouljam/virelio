@@ -82,6 +82,11 @@ export class DashboardService {
         },
       }),
       this.prisma.proofDocument.findMany({
+        where: {
+          expense: {
+            archivedAt: null,
+          },
+        },
         orderBy: {
           createdAt: 'desc',
         },
@@ -91,7 +96,6 @@ export class DashboardService {
             select: {
               id: true,
               description: true,
-              archivedAt: true,
             },
           },
         },
