@@ -8,6 +8,7 @@ describe('DashboardService', () => {
   const expenseCountMock = jest.fn();
   const proofCountMock = jest.fn();
   const expenseFindManyMock = jest.fn();
+  const proofFindManyMock = jest.fn();
 
   const prisma = {
     vendor: {
@@ -19,6 +20,7 @@ describe('DashboardService', () => {
     },
     proofDocument: {
       count: proofCountMock,
+      findMany: proofFindManyMock,
     },
   } as unknown as PrismaService;
 
@@ -62,6 +64,20 @@ describe('DashboardService', () => {
         category: null,
       },
     ]);
+    proofFindManyMock.mockResolvedValueOnce([
+      {
+        id: 'proof-1',
+        originalName: 'receipt.jpg',
+        mimeType: 'image/jpeg',
+        sizeBytes: 245760,
+        storagePath: 'uploads/proofs/expense-1/receipt.jpg',
+        createdAt: new Date('2026-06-22T10:00:00.000Z'),
+        expense: {
+          id: 'expense-1',
+          description: 'Airport transfer',
+        },
+      },
+    ]);
 
     await expect(service.getSummary()).resolves.toEqual({
       totalSpend: '300.50',
@@ -86,6 +102,18 @@ describe('DashboardService', () => {
           vendorId: 'vendor-2',
           vendorName: 'Atlas Office Supplies',
           categoryName: 'Uncategorized',
+        },
+      ],
+      recentProofs: [
+        {
+          id: 'proof-1',
+          originalName: 'receipt.jpg',
+          mimeType: 'image/jpeg',
+          sizeBytes: 245760,
+          storagePath: 'uploads/proofs/expense-1/receipt.jpg',
+          createdAt: new Date('2026-06-22T10:00:00.000Z').toISOString(),
+          expenseId: 'expense-1',
+          expenseDescription: 'Airport transfer',
         },
       ],
       categoryBreakdown: [
@@ -113,7 +141,14 @@ describe('DashboardService', () => {
         categoryId: null,
       },
     });
-    expect(proofCountMock).toHaveBeenCalled();
+    expect(proofCountMock).toHaveBeenCalledWith({
+      where: {
+        expense: {
+          archivedAt: null,
+        },
+      },
+    });
+
     expect(expenseFindManyMock).toHaveBeenCalledWith({
       where: { archivedAt: null },
       include: {
@@ -134,6 +169,26 @@ describe('DashboardService', () => {
         expenseDate: 'desc',
       },
     });
+    expect(proofFindManyMock).toHaveBeenCalledWith({
+      where: {
+        expense: {
+          archivedAt: null,
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 5,
+      include: {
+        expense: {
+          select: {
+            id: true,
+            description: true,
+            archivedAt: true,
+          },
+        },
+      },
+    });
   });
 
   it('returns empty summary when no expenses exist', async () => {
@@ -141,6 +196,7 @@ describe('DashboardService', () => {
     expenseCountMock.mockResolvedValueOnce(0);
     proofCountMock.mockResolvedValueOnce(0);
     expenseFindManyMock.mockResolvedValueOnce([]);
+    proofFindManyMock.mockResolvedValueOnce([]);
 
     await expect(service.getSummary()).resolves.toEqual({
       totalSpend: '0.00',
@@ -148,6 +204,7 @@ describe('DashboardService', () => {
       uncategorizedExpenses: 0,
       proofDocuments: 0,
       recentExpenses: [],
+      recentProofs: [],
       categoryBreakdown: [],
     });
   });

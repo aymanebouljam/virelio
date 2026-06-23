@@ -22,6 +22,18 @@ export const dashboardSummarySchema = z.object({
       categoryName: z.string().trim().min(1),
     }),
   ),
+  recentProofs: z.array(
+    z.object({
+      id: z.string().trim().min(1),
+      originalName: z.string().trim().min(1),
+      mimeType: z.string().trim().min(1),
+      sizeBytes: z.number().int().nonnegative(),
+      createdAt: z.iso.datetime(),
+      storagePath: z.string().trim().min(1),
+      expenseId: z.string().trim().min(1),
+      expenseDescription: z.string().trim().min(1),
+    }),
+  ),
   categoryBreakdown: z.array(
     z.object({
       categoryId: z.string().trim().min(1).nullable(),
