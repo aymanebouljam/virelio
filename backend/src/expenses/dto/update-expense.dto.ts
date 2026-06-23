@@ -8,6 +8,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class UpdateExpenseDto {
   @IsOptional()
@@ -24,6 +25,7 @@ export class UpdateExpenseDto {
   @MaxLength(240)
   description?: string;
 
+  @Type(() => Number)
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.01)

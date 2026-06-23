@@ -29,7 +29,12 @@ export const expenseSchema = z.object({
   vendorId: z.string().trim().min(1),
   categoryId: z.string().trim().nullable(),
   description: z.string().trim().min(1).max(240),
-  amount: z.string().trim().min(1),
+  amount: z
+    .string()
+    .trim()
+    .regex(/^\d+(\.\d{1,2})?$/, {
+      message: 'Amount must be a positive number with up to 2 decimal places',
+    }),
   expenseDate: z.iso.datetime(),
   notes: z.string().trim().nullable(),
   createdAt: z.iso.datetime(),
