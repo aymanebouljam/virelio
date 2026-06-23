@@ -170,11 +170,6 @@ describe('DashboardService', () => {
       },
     });
     expect(proofFindManyMock).toHaveBeenCalledWith({
-      where: {
-        expense: {
-          archivedAt: null,
-        },
-      },
       orderBy: {
         createdAt: 'desc',
       },
