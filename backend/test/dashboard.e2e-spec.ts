@@ -63,6 +63,23 @@ describe('Dashboard e2e', () => {
     return response.body as { id: string };
   }
 
+  async function uploadProof(expenseId: string, filename = 'receipt.jpg') {
+    const response = await request(http)
+      .post(`/expenses/${expenseId}/proofs`)
+      .attach('file', Buffer.from('receipt content'), filename)
+      .expect(HttpStatus.CREATED);
+
+    return response.body as {
+      id: string;
+      expenseId: string;
+      originalName: string;
+      mimeType: string;
+      sizeBytes: number;
+      storagePath: string;
+      createdAt: string;
+    };
+  }
+
   describe('GET /dashboard/summary', () => {
     it('returns an empty summary initially', async () => {
       const response = await request(http)
@@ -148,6 +165,8 @@ describe('Dashboard e2e', () => {
         categoryName: 'Uncategorized',
       });
 
+      expect(summary.recentProofs).toEqual([]);
+
       expect(summary.categoryBreakdown).toEqual([
         {
           categoryId: category.id,
@@ -162,6 +181,62 @@ describe('Dashboard e2e', () => {
           expenseCount: 1,
         },
       ]);
+    });
+
+    it('returns recent proof uploads for active expenses only', async () => {
+      const vendor = await createVendor({
+        name: 'Atlas Office Supplies',
+        email: 'contact@atlasoffice.com',
+        phone: '+212600000001',
+        website: 'https://atlasoffice.com',
+        notes: 'Office supplies vendor',
+      });
+
+      const activeExpense = await createExpense({
+        vendorId: vendor.id,
+        description: 'Printer paper',
+        amount: 80.5,
+        expenseDate: '2026-06-20',
+        notes: 'Office restock',
+      });
+
+      const archivedExpense = await createExpense({
+        vendorId: vendor.id,
+        description: 'Old archived expense',
+        amount: 45,
+        expenseDate: '2026-06-19',
+        notes: 'Archive me',
+      });
+
+      const activeProof = await uploadProof(
+        activeExpense.id,
+        'active-receipt.jpg',
+      );
+      await uploadProof(archivedExpense.id, 'archived-receipt.jpg');
+
+      await request(http)
+        .patch(`/expenses/${archivedExpense.id}/archive`)
+        .expect(HttpStatus.OK);
+
+      const response = await request(http)
+        .get('/dashboard/summary')
+        .expect(HttpStatus.OK);
+
+      const summary = response.body as DashboardSummary;
+
+      expect(summary.proofDocuments).toBe(1);
+
+      expect(summary.recentProofs).toHaveLength(1);
+      expect(summary.recentProofs[0]).toMatchObject({
+        id: activeProof.id,
+        originalName: 'active-receipt.jpg',
+        expenseId: activeExpense.id,
+        expenseDescription: 'Printer paper',
+      });
+
+      expect(summary.recentProofs[0].storagePath).toMatch(
+        new RegExp(`^uploads/proofs/${activeExpense.id}/[^/]+\\.jpg$`),
+      );
     });
   });
 });
