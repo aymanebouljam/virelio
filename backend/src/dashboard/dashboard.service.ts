@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
-type DashboardSummary = {
+export type DashboardSummary = {
   totalSpend: string;
   activeVendors: number;
   uncategorizedExpenses: number;
@@ -13,7 +13,7 @@ type DashboardSummary = {
     expenseDate: string;
     vendorId: string;
     vendorName: string;
-    categoryName: string | null;
+    categoryName: string;
   }>;
   categoryBreakdown: Array<{
     categoryId: string | null;
@@ -73,7 +73,7 @@ export class DashboardService {
       expenseDate: expense.expenseDate.toISOString(),
       vendorId: expense.vendor.id,
       vendorName: expense.vendor.name,
-      categoryName: expense.category?.name ?? null,
+      categoryName: expense.category?.name ?? 'Uncategorized',
     }));
 
     const categoryBreakdownMap = new Map<
