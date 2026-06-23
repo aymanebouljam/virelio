@@ -85,7 +85,7 @@ describe('DashboardService', () => {
           expenseDate: '2026-06-20T00:00:00.000Z',
           vendorId: 'vendor-2',
           vendorName: 'Atlas Office Supplies',
-          categoryName: null,
+          categoryName: 'Uncategorized',
         },
       ],
       categoryBreakdown: [
