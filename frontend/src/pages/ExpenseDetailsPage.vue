@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ApiError } from '@/lib/api'
 import { fetchExpense } from '@/lib/expenses/api'
 import { expenseDetailSchema, type ExpenseDetail } from '@/lib/expenses/schema'
-import { uploadExpenseProof } from '@/lib/proofs/api'
+import { removeExpenseProof, uploadExpenseProof } from '@/lib/proofs/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -14,8 +14,10 @@ const loading = ref(true)
 const error = ref('')
 
 const expenseId = computed(() => String(route.params.id ?? ''))
+const removingProofId = ref<string | null>(null)
 
 const uploadError = ref('')
+const proofActionError = ref('')
 const uploading = ref(false)
 
 function formatDate(value: string) {
@@ -90,6 +92,31 @@ async function onProofSelected(event: Event) {
   } finally {
     uploading.value = false
     input.value = ''
+  }
+}
+
+async function removeProof(proofId: string) {
+  if (!expense.value) {
+    return
+  }
+
+  if (!confirm('Are you sure you want to remove this proof document?')) {
+    return
+  }
+
+  proofActionError.value = ''
+  removingProofId.value = proofId
+
+  try {
+    await removeExpenseProof(expense.value.id, proofId)
+    expense.value = {
+      ...expense.value,
+      proofs: expense.value.proofs.filter((proof) => proof.id !== proofId),
+    }
+  } catch (err) {
+    proofActionError.value = err instanceof ApiError ? err.message : 'Removing proof failed'
+  } finally {
+    removingProofId.value = null
   }
 }
 
@@ -256,7 +283,12 @@ onMounted(loadExpense)
               <label
                 class="inline-flex w-fit cursor-pointer items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900"
               >
-                <input type="file" class="hidden" :disabled="uploading" @change="onProofSelected" />
+                <input
+                  type="file"
+                  class="hidden"
+                  :disabled="uploading || removingProofId !== null"
+                  @change="onProofSelected"
+                />
                 {{ uploading ? 'Uploading...' : 'Upload proof' }}
               </label>
 
@@ -266,6 +298,13 @@ onMounted(loadExpense)
               >
                 {{ uploadError }}
               </div>
+            </div>
+
+            <div
+              v-if="proofActionError"
+              class="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            >
+              {{ proofActionError }}
             </div>
 
             <div v-if="expense.proofs.length === 0" class="mt-3 text-sm text-stone-500">
@@ -292,6 +331,16 @@ onMounted(loadExpense)
                   <span>{{ formatFileSize(proof.sizeBytes) }}</span>
 
                   <span>{{ formatDateTime(proof.createdAt) }}</span>
+                </div>
+                <div class="mt-3">
+                  <button
+                    type="button"
+                    class="inline-flex items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-60"
+                    :disabled="removingProofId === proof.id"
+                    @click="removeProof(proof.id)"
+                  >
+                    {{ removingProofId === proof.id ? 'Removing...' : 'Remove' }}
+                  </button>
                 </div>
               </li>
             </ul>
