@@ -116,6 +116,33 @@ describe('DashboardService', () => {
           expenseDescription: 'Airport transfer',
         },
       ],
+      recentActivity: [
+        {
+          id: 'proof-1',
+          type: 'proof',
+          title: 'receipt.jpg',
+          subtitle: 'Airport transfer',
+          occurredAt: new Date('2026-06-22T10:00:00.000Z').toISOString(),
+          expenseId: 'expense-1',
+        },
+        {
+          id: 'expense-1',
+          type: 'expense',
+          title: 'Taxi',
+          subtitle: 'City Transport · Travel',
+          occurredAt: new Date('2026-06-21T00:00:00.000Z').toISOString(),
+          expenseId: 'expense-1',
+        },
+        {
+          id: 'expense-2',
+          type: 'expense',
+          title: 'Paper',
+          subtitle: 'Atlas Office Supplies · Uncategorized',
+          occurredAt: new Date('2026-06-20T00:00:00.000Z').toISOString(),
+          expenseId: 'expense-2',
+        },
+      ],
+
       categoryBreakdown: [
         {
           categoryId: 'category-1',
@@ -204,6 +231,7 @@ describe('DashboardService', () => {
       proofDocuments: 0,
       recentExpenses: [],
       recentProofs: [],
+      recentActivity: [],
       categoryBreakdown: [],
     });
   });
