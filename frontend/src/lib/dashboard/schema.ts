@@ -34,6 +34,17 @@ export const dashboardSummarySchema = z.object({
       expenseDescription: z.string().trim().min(1),
     }),
   ),
+  recentActivity: z.array(
+    z.object({
+      id: z.string().trim().min(1),
+      type: z.enum(['expense', 'proof']),
+      title: z.string().trim().min(1),
+      subtitle: z.string().trim().min(1),
+      occurredAt: z.iso.datetime(),
+      expenseId: z.string().trim().min(1),
+    }),
+  ),
+
   categoryBreakdown: z.array(
     z.object({
       categoryId: z.string().trim().min(1).nullable(),

@@ -3,15 +3,15 @@ import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { ApiError } from '@/lib/api'
 import { fetchDashboardSummary } from '@/lib/dashboard/api'
-import { formatAmount, formatDate, formatFileSize, getProofUrl } from '@/lib/helpers'
+import { formatAmount, formatDate } from '@/lib/helpers'
 import { dashboardSummarySchema, type DashboardSummary } from '@/lib/dashboard/schema'
 
 const summary = ref<DashboardSummary | null>(null)
 const loading = ref(true)
 const error = ref('')
 
-const hasRecentExpenses = computed(() => (summary.value?.recentExpenses.length ?? 0) > 0)
 const hasCategoryBreakdown = computed(() => (summary.value?.categoryBreakdown.length ?? 0) > 0)
+const hasRecentActivity = computed(() => (summary.value?.recentActivity.length ?? 0) > 0)
 
 async function loadSummary() {
   try {
@@ -114,44 +114,47 @@ onMounted(loadSummary)
         <section class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
           <div class="flex items-start justify-between gap-4">
             <div>
-              <h3 class="text-lg font-semibold tracking-tight text-stone-900">Recent expenses</h3>
+              <h3 class="text-lg font-semibold tracking-tight text-stone-900">Recent activity</h3>
               <p class="mt-1 text-sm text-stone-500">
-                The latest recorded expenses across all active vendors.
+                The latest expense records and proof uploads across active expenses.
               </p>
             </div>
           </div>
 
           <div
-            v-if="!hasRecentExpenses"
+            v-if="!hasRecentActivity"
             class="mt-6 rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-10 text-center"
           >
-            <p class="text-sm font-medium text-stone-600">No expenses yet</p>
+            <p class="text-sm font-medium text-stone-600">No activity yet</p>
             <p class="mt-2 text-sm text-stone-500">
-              Add expenses to start seeing recent activity here.
+              Add expenses or upload proof documents to populate this activity stream.
             </p>
           </div>
 
           <div v-else class="mt-6 space-y-3">
             <RouterLink
-              v-for="expense in summary.recentExpenses"
-              :key="expense.id"
-              :to="`/expenses/${expense.id}`"
+              v-for="item in summary.recentActivity"
+              :key="`${item.type}-${item.id}`"
+              :to="`/expenses/${item.expenseId}`"
               class="flex items-start justify-between gap-4 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 transition hover:border-stone-300 hover:bg-stone-100"
             >
               <div class="min-w-0">
-                <p class="text-sm font-semibold text-stone-900">
-                  {{ expense.description }}
-                </p>
+                <div class="flex flex-wrap items-center gap-2">
+                  <p class="text-sm font-semibold text-stone-900">
+                    {{ item.title }}
+                  </p>
+                  <span
+                    class="inline-flex items-center rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-stone-500 ring-1 ring-stone-200"
+                  >
+                    {{ item.type === 'proof' ? 'Proof upload' : 'Expense' }}
+                  </span>
+                </div>
+
                 <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-500">
-                  <span>{{ expense.vendorName }}</span>
-                  <span>{{ expense.categoryName }}</span>
-                  <span>{{ formatDate(expense.expenseDate) }}</span>
+                  <span>{{ item.subtitle }}</span>
+                  <span>{{ formatDate(item.occurredAt) }}</span>
                 </div>
               </div>
-
-              <span class="shrink-0 text-sm font-semibold text-stone-900">
-                ${{ formatAmount(expense.amount) }}
-              </span>
             </RouterLink>
           </div>
         </section>
@@ -191,56 +194,6 @@ onMounted(loadSummary)
                 <span class="shrink-0 text-sm font-semibold text-stone-900">
                   ${{ formatAmount(category.totalAmount) }}
                 </span>
-              </div>
-            </div>
-          </div>
-        </section>
-        <section class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-          <h3 class="text-lg font-semibold tracking-tight text-stone-900">Recent proof uploads</h3>
-          <p class="mt-1 text-sm text-stone-500">
-            The latest uploaded receipts and invoices linked to active expenses.
-          </p>
-
-          <div
-            v-if="summary.recentProofs.length === 0"
-            class="mt-6 rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-10 text-center"
-          >
-            <p class="text-sm font-medium text-stone-600">No proof uploads yet</p>
-            <p class="mt-2 text-sm text-stone-500">
-              Upload receipts or invoices from an expense detail page to see them here.
-            </p>
-          </div>
-
-          <div v-else class="mt-6 space-y-3">
-            <div
-              v-for="proof in summary.recentProofs"
-              :key="proof.id"
-              class="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4"
-            >
-              <div class="flex items-start justify-between gap-4">
-                <div class="min-w-0">
-                  <a
-                    :href="getProofUrl(proof.storagePath)"
-                    target="_blank"
-                    rel="noreferrer"
-                    class="text-sm font-semibold text-stone-900 underline decoration-stone-300 underline-offset-4 transition hover:text-stone-700"
-                  >
-                    {{ proof.originalName }}
-                  </a>
-
-                  <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-500">
-                    <span>{{ proof.mimeType }}</span>
-                    <span>{{ formatFileSize(proof.sizeBytes) }}</span>
-                    <span>{{ formatDate(proof.createdAt) }}</span>
-                  </div>
-
-                  <RouterLink
-                    :to="`/expenses/${proof.expenseId}`"
-                    class="mt-2 inline-block text-xs font-medium text-stone-600 transition hover:text-stone-900"
-                  >
-                    {{ proof.expenseDescription }}
-                  </RouterLink>
-                </div>
               </div>
             </div>
           </div>
