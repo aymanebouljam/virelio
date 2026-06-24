@@ -52,8 +52,10 @@ export class DashboardService {
     query: GetDashboardSummaryQueryDto = {},
   ): Promise<DashboardSummary> {
     const dateFilter = this.buildDateFilter(query);
-    const expenseDateFilter = { expenseDate: dateFilter };
-    const proofDateFilter = { createdAt: dateFilter };
+    const expenseDateFilter =
+      Object.keys(dateFilter).length > 0 ? { expenseDate: dateFilter } : {};
+    const proofDateFilter =
+      Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
 
     const [
       activeVendors,

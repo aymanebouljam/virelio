@@ -353,7 +353,7 @@ describe('Dashboard e2e', () => {
           {
             field: 'dateRange',
             constraints: {
-              isValid: 'Date From must be before or equal to dateTo',
+              isValid: 'Date From must be before or equal to date To',
             },
           },
         ],
