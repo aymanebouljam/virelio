@@ -4,8 +4,14 @@ import { useRoute, useRouter } from 'vue-router'
 import { ApiError } from '@/lib/api'
 import { fetchExpense } from '@/lib/expenses/api'
 import { expenseDetailSchema, type ExpenseDetail } from '@/lib/expenses/schema'
+import {
+  formatAmount,
+  formatDate,
+  formatDateTime,
+  formatFileSize,
+  getProofUrl,
+} from '@/lib/helpers'
 import { removeExpenseProof, uploadExpenseProof } from '@/lib/proofs/api'
-import { formatAmount, formatDate, formatDateTime, formatFileSize } from '@/lib/helpers'
 
 const route = useRoute()
 const router = useRouter()
@@ -94,15 +100,6 @@ async function removeProof(proofId: string) {
   }
 }
 
-function getProofUrl(storagePath: string): string {
-  const baseUrl = import.meta.env.VITE_API_BASE_URL
-
-  if (!baseUrl) {
-    throw new Error('VITE_API_BASE_URL is not defined')
-  }
-
-  return `${baseUrl.replace(/\/$/, '')}/${storagePath.replace(/^\/+/, '')}`
-}
 onMounted(loadExpense)
 </script>
 

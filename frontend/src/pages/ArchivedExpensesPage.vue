@@ -5,6 +5,7 @@ import { fetchExpenseCategories } from '@/lib/expense-categories/api'
 import { expenseCategorySchema, type ExpenseCategory } from '@/lib/expense-categories/schema'
 import { fetchArchivedExpenses, removeExpense, restoreExpense } from '@/lib/expenses/api'
 import { expenseSchema, type Expense } from '@/lib/expenses/schema'
+import { formatAmount, formatDate } from '@/lib/helpers'
 import { fetchVendors } from '@/lib/vendors/api'
 import { type Vendor, vendorSchema } from '@/lib/vendors/schema'
 
@@ -25,15 +26,6 @@ const vendorNameById = computed(
 const categoryNameById = computed(
   () => new Map(categories.value.map((category) => [category.id, category.name])),
 )
-
-function formatDate(value: string) {
-  return new Date(value).toLocaleDateString()
-}
-
-function formatAmount(value: string) {
-  const amount = Number(value)
-  return Number.isNaN(amount) ? 'N/A' : amount.toFixed(2)
-}
 
 async function loadArchivedExpensesPage() {
   try {
