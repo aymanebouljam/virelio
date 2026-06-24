@@ -1,5 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { GetDashboardSummaryQueryDto } from './dto/get-dashboard-summary-query.dto';
+import { Prisma } from '../../generated/prisma/client';
 
 export type DashboardSummary = {
   totalSpend: string;
@@ -46,7 +48,11 @@ export type DashboardSummary = {
 export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getSummary(): Promise<DashboardSummary> {
+  async getSummary(
+    query: GetDashboardSummaryQueryDto = {},
+  ): Promise<DashboardSummary> {
+    const expenseDateFilter = this.buildExpenseDateFilter(query);
+
     const [
       activeVendors,
       uncategorizedExpenses,
@@ -61,17 +67,19 @@ export class DashboardService {
         where: {
           archivedAt: null,
           categoryId: null,
+          ...expenseDateFilter,
         },
       }),
       this.prisma.proofDocument.count({
         where: {
           expense: {
             archivedAt: null,
+            ...expenseDateFilter,
           },
         },
       }),
       this.prisma.expense.findMany({
-        where: { archivedAt: null },
+        where: { archivedAt: null, ...expenseDateFilter },
         include: {
           vendor: {
             select: {
@@ -94,6 +102,7 @@ export class DashboardService {
         where: {
           expense: {
             archivedAt: null,
+            ...expenseDateFilter,
           },
         },
         orderBy: {
@@ -211,5 +220,60 @@ export class DashboardService {
       recentActivity,
       categoryBreakdown,
     };
+  }
+
+  private buildExpenseDateFilter(
+    query: GetDashboardSummaryQueryDto,
+  ): Prisma.ExpenseWhereInput {
+    const { dateFrom, dateTo } = query;
+
+    if (!dateFrom && !dateTo) {
+      return {};
+    }
+
+    const expenseDate: Prisma.DateTimeFilter = {};
+
+    if (dateFrom) {
+      expenseDate.gte = new Date(dateFrom);
+    }
+
+    if (dateTo) {
+      const inclusiveEnd = new Date(dateTo);
+      inclusiveEnd.setUTCHours(23, 59, 59, 999);
+      expenseDate.lte = inclusiveEnd;
+    }
+    const isValidDate = (value: unknown): value is Date =>
+      value instanceof Date && !Number.isNaN(value.getTime());
+
+    const errorShape = (description: string): never => {
+      throw new BadRequestException({
+        message: 'Validation failed',
+        errors: [
+          {
+            field: 'dateRange',
+            constraints: {
+              isValid: description,
+            },
+          },
+        ],
+      });
+    };
+
+    if (
+      (expenseDate.gte !== undefined && !isValidDate(expenseDate.gte)) ||
+      (expenseDate.lte !== undefined && !isValidDate(expenseDate.lte))
+    ) {
+      errorShape('Invalid date format');
+    }
+
+    if (
+      isValidDate(expenseDate.gte) &&
+      isValidDate(expenseDate.lte) &&
+      expenseDate.gte.getTime() > expenseDate.lte.getTime()
+    ) {
+      errorShape('dateFrom must be before or equal to dateTo');
+    }
+
+    return { expenseDate };
   }
 }
