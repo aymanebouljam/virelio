@@ -93,6 +93,7 @@ describe('Dashboard e2e', () => {
         proofDocuments: 0,
         recentExpenses: [],
         recentProofs: [],
+        recentActivity: [],
         categoryBreakdown: [],
       });
     });
@@ -167,6 +168,23 @@ describe('Dashboard e2e', () => {
 
       expect(summary.recentProofs).toEqual([]);
 
+      expect(summary.recentActivity.length).toBeGreaterThan(0);
+      expect(summary.recentActivity[0]).toMatchObject({
+        type: 'expense',
+        title: 'Airport transfer',
+        subtitle: 'City Transport · Travel',
+      });
+
+      expect(typeof summary.recentActivity[0].expenseId).toBe('string');
+
+      expect(summary.recentActivity[1]).toMatchObject({
+        type: 'expense',
+        title: 'Printer paper',
+        subtitle: 'Atlas Office Supplies · Uncategorized',
+      });
+
+      expect(typeof summary.recentActivity[0].expenseId).toBe('string');
+
       expect(summary.categoryBreakdown).toEqual([
         {
           categoryId: category.id,
@@ -236,6 +254,17 @@ describe('Dashboard e2e', () => {
 
       expect(summary.recentProofs[0].storagePath).toMatch(
         new RegExp(`^uploads/proofs/${activeExpense.id}/[^/]+\\.jpg$`),
+      );
+
+      expect(summary.recentActivity).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            type: 'proof',
+            title: 'active-receipt.jpg',
+            subtitle: 'Printer paper',
+            expenseId: activeExpense.id,
+          }),
+        ]),
       );
     });
   });

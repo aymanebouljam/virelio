@@ -25,6 +25,15 @@ export type DashboardSummary = {
     expenseId: string;
     expenseDescription: string;
   }>;
+  recentActivity: Array<{
+    id: string;
+    type: 'expense' | 'proof';
+    title: string;
+    subtitle: string;
+    occurredAt: string;
+    expenseId: string;
+  }>;
+
   categoryBreakdown: Array<{
     categoryId: string | null;
     categoryName: string;
@@ -167,6 +176,31 @@ export class DashboardService {
         expenseCount: entry.expenseCount,
       }));
 
+    const recentActivity = [
+      ...recentExpenses.map((expense) => ({
+        id: expense.id,
+        type: 'expense' as const,
+        title: expense.description,
+        subtitle: `${expense.vendorName} · ${expense.categoryName}`,
+        occurredAt: expense.expenseDate,
+        expenseId: expense.id,
+      })),
+      ...recentProofs.map((proof) => ({
+        id: proof.id,
+        type: 'proof' as const,
+        title: proof.originalName,
+        subtitle: proof.expenseDescription,
+        occurredAt: proof.createdAt,
+        expenseId: proof.expenseId,
+      })),
+    ]
+      .sort(
+        (left, right) =>
+          new Date(right.occurredAt).getTime() -
+          new Date(left.occurredAt).getTime(),
+      )
+      .slice(0, 8);
+
     return {
       totalSpend,
       activeVendors,
@@ -174,6 +208,7 @@ export class DashboardService {
       proofDocuments,
       recentExpenses,
       recentProofs,
+      recentActivity,
       categoryBreakdown,
     };
   }
