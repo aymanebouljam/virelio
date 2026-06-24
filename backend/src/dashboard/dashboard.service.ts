@@ -49,7 +49,7 @@ export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getSummary(
-    query: GetDashboardSummaryQueryDto,
+    query: GetDashboardSummaryQueryDto = {},
   ): Promise<DashboardSummary> {
     const expenseDateFilter = this.buildExpenseDateFilter(query);
 
