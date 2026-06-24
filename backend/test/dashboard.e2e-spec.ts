@@ -316,7 +316,7 @@ describe('Dashboard e2e', () => {
         totalSpend: '220.00',
         activeVendors: 1,
         uncategorizedExpenses: 0,
-        proofDocuments: 1,
+        proofDocuments: 0,
       });
 
       expect(summary.recentExpenses).toHaveLength(1);
@@ -326,11 +326,7 @@ describe('Dashboard e2e', () => {
         categoryName: 'Travel',
       });
 
-      expect(summary.recentProofs).toHaveLength(1);
-      expect(summary.recentProofs[0]).toMatchObject({
-        originalName: 'in-range.jpg',
-        expenseId: inRangeExpense.id,
-      });
+      expect(summary.recentProofs).toHaveLength(0);
 
       expect(summary.categoryBreakdown).toEqual([
         {
@@ -357,7 +353,7 @@ describe('Dashboard e2e', () => {
           {
             field: 'dateRange',
             constraints: {
-              isValid: 'dateFrom must be before or equal to dateTo',
+              isValid: 'Date From must be before or equal to dateTo',
             },
           },
         ],

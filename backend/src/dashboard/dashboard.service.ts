@@ -51,7 +51,9 @@ export class DashboardService {
   async getSummary(
     query: GetDashboardSummaryQueryDto = {},
   ): Promise<DashboardSummary> {
-    const expenseDateFilter = this.buildExpenseDateFilter(query);
+    const dateFilter = this.buildDateFilter(query);
+    const expenseDateFilter = { expenseDate: dateFilter };
+    const proofDateFilter = { createdAt: dateFilter };
 
     const [
       activeVendors,
@@ -72,9 +74,9 @@ export class DashboardService {
       }),
       this.prisma.proofDocument.count({
         where: {
+          ...proofDateFilter,
           expense: {
             archivedAt: null,
-            ...expenseDateFilter,
           },
         },
       }),
@@ -100,9 +102,9 @@ export class DashboardService {
       }),
       this.prisma.proofDocument.findMany({
         where: {
+          ...proofDateFilter,
           expense: {
             archivedAt: null,
-            ...expenseDateFilter,
           },
         },
         orderBy: {
@@ -222,25 +224,25 @@ export class DashboardService {
     };
   }
 
-  private buildExpenseDateFilter(
+  private buildDateFilter(
     query: GetDashboardSummaryQueryDto,
-  ): Prisma.ExpenseWhereInput {
+  ): Prisma.DateTimeFilter {
     const { dateFrom, dateTo } = query;
 
     if (!dateFrom && !dateTo) {
       return {};
     }
 
-    const expenseDate: Prisma.DateTimeFilter = {};
+    const filterDate: Prisma.DateTimeFilter = {};
 
     if (dateFrom) {
-      expenseDate.gte = new Date(dateFrom);
+      filterDate.gte = new Date(dateFrom);
     }
 
     if (dateTo) {
       const inclusiveEnd = new Date(dateTo);
       inclusiveEnd.setUTCHours(23, 59, 59, 999);
-      expenseDate.lte = inclusiveEnd;
+      filterDate.lte = inclusiveEnd;
     }
     const isValidDate = (value: unknown): value is Date =>
       value instanceof Date && !Number.isNaN(value.getTime());
@@ -260,20 +262,20 @@ export class DashboardService {
     };
 
     if (
-      (expenseDate.gte !== undefined && !isValidDate(expenseDate.gte)) ||
-      (expenseDate.lte !== undefined && !isValidDate(expenseDate.lte))
+      (filterDate.gte !== undefined && !isValidDate(filterDate.gte)) ||
+      (filterDate.lte !== undefined && !isValidDate(filterDate.lte))
     ) {
       errorShape('Invalid date format');
     }
 
     if (
-      isValidDate(expenseDate.gte) &&
-      isValidDate(expenseDate.lte) &&
-      expenseDate.gte.getTime() > expenseDate.lte.getTime()
+      isValidDate(filterDate.gte) &&
+      isValidDate(filterDate.lte) &&
+      filterDate.gte.getTime() > filterDate.lte.getTime()
     ) {
-      errorShape('dateFrom must be before or equal to dateTo');
+      errorShape('Date From must be before or equal to date To');
     }
 
-    return { expenseDate };
+    return filterDate;
   }
 }
