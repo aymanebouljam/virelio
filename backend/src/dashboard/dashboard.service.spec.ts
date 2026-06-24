@@ -235,4 +235,117 @@ describe('DashboardService', () => {
       categoryBreakdown: [],
     });
   });
+
+  it('filters dashboard summary by expense date range', async () => {
+    vendorCountMock.mockResolvedValueOnce(4);
+    expenseCountMock.mockResolvedValueOnce(1);
+    proofCountMock.mockResolvedValueOnce(1);
+    expenseFindManyMock.mockResolvedValueOnce([
+      {
+        id: 'expense-1',
+        description: 'Taxi',
+        amount: {
+          toNumber: () => 220,
+        },
+        expenseDate: new Date('2026-06-21T00:00:00.000Z'),
+        vendor: {
+          id: 'vendor-1',
+          name: 'City Transport',
+        },
+        category: {
+          id: 'category-1',
+          name: 'Travel',
+        },
+      },
+    ]);
+    proofFindManyMock.mockResolvedValueOnce([
+      {
+        id: 'proof-1',
+        originalName: 'receipt.jpg',
+        mimeType: 'image/jpeg',
+        sizeBytes: 245760,
+        storagePath: 'uploads/proofs/expense-1/receipt.jpg',
+        createdAt: new Date('2026-06-22T10:00:00.000Z'),
+        expense: {
+          id: 'expense-1',
+          description: 'Taxi',
+        },
+      },
+    ]);
+
+    await expect(
+      service.getSummary({
+        dateFrom: '2026-06-20',
+        dateTo: '2026-06-21',
+      }),
+    ).resolves.toMatchObject({
+      totalSpend: '220.00',
+      uncategorizedExpenses: 1,
+      proofDocuments: 1,
+    });
+
+    expect(expenseCountMock).toHaveBeenCalledWith({
+      where: {
+        archivedAt: null,
+        categoryId: null,
+        expenseDate: {
+          gte: new Date('2026-06-20'),
+          lte: new Date('2026-06-21T23:59:59.999Z'),
+        },
+      },
+    });
+
+    expect(expenseFindManyMock).toHaveBeenCalledWith({
+      where: {
+        archivedAt: null,
+        expenseDate: {
+          gte: new Date('2026-06-20'),
+          lte: new Date('2026-06-21T23:59:59.999Z'),
+        },
+      },
+      include: {
+        vendor: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        expenseDate: 'desc',
+      },
+    });
+  });
+
+  it('rejects dashboard summary when dateFrom is after dateTo', async () => {
+    await expect(
+      service.getSummary({
+        dateFrom: '2026-06-22',
+        dateTo: '2026-06-21',
+      }),
+    ).rejects.toMatchObject({
+      response: {
+        message: 'Validation failed',
+        errors: [
+          {
+            field: 'dateRange',
+            constraints: {
+              isValid: 'dateFrom must be before or equal to dateTo',
+            },
+          },
+        ],
+      },
+    });
+
+    expect(expenseCountMock).not.toHaveBeenCalled();
+    expect(expenseFindManyMock).not.toHaveBeenCalled();
+    expect(proofCountMock).not.toHaveBeenCalled();
+    expect(proofFindManyMock).not.toHaveBeenCalled();
+  });
 });
