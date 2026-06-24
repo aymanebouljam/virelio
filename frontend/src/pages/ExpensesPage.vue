@@ -14,6 +14,7 @@ import {
 import { fetchExpenseCategories } from '@/lib/expense-categories/api'
 import { expenseCategorySchema, type ExpenseCategory } from '@/lib/expense-categories/schema'
 import { fetchVendors } from '@/lib/vendors/api'
+import { formatAmount, formatDate } from '@/lib/helpers'
 import { type Vendor, vendorSchema } from '@/lib/vendors/schema'
 import { mapZodErrors } from '@/lib/zod'
 
@@ -140,15 +141,6 @@ function normalizeError(err: unknown) {
   }
 
   submitError.value = 'Something went wrong'
-}
-
-function formatDate(value: string) {
-  return new Date(value).toLocaleDateString()
-}
-
-function formatAmount(value: string) {
-  const amount = Number(value)
-  return Number.isNaN(amount) ? 'N/A' : amount.toFixed(2)
 }
 
 async function loadExpensesPage() {
