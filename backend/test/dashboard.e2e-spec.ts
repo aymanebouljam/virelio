@@ -267,5 +267,101 @@ describe('Dashboard e2e', () => {
         ]),
       );
     });
+
+    it('filters dashboard summary by date range query params', async () => {
+      const vendor = await createVendor({
+        name: 'Atlas Office Supplies',
+        email: 'contact@atlasoffice.com',
+        phone: '+212600000001',
+        website: 'https://atlasoffice.com',
+        notes: 'Office supplies vendor',
+      });
+
+      const category = await createCategory({
+        name: 'Travel',
+        color: '#0f766e',
+      });
+
+      const inRangeExpense = await createExpense({
+        vendorId: vendor.id,
+        categoryId: category.id,
+        description: 'Airport transfer',
+        amount: 220,
+        expenseDate: '2026-06-21',
+        notes: 'Client pickup',
+      });
+
+      const outOfRangeExpense = await createExpense({
+        vendorId: vendor.id,
+        description: 'Printer paper',
+        amount: 80.5,
+        expenseDate: '2026-06-10',
+        notes: 'Office restock',
+      });
+
+      await uploadProof(inRangeExpense.id, 'in-range.jpg');
+      await uploadProof(outOfRangeExpense.id, 'out-of-range.jpg');
+
+      const response = await request(http)
+        .get('/dashboard/summary')
+        .query({
+          dateFrom: '2026-06-20',
+          dateTo: '2026-06-21',
+        })
+        .expect(HttpStatus.OK);
+
+      const summary = response.body as DashboardSummary;
+
+      expect(summary).toMatchObject({
+        totalSpend: '220.00',
+        activeVendors: 1,
+        uncategorizedExpenses: 0,
+        proofDocuments: 1,
+      });
+
+      expect(summary.recentExpenses).toHaveLength(1);
+      expect(summary.recentExpenses[0]).toMatchObject({
+        description: 'Airport transfer',
+        amount: '220.00',
+        categoryName: 'Travel',
+      });
+
+      expect(summary.recentProofs).toHaveLength(1);
+      expect(summary.recentProofs[0]).toMatchObject({
+        originalName: 'in-range.jpg',
+        expenseId: inRangeExpense.id,
+      });
+
+      expect(summary.categoryBreakdown).toEqual([
+        {
+          categoryId: category.id,
+          categoryName: 'Travel',
+          totalAmount: '220.00',
+          expenseCount: 1,
+        },
+      ]);
+    });
+
+    it('returns 400 when dateFrom is after dateTo', async () => {
+      const response = await request(http)
+        .get('/dashboard/summary')
+        .query({
+          dateFrom: '2026-06-22',
+          dateTo: '2026-06-21',
+        })
+        .expect(HttpStatus.BAD_REQUEST);
+
+      expect(response.body).toEqual({
+        message: 'Validation failed',
+        errors: [
+          {
+            field: 'dateRange',
+            constraints: {
+              isValid: 'dateFrom must be before or equal to dateTo',
+            },
+          },
+        ],
+      });
+    });
   });
 });
