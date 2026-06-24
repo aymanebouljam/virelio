@@ -43,7 +43,15 @@ async function loadSummary() {
 
     summary.value = result.data
   } catch (err) {
-    error.value = err instanceof ApiError ? err.message : 'Something went wrong'
+    if (err instanceof ApiError) {
+      if (err.content && typeof err.content.dateRange === 'string') {
+        error.value = err.content.dateRange
+      } else {
+        error.value = err.message
+      }
+    } else {
+      error.value = 'Something went wrong'
+    }
   } finally {
     loading.value = false
   }
