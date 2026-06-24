@@ -1,14 +1,27 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { computed, onMounted, ref, watch } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ApiError } from '@/lib/api'
 import { fetchDashboardSummary } from '@/lib/dashboard/api'
 import { formatAmount, formatDate } from '@/lib/helpers'
 import { dashboardSummarySchema, type DashboardSummary } from '@/lib/dashboard/schema'
 
+const route = useRoute()
+const router = useRouter()
+
 const summary = ref<DashboardSummary | null>(null)
 const loading = ref(true)
 const error = ref('')
+
+const dateFrom = computed(() => {
+  const value = route.query.dateFrom
+  return typeof value === 'string' ? value : undefined
+})
+
+const dateTo = computed(() => {
+  const value = route.query.dateTo
+  return typeof value === 'string' ? value : undefined
+})
 
 const hasCategoryBreakdown = computed(() => (summary.value?.categoryBreakdown.length ?? 0) > 0)
 const hasRecentActivity = computed(() => (summary.value?.recentActivity.length ?? 0) > 0)
@@ -16,7 +29,12 @@ const hasRecentActivity = computed(() => (summary.value?.recentActivity.length ?
 async function loadSummary() {
   try {
     error.value = ''
-    const result = dashboardSummarySchema.safeParse(await fetchDashboardSummary())
+    const result = dashboardSummarySchema.safeParse(
+      await fetchDashboardSummary({
+        dateFrom: dateFrom.value,
+        dateTo: dateTo.value,
+      }),
+    )
 
     if (!result.success) {
       error.value = 'Failed to validate dashboard summary'
@@ -30,6 +48,32 @@ async function loadSummary() {
     loading.value = false
   }
 }
+
+async function updateDateRange(next: { dateFrom?: string; dateTo?: string }) {
+  const query = { ...route.query }
+
+  if (next.dateFrom) {
+    query.dateFrom = next.dateFrom
+  } else {
+    delete query.dateFrom
+  }
+
+  if (next.dateTo) {
+    query.dateTo = next.dateTo
+  } else {
+    delete query.dateTo
+  }
+
+  await router.replace({ query })
+}
+
+watch(
+  () => [dateFrom.value, dateTo.value],
+  () => {
+    loading.value = true
+    void loadSummary()
+  },
+)
 
 onMounted(loadSummary)
 </script>
@@ -50,6 +94,50 @@ onMounted(loadSummary)
         </div>
       </div>
     </header>
+
+    <section
+      class="flex flex-col gap-3 rounded-3xl border border-stone-200 bg-white p-4 shadow-sm sm:flex-row sm:flex-wrap sm:items-end"
+    >
+      <div class="flex flex-col gap-2">
+        <label class="text-xs font-medium uppercase tracking-[0.18em] text-stone-400"> From </label>
+        <input
+          :value="dateFrom"
+          type="date"
+          class="min-h-11 rounded-2xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-stone-400"
+          @change="
+            updateDateRange({
+              dateFrom: ($event.target as HTMLInputElement).value,
+              dateTo: dateTo,
+            })
+          "
+        />
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label class="text-xs font-medium uppercase tracking-[0.18em] text-stone-400"> To </label>
+        <input
+          :value="dateTo"
+          type="date"
+          class="min-h-11 rounded-2xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-stone-400"
+          @change="
+            updateDateRange({
+              dateFrom: dateFrom,
+              dateTo: ($event.target as HTMLInputElement).value,
+            })
+          "
+        />
+      </div>
+
+      <div v-if="dateFrom || dateTo">
+        <button
+          type="button"
+          class="inline-flex min-h-11 items-center justify-center rounded-2xl border border-stone-200 bg-stone-50 px-4 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:bg-stone-100 hover:text-stone-900"
+          @click="updateDateRange({ dateFrom: undefined, dateTo: undefined })"
+        >
+          Clear
+        </button>
+      </div>
+    </section>
 
     <div v-if="loading" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <div
