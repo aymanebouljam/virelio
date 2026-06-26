@@ -4,6 +4,8 @@ import request from 'supertest';
 import type { PrismaService } from '../prisma/prisma.service';
 import { createTestApp, resetDatabase } from './test-app';
 import type { ExpenseReport } from '../src/reports/reports.service';
+import { rm } from 'node:fs/promises';
+import { getUploadsRoot } from '../src/proofs/proofs-paths';
 
 describe('Reports e2e', () => {
   let app: INestApplication;
@@ -16,10 +18,12 @@ describe('Reports e2e', () => {
 
   beforeEach(async () => {
     await resetDatabase(prisma);
+    await rm(getUploadsRoot(), { recursive: true, force: true });
   });
 
   afterAll(async () => {
     await resetDatabase(prisma);
+    await rm(getUploadsRoot(), { recursive: true, force: true });
     await app?.close();
   });
 
