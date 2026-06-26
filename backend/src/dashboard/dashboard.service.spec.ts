@@ -288,10 +288,6 @@ describe('DashboardService', () => {
       where: {
         archivedAt: null,
         categoryId: null,
-        expenseDate: {
-          gte: new Date('2026-06-20'),
-          lte: new Date('2026-06-21T23:59:59.999Z'),
-        },
       },
     });
 

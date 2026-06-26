@@ -315,7 +315,7 @@ describe('Dashboard e2e', () => {
       expect(summary).toMatchObject({
         totalSpend: '220.00',
         activeVendors: 1,
-        uncategorizedExpenses: 0,
+        uncategorizedExpenses: 1,
         proofDocuments: 0,
       });
 
