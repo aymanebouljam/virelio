@@ -1,7 +1,6 @@
 import { HttpStatus, type INestApplication } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { rm } from 'node:fs/promises';
-import { join } from 'node:path';
 import type { Server } from 'node:http';
 import request from 'supertest';
 import type { PrismaService } from '../prisma/prisma.service';
@@ -37,12 +36,12 @@ describe('Proofs e2e', () => {
 
   beforeEach(async () => {
     await resetDatabase(prisma);
-    await rm(join(getUploadsRoot()), { recursive: true, force: true });
+    await rm(getUploadsRoot(), { recursive: true, force: true });
   });
 
   afterAll(async () => {
     await resetDatabase(prisma);
-    await rm(join(getUploadsRoot()), { recursive: true, force: true });
+    await rm(getUploadsRoot(), { recursive: true, force: true });
     await app?.close();
   });
 
