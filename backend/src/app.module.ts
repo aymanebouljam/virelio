@@ -8,6 +8,7 @@ import { ExpenseCategoriesModule } from './categories/expense-categories.module'
 import { ExpensesModule } from './expenses/expenses.module';
 import { ProofsModule } from './proofs/proofs.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     ExpensesModule,
     ProofsModule,
     DashboardModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
