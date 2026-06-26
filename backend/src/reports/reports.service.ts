@@ -121,7 +121,7 @@ export class ReportsService {
   }
 
   private buildExpenseDateFilter(
-    query: GetExpenseReportQueryDto = {},
+    query: GetExpenseReportQueryDto,
   ): Prisma.ExpenseWhereInput {
     const { dateFrom, dateTo } = query;
 
@@ -172,7 +172,7 @@ export class ReportsService {
           {
             field: 'dateRange',
             constraints: {
-              isValid: 'dateFrom must be before or equal to dateTo',
+              isValid: 'Date From must be before or equal to date To',
             },
           },
         ],
