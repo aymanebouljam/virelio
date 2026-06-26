@@ -71,7 +71,6 @@ export class DashboardService {
         where: {
           archivedAt: null,
           categoryId: null,
-          ...expenseDateFilter,
         },
       }),
       this.prisma.proofDocument.count({
