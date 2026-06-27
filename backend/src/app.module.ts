@@ -9,6 +9,7 @@ import { ExpensesModule } from './expenses/expenses.module';
 import { ProofsModule } from './proofs/proofs.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ReportsModule } from './reports/reports.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ReportsModule } from './reports/reports.module';
     ProofsModule,
     DashboardModule,
     ReportsModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
