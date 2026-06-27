@@ -102,10 +102,8 @@ describe('Auth e2e', () => {
         .expect(HttpStatus.OK);
 
       expect(response.body).toMatchObject({
-        user: {
-          email: 'owner@local.dev',
-          fullName: 'Local Owner',
-        },
+        email: 'owner@local.dev',
+        fullName: 'Local Owner',
       });
     });
 

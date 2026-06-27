@@ -101,11 +101,9 @@ describe('AuthService', () => {
         password: 'password123',
       }),
     ).resolves.toMatchObject({
-      user: {
-        id: 'user-1',
-        email: 'owner@local.dev',
-        fullName: 'Local Owner',
-      },
+      id: 'user-1',
+      email: 'owner@local.dev',
+      fullName: 'Local Owner',
     });
 
     expect(bcrypt.compare).toHaveBeenCalledWith(
