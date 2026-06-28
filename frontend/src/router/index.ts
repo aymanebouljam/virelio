@@ -9,6 +9,8 @@ import ExpensesPage from '@/pages/ExpensesPage.vue'
 import ArchivedExpensesPage from '@/pages/ArchivedExpensesPage.vue'
 import ExpenseDetailsPage from '@/pages/ExpenseDetailsPage.vue'
 import ReportsPage from '@/pages/ReportsPage.vue'
+import RegisterPage from '@/pages/RegisterPage.vue'
+import LoginPage from '@/pages/LoginPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -62,6 +64,16 @@ const router = createRouter({
       path: '/reports',
       name: 'reports',
       component: ReportsPage,
+    },
+    {
+      path: '/register',
+      name: 'register',
+      component: RegisterPage,
+    },
+    {
+      path: '/login',
+      name: 'login',
+      component: LoginPage,
     },
   ],
 })
