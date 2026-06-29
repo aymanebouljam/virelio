@@ -2,6 +2,7 @@ import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthService } from './auth.service';
+import { JwtService } from '@nestjs/jwt';
 
 jest.mock('bcrypt', () => ({
   hash: jest.fn(),
@@ -10,6 +11,13 @@ jest.mock('bcrypt', () => ({
 
 describe('AuthService', () => {
   let service: AuthService;
+
+  const signAsyncMock = jest.fn();
+  const verifyAsyncMock = jest.fn();
+  const jwtService = {
+    signAsync: signAsyncMock,
+    verifyAsync: verifyAsyncMock,
+  } as unknown as JwtService;
 
   const userFindUniqueMock = jest.fn();
   const userCreateMock = jest.fn();
@@ -23,7 +31,7 @@ describe('AuthService', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
-    service = new AuthService(prisma);
+    service = new AuthService(prisma, jwtService);
   });
 
   it('registers a new user', async () => {
