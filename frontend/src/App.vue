@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { clearAccessToken, currentUser, isAuthenticated } from '@/lib/auth/storage'
-
 const router = useRouter()
 
 async function logout() {
@@ -86,7 +85,7 @@ async function logout() {
             Reports
           </RouterLink>
           <div class="mt-8 border-t border-stone-200 pt-4">
-            <template v-if="isAuthenticated()">
+            <template v-if="isAuthenticated">
               <p v-if="currentUser" class="px-4 text-sm font-medium text-stone-900">
                 {{ currentUser.fullName }}
               </p>
