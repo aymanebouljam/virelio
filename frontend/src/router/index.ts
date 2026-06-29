@@ -95,12 +95,11 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
   const guestOnly = to.matched.some((record) => record.meta.guestOnly)
+  const authenticated = isAuthenticated.value
 
   if (!requiresAuth && !guestOnly) {
     return true
   }
-
-  const authenticated = isAuthenticated()
 
   if (!authenticated && requiresAuth) {
     return { name: 'login', query: { redirect: to.fullPath } }
