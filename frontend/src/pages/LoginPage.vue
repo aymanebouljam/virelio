@@ -55,8 +55,10 @@ async function submit() {
     loginFormSchema.parse(form.value)
     const session = await loginUser(form.value)
     setAccessToken(session.accessToken)
+    const redirect = router.currentRoute.value.query.redirect
+    const target = typeof redirect === 'string' && redirect.length > 0 ? redirect : '/'
     resetForm()
-    await router.push('/')
+    await router.push(target)
   } catch (err) {
     normalizeError(err)
   } finally {
