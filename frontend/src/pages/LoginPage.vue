@@ -6,6 +6,7 @@ import { login as loginUser } from '@/lib/auth/api'
 import { loginFormSchema, type LoginFormValues } from '@/lib/auth/schema'
 import { ZodError } from 'zod'
 import { mapZodErrors } from '@/lib/zod'
+import { setAccessToken } from '@/lib/auth/storage'
 
 const router = useRouter()
 
@@ -52,7 +53,8 @@ async function submit() {
 
   try {
     loginFormSchema.parse(form.value)
-    await loginUser(form.value)
+    const session = await loginUser(form.value)
+    setAccessToken(session.accessToken)
     resetForm()
     await router.push('/')
   } catch (err) {
