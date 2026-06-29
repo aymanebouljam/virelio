@@ -1,3 +1,15 @@
+<script setup lang="ts">
+import { useRouter } from 'vue-router'
+import { clearAccessToken, currentUser, isAuthenticated } from '@/lib/auth/storage'
+
+const router = useRouter()
+
+async function logout() {
+  clearAccessToken()
+  await router.push('/login')
+}
+</script>
+
 <template>
   <div class="min-h-screen bg-stone-100 text-stone-900">
     <div class="mx-auto flex min-h-screen max-w-7xl flex-col lg:flex-row">
@@ -73,21 +85,42 @@
           >
             Reports
           </RouterLink>
-          <RouterLink
-            to="/register"
-            class="rounded-2xl px-4 py-3 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
-            active-class="bg-stone-900 text-white hover:bg-stone-900 hover:text-white"
-          >
-            Register
-          </RouterLink>
+          <div class="mt-8 border-t border-stone-200 pt-4">
+            <template v-if="isAuthenticated()">
+              <p v-if="currentUser" class="px-4 text-sm font-medium text-stone-900">
+                {{ currentUser.fullName }}
+              </p>
+              <p v-if="currentUser" class="px-4 pt-1 text-xs text-stone-500">
+                {{ currentUser.email }}
+              </p>
 
-          <RouterLink
-            to="/login"
-            class="rounded-2xl px-4 py-3 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
-            active-class="bg-stone-900 text-white hover:bg-stone-900 hover:text-white"
-          >
-            Login
-          </RouterLink>
+              <button
+                type="button"
+                class="mt-3 inline-flex w-full items-center rounded-2xl px-4 py-3 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
+                @click="logout"
+              >
+                Logout
+              </button>
+            </template>
+
+            <template v-else>
+              <RouterLink
+                to="/register"
+                class="rounded-2xl px-4 py-3 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
+                active-class="bg-stone-900 text-white hover:bg-stone-900 hover:text-white"
+              >
+                Register
+              </RouterLink>
+
+              <RouterLink
+                to="/login"
+                class="rounded-2xl px-4 py-3 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
+                active-class="bg-stone-900 text-white hover:bg-stone-900 hover:text-white"
+              >
+                Login
+              </RouterLink>
+            </template>
+          </div>
         </nav>
       </aside>
 
