@@ -6,6 +6,7 @@ import request from 'supertest';
 import type { PrismaService } from '../prisma/prisma.service';
 import { createTestApp, resetDatabase } from './test-app';
 import { getUploadsRoot } from '../src/proofs/proofs-paths';
+import { createAuthHeader } from './test-auth';
 
 type ErrorResponse = {
   message: string;
@@ -29,6 +30,7 @@ describe('Proofs e2e', () => {
   let app: INestApplication;
   let http: Server;
   let prisma: PrismaService;
+  let authHeaders: Record<string, string>;
 
   beforeAll(async () => {
     ({ app, http, prisma } = await createTestApp());
@@ -37,6 +39,7 @@ describe('Proofs e2e', () => {
   beforeEach(async () => {
     await resetDatabase(prisma);
     await rm(getUploadsRoot(), { recursive: true, force: true });
+    authHeaders = await createAuthHeader(http);
   });
 
   afterAll(async () => {
@@ -48,6 +51,7 @@ describe('Proofs e2e', () => {
   async function createVendor() {
     const response = await request(http)
       .post('/vendors')
+      .set(authHeaders)
       .send({
         name: 'Atlas Office Supplies',
         email: 'contact@atlasoffice.com',
@@ -65,6 +69,7 @@ describe('Proofs e2e', () => {
 
     const response = await request(http)
       .post('/expenses')
+      .set(authHeaders)
       .send({
         vendorId: vendor.id,
         description: 'Office supplies',
@@ -80,6 +85,7 @@ describe('Proofs e2e', () => {
   async function createProof(expense: { id: string }) {
     const response = await request(http)
       .post(`/expenses/${expense.id}/proofs`)
+      .set(authHeaders)
       .attach('file', Buffer.from(content), 'invoice.txt')
       .expect(HttpStatus.CREATED);
 
@@ -94,6 +100,7 @@ describe('Proofs e2e', () => {
 
       const response = await request(http)
         .post(`/expenses/${expense.id}/proofs`)
+        .set(authHeaders)
         .attach('file', Buffer.from(content), 'invoice.txt')
         .expect(HttpStatus.CREATED);
       const createdProof = response.body as ProofResponse;
@@ -125,6 +132,7 @@ describe('Proofs e2e', () => {
     it('returns 400 when the expense ID is not a valid UUID', async () => {
       const response = await request(http)
         .post('/expenses/not-a-uuid/proofs')
+        .set(authHeaders)
         .attach('file', Buffer.from('invoice content'), 'invoice.txt')
         .expect(HttpStatus.BAD_REQUEST);
 
@@ -137,6 +145,7 @@ describe('Proofs e2e', () => {
 
       const response = await request(http)
         .post(`/expenses/${expense.id}/proofs`)
+        .set(authHeaders)
         .expect(HttpStatus.BAD_REQUEST);
 
       expect(response.body).toEqual({
@@ -155,6 +164,7 @@ describe('Proofs e2e', () => {
     it('returns 404 when the expense does not exist', async () => {
       const response = await request(http)
         .post(`/expenses/${randomUUID()}/proofs`)
+        .set(authHeaders)
         .attach('file', Buffer.from('invoice content'), 'invoice.txt')
         .expect(HttpStatus.NOT_FOUND);
 
@@ -174,6 +184,7 @@ describe('Proofs e2e', () => {
 
       await request(http)
         .delete(`/expenses/${expense.id}/proofs/${createdProof.id}`)
+        .set(authHeaders)
         .expect(HttpStatus.NO_CONTENT);
       const proof = await prisma.proofDocument.findUnique({
         where: {
@@ -192,6 +203,7 @@ describe('Proofs e2e', () => {
 
       const response = await request(http)
         .delete(`/expenses/not-a-uuid/proofs/${createdProof.id}`)
+        .set(authHeaders)
         .expect(HttpStatus.BAD_REQUEST);
 
       const error = response.body as ErrorResponse;
@@ -203,6 +215,7 @@ describe('Proofs e2e', () => {
 
       const response = await request(http)
         .delete(`/expenses/${expense.id}/proofs/not-a-uuid`)
+        .set(authHeaders)
         .expect(HttpStatus.BAD_REQUEST);
 
       const error = response.body as ErrorResponse;
@@ -219,6 +232,7 @@ describe('Proofs e2e', () => {
 
       const response = await request(http)
         .delete(`/expenses/${randomUUID()}/proofs/${createdProof.id}`)
+        .set(authHeaders)
         .expect(HttpStatus.NOT_FOUND);
 
       const error = response.body as ErrorResponse;
@@ -230,6 +244,7 @@ describe('Proofs e2e', () => {
 
       const response = await request(http)
         .delete(`/expenses/${expense.id}/proofs/${randomUUID()}`)
+        .set(authHeaders)
         .expect(HttpStatus.NOT_FOUND);
 
       const error = response.body as ErrorResponse;

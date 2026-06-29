@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import type { Server } from 'node:http';
 import type { PrismaService } from '../prisma/prisma.service';
 import { createTestApp, resetDatabase } from './test-app';
+import { createAuthHeader } from './test-auth';
 
 type ExpenseResponse = {
   id: string;
@@ -58,6 +59,7 @@ describe('Expenses e2e', () => {
   let app: INestApplication;
   let http: Server;
   let prisma: PrismaService;
+  let authHeaders: Record<string, string>;
 
   beforeAll(async () => {
     ({ app, http, prisma } = await createTestApp());
@@ -65,6 +67,7 @@ describe('Expenses e2e', () => {
 
   beforeEach(async () => {
     await resetDatabase(prisma);
+    authHeaders = await createAuthHeader(http);
   });
 
   afterAll(async () => {
@@ -75,6 +78,7 @@ describe('Expenses e2e', () => {
   async function createVendor() {
     const response = await request(http)
       .post('/vendors')
+      .set(authHeaders)
       .send({
         name: 'Atlas Office Supplies',
         email: 'contact@atlasoffice.com',
@@ -90,6 +94,7 @@ describe('Expenses e2e', () => {
   async function createCategory() {
     const response = await request(http)
       .post('/expense-categories')
+      .set(authHeaders)
       .send({
         name: 'Office',
         color: '#64748b',
@@ -103,6 +108,7 @@ describe('Expenses e2e', () => {
     it('returns empty list initially', async () => {
       const response = await request(http)
         .get('/expenses')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       expect(response.body).toEqual([]);
@@ -114,6 +120,7 @@ describe('Expenses e2e', () => {
 
       const createResponseA = await request(http)
         .post('/expenses')
+        .set(authHeaders)
         .send({
           vendorId: vendor.id,
           categoryId: category.id,
@@ -128,10 +135,12 @@ describe('Expenses e2e', () => {
 
       await request(http)
         .patch(`/expenses/${expenseA.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       await request(http)
         .post('/expenses')
+        .set(authHeaders)
         .send({
           vendorId: vendor.id,
           categoryId: category.id,
@@ -144,6 +153,7 @@ describe('Expenses e2e', () => {
 
       const listResponse = await request(http)
         .get('/expenses')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const expenses = listResponse.body as ExpenseResponse[];
@@ -161,6 +171,7 @@ describe('Expenses e2e', () => {
 
       const createResponseA = await request(http)
         .post('/expenses')
+        .set(authHeaders)
         .send({
           vendorId: vendor.id,
           categoryId: category.id,
@@ -175,6 +186,7 @@ describe('Expenses e2e', () => {
 
       const createResponseB = await request(http)
         .post('/expenses')
+        .set(authHeaders)
         .send({
           vendorId: vendor.id,
           categoryId: category.id,
@@ -189,6 +201,7 @@ describe('Expenses e2e', () => {
 
       const listResponse = await request(http)
         .get('/expenses')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const expenses = listResponse.body as ExpenseResponse[];
@@ -204,6 +217,7 @@ describe('Expenses e2e', () => {
 
       const createResponse = await request(http)
         .post('/expenses')
+        .set(authHeaders)
         .send({
           vendorId: vendor.id,
           categoryId: category.id,
@@ -218,6 +232,7 @@ describe('Expenses e2e', () => {
 
       const response = await request(http)
         .get(`/expenses/${createdExpense.id}`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const expense = response.body as ExpenseResponse;
@@ -245,6 +260,7 @@ describe('Expenses e2e', () => {
     it('returns 400 when the expense ID is not a valid UUID', async () => {
       const response = await request(http)
         .get('/expenses/not-a-uuid')
+        .set(authHeaders)
         .expect(HttpStatus.BAD_REQUEST);
 
       const error = response.body as ErrorResponse;
@@ -254,6 +270,7 @@ describe('Expenses e2e', () => {
     it('returns 404 when the expense does not exist', async () => {
       const response = await request(http)
         .get(`/expenses/${randomUUID()}`)
+        .set(authHeaders)
         .expect(HttpStatus.NOT_FOUND);
 
       const error = response.body as ErrorResponse;
@@ -266,6 +283,7 @@ describe('Expenses e2e', () => {
 
       const createResponse = await request(http)
         .post('/expenses')
+        .set(authHeaders)
         .send({
           vendorId: vendor.id,
           categoryId: category.id,
@@ -280,10 +298,12 @@ describe('Expenses e2e', () => {
 
       await request(http)
         .patch(`/expenses/${createdExpense.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const response = await request(http)
         .get(`/expenses/${createdExpense.id}`)
+        .set(authHeaders)
         .expect(HttpStatus.NOT_FOUND);
 
       const error = response.body as ErrorResponse;
@@ -295,6 +315,7 @@ describe('Expenses e2e', () => {
     it('returns an empty array when no archived expenses exist', async () => {
       const response = await request(http)
         .get('/expenses/archived')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       expect(response.body).toEqual([]);
@@ -306,6 +327,7 @@ describe('Expenses e2e', () => {
 
       const createResponseA = await request(http)
         .post('/expenses')
+        .set(authHeaders)
         .send({
           vendorId: vendor.id,
           categoryId: category.id,
@@ -320,10 +342,12 @@ describe('Expenses e2e', () => {
 
       await request(http)
         .patch(`/expenses/${expenseA.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       await request(http)
         .post('/expenses')
+        .set(authHeaders)
         .send({
           vendorId: vendor.id,
           categoryId: category.id,
@@ -336,6 +360,7 @@ describe('Expenses e2e', () => {
 
       const listResponse = await request(http)
         .get('/expenses/archived')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const expenses = listResponse.body as ExpenseResponse[];
@@ -365,6 +390,7 @@ describe('Expenses e2e', () => {
 
       const createResponse = await request(http)
         .post('/expenses')
+        .set(authHeaders)
         .send(input)
         .expect(HttpStatus.CREATED);
 
@@ -385,6 +411,7 @@ describe('Expenses e2e', () => {
 
       const listResponse = await request(http)
         .get('/expenses')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const expenses = listResponse.body as ExpenseResponse[];
@@ -401,6 +428,7 @@ describe('Expenses e2e', () => {
 
       const response = await request(http)
         .post('/expenses')
+        .set(authHeaders)
         .send({
           vendorId: vendor.id,
           description: 'Taxi',
@@ -419,6 +447,7 @@ describe('Expenses e2e', () => {
     it('rejects expense creation with invalid payload and returns 400', async () => {
       const response = await request(http)
         .post('/expenses')
+        .set(authHeaders)
         .send({
           description: 'Office supplies',
           amount: 1250.5,
@@ -447,6 +476,7 @@ describe('Expenses e2e', () => {
 
       const response = await request(http)
         .post('/expenses')
+        .set(authHeaders)
         .send({
           vendorId: randomUUID(),
           categoryId: category.id,
@@ -466,6 +496,7 @@ describe('Expenses e2e', () => {
 
       const response = await request(http)
         .post('/expenses')
+        .set(authHeaders)
         .send({
           vendorId: vendor.id,
           categoryId: randomUUID(),
@@ -488,6 +519,7 @@ describe('Expenses e2e', () => {
 
       const createResponse = await request(http)
         .post('/expenses')
+        .set(authHeaders)
         .send({
           vendorId: vendor.id,
           categoryId: category.id,
@@ -502,6 +534,7 @@ describe('Expenses e2e', () => {
 
       const updateResponse = await request(http)
         .patch(`/expenses/${createdExpense.id}`)
+        .set(authHeaders)
         .send({
           description: 'Office supplies and toner',
           amount: 1400.75,
@@ -517,6 +550,7 @@ describe('Expenses e2e', () => {
 
       const getResponse = await request(http)
         .get(`/expenses/${createdExpense.id}`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       expect(getResponse.body).toMatchObject({
@@ -531,6 +565,7 @@ describe('Expenses e2e', () => {
 
       const createResponse = await request(http)
         .post('/expenses')
+        .set(authHeaders)
         .send({
           vendorId: vendor.id,
           description: 'Taxi',
@@ -544,6 +579,7 @@ describe('Expenses e2e', () => {
 
       const response = await request(http)
         .patch(`/expenses/${createdExpense.id}`)
+        .set(authHeaders)
         .send({})
         .expect(HttpStatus.BAD_REQUEST);
 
@@ -561,6 +597,7 @@ describe('Expenses e2e', () => {
     it('returns 404 when the expense does not exist', async () => {
       const response = await request(http)
         .patch(`/expenses/${randomUUID()}`)
+        .set(authHeaders)
         .send({
           description: 'Updated description',
         })
@@ -573,6 +610,7 @@ describe('Expenses e2e', () => {
     it('returns 400 when the expense ID is not a valid UUID', async () => {
       const response = await request(http)
         .patch('/expenses/not-a-uuid')
+        .set(authHeaders)
         .send({
           description: 'Updated description',
         })
@@ -588,6 +626,7 @@ describe('Expenses e2e', () => {
 
       const createResponse = await request(http)
         .post('/expenses')
+        .set(authHeaders)
         .send({
           vendorId: vendor.id,
           categoryId: category.id,
@@ -602,6 +641,7 @@ describe('Expenses e2e', () => {
 
       const response = await request(http)
         .patch(`/expenses/${createdExpense.id}`)
+        .set(authHeaders)
         .send({
           vendorId: randomUUID(),
         })
@@ -617,6 +657,7 @@ describe('Expenses e2e', () => {
 
       const createResponse = await request(http)
         .post('/expenses')
+        .set(authHeaders)
         .send({
           vendorId: vendor.id,
           categoryId: category.id,
@@ -631,6 +672,7 @@ describe('Expenses e2e', () => {
 
       const response = await request(http)
         .patch(`/expenses/${createdExpense.id}`)
+        .set(authHeaders)
         .send({
           categoryId: randomUUID(),
         })
@@ -647,6 +689,7 @@ describe('Expenses e2e', () => {
 
       const createResponse = await request(http)
         .post('/expenses')
+        .set(authHeaders)
         .send({
           vendorId: vendor.id,
           description: 'Taxi',
@@ -660,10 +703,12 @@ describe('Expenses e2e', () => {
 
       await request(http)
         .patch(`/expenses/${createdExpense.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const archivedResponse = await request(http)
         .get('/expenses/archived')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const archivedExpenses = archivedResponse.body as ExpenseResponse[];
@@ -675,6 +720,7 @@ describe('Expenses e2e', () => {
     it('returns 400 when the expense ID is not a valid UUID', async () => {
       const response = await request(http)
         .patch('/expenses/not-a-uuid/archive')
+        .set(authHeaders)
         .expect(HttpStatus.BAD_REQUEST);
 
       const error = response.body as ErrorResponse;
@@ -684,6 +730,7 @@ describe('Expenses e2e', () => {
     it('returns 404 when the expense does not exist', async () => {
       const response = await request(http)
         .patch(`/expenses/${randomUUID()}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.NOT_FOUND);
 
       const error = response.body as ErrorResponse;
@@ -695,6 +742,7 @@ describe('Expenses e2e', () => {
 
       const createResponse = await request(http)
         .post('/expenses')
+        .set(authHeaders)
         .send({
           vendorId: vendor.id,
           description: 'Taxi',
@@ -708,10 +756,12 @@ describe('Expenses e2e', () => {
 
       await request(http)
         .patch(`/expenses/${createdExpense.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const response = await request(http)
         .patch(`/expenses/${createdExpense.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.CONFLICT);
 
       expect(response.body).toEqual({
@@ -734,6 +784,7 @@ describe('Expenses e2e', () => {
 
       const createResponse = await request(http)
         .post('/expenses')
+        .set(authHeaders)
         .send({
           vendorId: vendor.id,
           description: 'Taxi',
@@ -747,14 +798,17 @@ describe('Expenses e2e', () => {
 
       await request(http)
         .patch(`/expenses/${createdExpense.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       await request(http)
         .patch(`/expenses/${createdExpense.id}/restore`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const response = await request(http)
         .get(`/expenses/${createdExpense.id}`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       expect(response.body).toMatchObject({
@@ -766,6 +820,7 @@ describe('Expenses e2e', () => {
     it('returns 400 when the expense ID is not a valid UUID', async () => {
       const response = await request(http)
         .patch('/expenses/not-a-uuid/restore')
+        .set(authHeaders)
         .expect(HttpStatus.BAD_REQUEST);
 
       const error = response.body as ErrorResponse;
@@ -775,6 +830,7 @@ describe('Expenses e2e', () => {
     it('returns 404 when the expense does not exist', async () => {
       const response = await request(http)
         .patch(`/expenses/${randomUUID()}/restore`)
+        .set(authHeaders)
         .expect(HttpStatus.NOT_FOUND);
 
       const error = response.body as ErrorResponse;
@@ -786,6 +842,7 @@ describe('Expenses e2e', () => {
 
       const createResponse = await request(http)
         .post('/expenses')
+        .set(authHeaders)
         .send({
           vendorId: vendor.id,
           description: 'Taxi',
@@ -799,6 +856,7 @@ describe('Expenses e2e', () => {
 
       const response = await request(http)
         .patch(`/expenses/${createdExpense.id}/restore`)
+        .set(authHeaders)
         .expect(HttpStatus.CONFLICT);
 
       expect(response.body).toEqual({
@@ -819,6 +877,7 @@ describe('Expenses e2e', () => {
 
       const createResponse = await request(http)
         .post('/expenses')
+        .set(authHeaders)
         .send({
           vendorId: vendor.id,
           description: 'Taxi',
@@ -832,14 +891,17 @@ describe('Expenses e2e', () => {
 
       await request(http)
         .patch(`/expenses/${createdExpense.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       await request(http)
         .patch(`/vendors/${vendor.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const response = await request(http)
         .patch(`/expenses/${createdExpense.id}/restore`)
+        .set(authHeaders)
         .expect(HttpStatus.NOT_FOUND);
 
       const error = response.body as ErrorResponse;
@@ -852,6 +914,7 @@ describe('Expenses e2e', () => {
 
       const createResponse = await request(http)
         .post('/expenses')
+        .set(authHeaders)
         .send({
           vendorId: vendor.id,
           categoryId: category.id,
@@ -866,14 +929,17 @@ describe('Expenses e2e', () => {
 
       await request(http)
         .patch(`/expenses/${createdExpense.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       await request(http)
         .patch(`/expense-categories/${category.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const response = await request(http)
         .patch(`/expenses/${createdExpense.id}/restore`)
+        .set(authHeaders)
         .expect(HttpStatus.NOT_FOUND);
 
       const error = response.body as ErrorResponse;
@@ -887,6 +953,7 @@ describe('Expenses e2e', () => {
 
       const createResponse = await request(http)
         .post('/expenses')
+        .set(authHeaders)
         .send({
           vendorId: vendor.id,
           description: 'Taxi',
@@ -900,10 +967,12 @@ describe('Expenses e2e', () => {
 
       await request(http)
         .patch(`/expenses/${createdExpense.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       await request(http)
         .delete(`/expenses/${createdExpense.id}`)
+        .set(authHeaders)
         .expect(HttpStatus.NO_CONTENT);
 
       const deletedExpense = await prisma.expense.findUnique({
@@ -918,6 +987,7 @@ describe('Expenses e2e', () => {
 
       const createResponse = await request(http)
         .post('/expenses')
+        .set(authHeaders)
         .send({
           vendorId: vendor.id,
           description: 'Taxi',
@@ -931,6 +1001,7 @@ describe('Expenses e2e', () => {
 
       const response = await request(http)
         .delete(`/expenses/${createdExpense.id}`)
+        .set(authHeaders)
         .expect(HttpStatus.CONFLICT);
 
       expect(response.body).toMatchObject({
@@ -949,6 +1020,7 @@ describe('Expenses e2e', () => {
     it('returns 400 when the expense ID is not a valid UUID', async () => {
       const response = await request(http)
         .delete('/expenses/not-a-uuid')
+        .set(authHeaders)
         .expect(HttpStatus.BAD_REQUEST);
 
       const error = response.body as ErrorResponse;
@@ -958,6 +1030,7 @@ describe('Expenses e2e', () => {
     it('returns 404 when the expense does not exist', async () => {
       const response = await request(http)
         .delete(`/expenses/${randomUUID()}`)
+        .set(authHeaders)
         .expect(HttpStatus.NOT_FOUND);
 
       const error = response.body as ErrorResponse;

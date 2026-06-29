@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import type { Server } from 'node:http';
 import type { PrismaService } from '../prisma/prisma.service';
 import { createTestApp, resetDatabase } from './test-app';
+import { createAuthHeader } from './test-auth';
 
 type ExpenseCategoryResponse = {
   id: string;
@@ -26,6 +27,7 @@ describe('ExpenseCategories e2e', () => {
   let app: INestApplication;
   let http: Server;
   let prisma: PrismaService;
+  let authHeaders: Record<string, string>;
 
   beforeAll(async () => {
     ({ app, http, prisma } = await createTestApp());
@@ -33,6 +35,7 @@ describe('ExpenseCategories e2e', () => {
 
   beforeEach(async () => {
     await resetDatabase(prisma);
+    authHeaders = await createAuthHeader(http);
   });
 
   afterAll(async () => {
@@ -44,6 +47,7 @@ describe('ExpenseCategories e2e', () => {
     it('returns empty list initially', async () => {
       const response = await request(http)
         .get('/expense-categories')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       expect(response.body).toEqual([]);
@@ -57,6 +61,7 @@ describe('ExpenseCategories e2e', () => {
 
       const createResponse = await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send(inputA)
         .expect(HttpStatus.CREATED);
 
@@ -64,6 +69,7 @@ describe('ExpenseCategories e2e', () => {
 
       await request(http)
         .patch(`/expense-categories/${createdCategory.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const inputB = {
@@ -73,11 +79,13 @@ describe('ExpenseCategories e2e', () => {
 
       await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send(inputB)
         .expect(HttpStatus.CREATED);
 
       const listResponse = await request(http)
         .get('/expense-categories')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const categories = listResponse.body as ExpenseCategoryResponse[];
@@ -93,6 +101,7 @@ describe('ExpenseCategories e2e', () => {
     it('lists the most recently created active expense categories first', async () => {
       const createResponseA = await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send({
           name: 'Office',
           color: '#64748b',
@@ -108,6 +117,7 @@ describe('ExpenseCategories e2e', () => {
 
       const createResponseB = await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send({
           name: 'Travel',
           color: '#0f766e',
@@ -123,6 +133,7 @@ describe('ExpenseCategories e2e', () => {
 
       const listResponse = await request(http)
         .get('/expense-categories')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const categories = listResponse.body as ExpenseCategoryResponse[];
@@ -143,6 +154,7 @@ describe('ExpenseCategories e2e', () => {
 
       const createResponse = await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send(input)
         .expect(HttpStatus.CREATED);
 
@@ -150,6 +162,7 @@ describe('ExpenseCategories e2e', () => {
 
       const response = await request(http)
         .get(`/expense-categories/${createdCategory.id}`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const category = response.body as ExpenseCategoryResponse;
@@ -162,6 +175,7 @@ describe('ExpenseCategories e2e', () => {
     it('returns 400 when the category ID is not a valid UUID', async () => {
       const response = await request(http)
         .get('/expense-categories/not-a-uuid')
+        .set(authHeaders)
         .expect(HttpStatus.BAD_REQUEST);
 
       const error = response.body as ErrorResponse;
@@ -171,6 +185,7 @@ describe('ExpenseCategories e2e', () => {
     it('returns 404 when the category does not exist', async () => {
       const response = await request(http)
         .get(`/expense-categories/${randomUUID()}`)
+        .set(authHeaders)
         .expect(HttpStatus.NOT_FOUND);
 
       const error = response.body as ErrorResponse;
@@ -180,6 +195,7 @@ describe('ExpenseCategories e2e', () => {
     it('returns 404 when the category is archived', async () => {
       const createResponse = await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send({
           name: 'Office',
           color: '#64748b',
@@ -190,10 +206,12 @@ describe('ExpenseCategories e2e', () => {
 
       await request(http)
         .patch(`/expense-categories/${createdCategory.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const response = await request(http)
         .get(`/expense-categories/${createdCategory.id}`)
+        .set(authHeaders)
         .expect(HttpStatus.NOT_FOUND);
 
       const error = response.body as ErrorResponse;
@@ -205,6 +223,7 @@ describe('ExpenseCategories e2e', () => {
     it('returns an empty array when no archived categories exist', async () => {
       const response = await request(http)
         .get('/expense-categories/archived')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       expect(response.body).toEqual([]);
@@ -218,6 +237,7 @@ describe('ExpenseCategories e2e', () => {
 
       const createResponse = await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send(inputA)
         .expect(HttpStatus.CREATED);
 
@@ -225,6 +245,7 @@ describe('ExpenseCategories e2e', () => {
 
       await request(http)
         .patch(`/expense-categories/${createdCategory.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const inputB = {
@@ -234,11 +255,13 @@ describe('ExpenseCategories e2e', () => {
 
       await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send(inputB)
         .expect(HttpStatus.CREATED);
 
       const listResponse = await request(http)
         .get('/expense-categories/archived')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const categories = listResponse.body as ExpenseCategoryResponse[];
@@ -254,6 +277,7 @@ describe('ExpenseCategories e2e', () => {
     it('lists the most recently archived categories first', async () => {
       const createResponseA = await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send({
           name: 'Office',
           color: '#64748b',
@@ -264,6 +288,7 @@ describe('ExpenseCategories e2e', () => {
 
       await request(http)
         .patch(`/expense-categories/${categoryA.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       await prisma.expenseCategory.update({
@@ -273,6 +298,7 @@ describe('ExpenseCategories e2e', () => {
 
       const createResponseB = await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send({
           name: 'Travel',
           color: '#0f766e',
@@ -283,6 +309,7 @@ describe('ExpenseCategories e2e', () => {
 
       await request(http)
         .patch(`/expense-categories/${categoryB.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       await prisma.expenseCategory.update({
@@ -292,6 +319,7 @@ describe('ExpenseCategories e2e', () => {
 
       const listResponse = await request(http)
         .get('/expense-categories/archived')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const categories = listResponse.body as ExpenseCategoryResponse[];
@@ -312,6 +340,7 @@ describe('ExpenseCategories e2e', () => {
 
       const createResponse = await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send(input)
         .expect(HttpStatus.CREATED);
 
@@ -328,6 +357,7 @@ describe('ExpenseCategories e2e', () => {
 
       const listResponse = await request(http)
         .get('/expense-categories')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const categories = listResponse.body as ExpenseCategoryResponse[];
@@ -343,6 +373,7 @@ describe('ExpenseCategories e2e', () => {
     it('rejects expense category creation with invalid payload and returns 400', async () => {
       const response = await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send({
           color: '#64748b',
         })
@@ -366,6 +397,7 @@ describe('ExpenseCategories e2e', () => {
 
       const listResponse = await request(http)
         .get('/expense-categories')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       expect(listResponse.body).toHaveLength(0);
@@ -374,6 +406,7 @@ describe('ExpenseCategories e2e', () => {
     it('rejects expense category creation with invalid color and returns 400', async () => {
       const response = await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send({
           name: 'Office',
           color: 'blue',
@@ -399,6 +432,7 @@ describe('ExpenseCategories e2e', () => {
     it('rejects duplicate category name and returns 409', async () => {
       await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send({
           name: 'Office',
           color: '#64748b',
@@ -407,6 +441,7 @@ describe('ExpenseCategories e2e', () => {
 
       const response = await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send({
           name: 'Office',
           color: '#0f766e',
@@ -441,6 +476,7 @@ describe('ExpenseCategories e2e', () => {
 
       const createResponse = await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send(createInput)
         .expect(HttpStatus.CREATED);
 
@@ -448,6 +484,7 @@ describe('ExpenseCategories e2e', () => {
 
       const updateResponse = await request(http)
         .patch(`/expense-categories/${createdCategory.id}`)
+        .set(authHeaders)
         .send(updateInput)
         .expect(HttpStatus.OK);
 
@@ -459,6 +496,7 @@ describe('ExpenseCategories e2e', () => {
 
       const getResponse = await request(http)
         .get(`/expense-categories/${createdCategory.id}`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       expect(getResponse.body).toMatchObject({
@@ -471,6 +509,7 @@ describe('ExpenseCategories e2e', () => {
     it('returns 400 when the request body is empty', async () => {
       const createResponse = await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send({
           name: 'Office',
           color: '#64748b',
@@ -481,6 +520,7 @@ describe('ExpenseCategories e2e', () => {
 
       const response = await request(http)
         .patch(`/expense-categories/${createdCategory.id}`)
+        .set(authHeaders)
         .send({})
         .expect(HttpStatus.BAD_REQUEST);
 
@@ -498,6 +538,7 @@ describe('ExpenseCategories e2e', () => {
     it('returns 400 when the category ID is not a valid UUID', async () => {
       const response = await request(http)
         .patch('/expense-categories/not-a-uuid')
+        .set(authHeaders)
         .send({
           name: 'Travel',
           color: '#0f766e',
@@ -511,6 +552,7 @@ describe('ExpenseCategories e2e', () => {
     it('returns 404 when the category does not exist', async () => {
       const response = await request(http)
         .patch(`/expense-categories/${randomUUID()}`)
+        .set(authHeaders)
         .send({
           name: 'Travel',
           color: '#0f766e',
@@ -524,6 +566,7 @@ describe('ExpenseCategories e2e', () => {
     it('returns 409 when category name is already in use', async () => {
       const createResponseA = await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send({
           name: 'Office',
           color: '#64748b',
@@ -534,6 +577,7 @@ describe('ExpenseCategories e2e', () => {
 
       await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send({
           name: 'Travel',
           color: '#0f766e',
@@ -542,6 +586,7 @@ describe('ExpenseCategories e2e', () => {
 
       const response = await request(http)
         .patch(`/expense-categories/${categoryA.id}`)
+        .set(authHeaders)
         .send({
           name: 'Travel',
         })
@@ -565,6 +610,7 @@ describe('ExpenseCategories e2e', () => {
     it('archives an active expense category', async () => {
       const createResponse = await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send({
           name: 'Office',
           color: '#64748b',
@@ -575,10 +621,12 @@ describe('ExpenseCategories e2e', () => {
 
       await request(http)
         .patch(`/expense-categories/${createdCategory.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const archivedResponse = await request(http)
         .get('/expense-categories/archived')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const archivedCategories =
@@ -591,6 +639,7 @@ describe('ExpenseCategories e2e', () => {
     it('returns 400 when the category ID is not a valid UUID', async () => {
       const response = await request(http)
         .patch('/expense-categories/not-a-uuid/archive')
+        .set(authHeaders)
         .expect(HttpStatus.BAD_REQUEST);
 
       const error = response.body as ErrorResponse;
@@ -600,6 +649,7 @@ describe('ExpenseCategories e2e', () => {
     it('returns 404 when the category does not exist', async () => {
       const response = await request(http)
         .patch(`/expense-categories/${randomUUID()}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.NOT_FOUND);
 
       const error = response.body as ErrorResponse;
@@ -609,6 +659,7 @@ describe('ExpenseCategories e2e', () => {
     it('returns 409 when the category is already archived', async () => {
       const createResponse = await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send({
           name: 'Office',
           color: '#64748b',
@@ -619,10 +670,12 @@ describe('ExpenseCategories e2e', () => {
 
       await request(http)
         .patch(`/expense-categories/${createdCategory.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const response = await request(http)
         .patch(`/expense-categories/${createdCategory.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.CONFLICT);
 
       expect(response.body).toEqual({
@@ -643,6 +696,7 @@ describe('ExpenseCategories e2e', () => {
     it('restores an archived expense category', async () => {
       const createResponse = await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send({
           name: 'Office',
           color: '#64748b',
@@ -653,14 +707,17 @@ describe('ExpenseCategories e2e', () => {
 
       await request(http)
         .patch(`/expense-categories/${createdCategory.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       await request(http)
         .patch(`/expense-categories/${createdCategory.id}/restore`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const response = await request(http)
         .get(`/expense-categories/${createdCategory.id}`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       expect(response.body).toMatchObject({
@@ -674,6 +731,7 @@ describe('ExpenseCategories e2e', () => {
     it('returns 400 when the category ID is not a valid UUID', async () => {
       const response = await request(http)
         .patch('/expense-categories/not-a-uuid/restore')
+        .set(authHeaders)
         .expect(HttpStatus.BAD_REQUEST);
 
       const error = response.body as ErrorResponse;
@@ -683,6 +741,7 @@ describe('ExpenseCategories e2e', () => {
     it('returns 404 when the category does not exist', async () => {
       const response = await request(http)
         .patch(`/expense-categories/${randomUUID()}/restore`)
+        .set(authHeaders)
         .expect(HttpStatus.NOT_FOUND);
 
       const error = response.body as ErrorResponse;
@@ -692,6 +751,7 @@ describe('ExpenseCategories e2e', () => {
     it('returns 409 when the category is already active', async () => {
       const createResponse = await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send({
           name: 'Office',
           color: '#64748b',
@@ -702,6 +762,7 @@ describe('ExpenseCategories e2e', () => {
 
       const response = await request(http)
         .patch(`/expense-categories/${createdCategory.id}/restore`)
+        .set(authHeaders)
         .expect(HttpStatus.CONFLICT);
 
       expect(response.body).toEqual({
@@ -722,6 +783,7 @@ describe('ExpenseCategories e2e', () => {
     it('deletes an archived expense category', async () => {
       const createResponse = await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send({
           name: 'Office',
           color: '#64748b',
@@ -732,10 +794,12 @@ describe('ExpenseCategories e2e', () => {
 
       await request(http)
         .patch(`/expense-categories/${createdCategory.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       await request(http)
         .delete(`/expense-categories/${createdCategory.id}`)
+        .set(authHeaders)
         .expect(HttpStatus.NO_CONTENT);
 
       const deletedCategory = await prisma.expenseCategory.findUnique({
@@ -748,6 +812,7 @@ describe('ExpenseCategories e2e', () => {
     it('returns 404 when the category does not exist', async () => {
       const response = await request(http)
         .delete(`/expense-categories/${randomUUID()}`)
+        .set(authHeaders)
         .expect(HttpStatus.NOT_FOUND);
 
       const error = response.body as ErrorResponse;
@@ -757,6 +822,7 @@ describe('ExpenseCategories e2e', () => {
     it('returns 409 when the category is still active', async () => {
       const createResponse = await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send({
           name: 'Office',
           color: '#64748b',
@@ -767,6 +833,7 @@ describe('ExpenseCategories e2e', () => {
 
       const response = await request(http)
         .delete(`/expense-categories/${createdCategory.id}`)
+        .set(authHeaders)
         .expect(HttpStatus.CONFLICT);
 
       expect(response.body).toMatchObject({
@@ -786,6 +853,7 @@ describe('ExpenseCategories e2e', () => {
     it('returns 400 when the category ID is not a valid UUID', async () => {
       const response = await request(http)
         .delete('/expense-categories/not-a-uuid')
+        .set(authHeaders)
         .expect(HttpStatus.BAD_REQUEST);
 
       const error = response.body as ErrorResponse;
@@ -795,6 +863,7 @@ describe('ExpenseCategories e2e', () => {
     it('returns 409 when the category is still linked to expenses', async () => {
       const createVendorResponse = await request(http)
         .post('/vendors')
+        .set(authHeaders)
         .send({
           name: 'Atlas Office Supplies',
           email: 'contact@atlasoffice.com',
@@ -808,6 +877,7 @@ describe('ExpenseCategories e2e', () => {
 
       const createCategoryResponse = await request(http)
         .post('/expense-categories')
+        .set(authHeaders)
         .send({
           name: 'Office',
           color: '#64748b',
@@ -829,10 +899,12 @@ describe('ExpenseCategories e2e', () => {
 
       await request(http)
         .patch(`/expense-categories/${category.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const response = await request(http)
         .delete(`/expense-categories/${category.id}`)
+        .set(authHeaders)
         .expect(HttpStatus.CONFLICT);
 
       expect(response.body).toMatchObject({
