@@ -6,11 +6,13 @@ import { createTestApp, resetDatabase } from './test-app';
 import type { ExpenseReport } from '../src/reports/reports.service';
 import { rm } from 'node:fs/promises';
 import { getUploadsRoot } from '../src/proofs/proofs-paths';
+import { createAuthHeader } from './test-auth';
 
 describe('Reports e2e', () => {
   let app: INestApplication;
   let http: Server;
   let prisma: PrismaService;
+  let authHeaders: Record<string, string>;
 
   beforeAll(async () => {
     ({ app, http, prisma } = await createTestApp());
@@ -19,6 +21,7 @@ describe('Reports e2e', () => {
   beforeEach(async () => {
     await resetDatabase(prisma);
     await rm(getUploadsRoot(), { recursive: true, force: true });
+    authHeaders = await createAuthHeader(http);
   });
 
   afterAll(async () => {
@@ -36,6 +39,7 @@ describe('Reports e2e', () => {
   }) {
     const response = await request(http)
       .post('/vendors')
+      .set(authHeaders)
       .send(input)
       .expect(HttpStatus.CREATED);
 
@@ -45,6 +49,7 @@ describe('Reports e2e', () => {
   async function createCategory(input: { name: string; color: string }) {
     const response = await request(http)
       .post('/expense-categories')
+      .set(authHeaders)
       .send(input)
       .expect(HttpStatus.CREATED);
 
@@ -61,6 +66,7 @@ describe('Reports e2e', () => {
   }) {
     const response = await request(http)
       .post('/expenses')
+      .set(authHeaders)
       .send(input)
       .expect(HttpStatus.CREATED);
 
@@ -71,6 +77,7 @@ describe('Reports e2e', () => {
     it('returns an empty expense report initially', async () => {
       const response = await request(http)
         .get('/reports/expenses')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       expect(response.body).toEqual({
@@ -122,6 +129,7 @@ describe('Reports e2e', () => {
 
       const response = await request(http)
         .get('/reports/expenses')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const report = response.body as ExpenseReport;
@@ -199,6 +207,7 @@ describe('Reports e2e', () => {
 
       const response = await request(http)
         .get('/reports/expenses')
+        .set(authHeaders)
         .query({
           dateFrom: '2026-06-20',
           dateTo: '2026-06-21',
@@ -230,6 +239,7 @@ describe('Reports e2e', () => {
     it('returns 400 when dateFrom is after dateTo', async () => {
       const response = await request(http)
         .get('/reports/expenses')
+        .set(authHeaders)
         .query({
           dateFrom: '2026-06-22',
           dateTo: '2026-06-21',

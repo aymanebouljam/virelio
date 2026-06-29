@@ -8,6 +8,7 @@ import {
   ParseUUIDPipe,
   Post,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -17,12 +18,14 @@ import { extname } from 'node:path';
 import { diskStorage } from 'multer';
 import { ProofsService } from './proofs.service';
 import { getTmpUploadDir } from './proofs-paths';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 function buildStoredFilename(originalName: string) {
   const extension = extname(originalName);
   return `${randomUUID()}${extension}`;
 }
 
+@UseGuards(JwtAuthGuard)
 @Controller('expenses/:expenseId/proofs')
 export class ProofsController {
   constructor(private readonly proofsService: ProofsService) {}

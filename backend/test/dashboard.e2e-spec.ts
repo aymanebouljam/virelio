@@ -6,11 +6,13 @@ import { createTestApp, resetDatabase } from './test-app';
 import { DashboardSummary } from '../src/dashboard/dashboard.service';
 import { getUploadsRoot } from '../src/proofs/proofs-paths';
 import { rm } from 'node:fs/promises';
+import { createAuthHeader } from './test-auth';
 
 describe('Dashboard e2e', () => {
   let app: INestApplication;
   let http: Server;
   let prisma: PrismaService;
+  let authHeaders: Record<string, string>;
 
   beforeAll(async () => {
     ({ app, http, prisma } = await createTestApp());
@@ -19,6 +21,7 @@ describe('Dashboard e2e', () => {
   beforeEach(async () => {
     await resetDatabase(prisma);
     await rm(getUploadsRoot(), { recursive: true, force: true });
+    authHeaders = await createAuthHeader(http);
   });
 
   afterAll(async () => {
@@ -36,6 +39,7 @@ describe('Dashboard e2e', () => {
   }) {
     const response = await request(http)
       .post('/vendors')
+      .set(authHeaders)
       .send(input)
       .expect(HttpStatus.CREATED);
 
@@ -45,6 +49,7 @@ describe('Dashboard e2e', () => {
   async function createCategory(input: { name: string; color: string }) {
     const response = await request(http)
       .post('/expense-categories')
+      .set(authHeaders)
       .send(input)
       .expect(HttpStatus.CREATED);
 
@@ -61,6 +66,7 @@ describe('Dashboard e2e', () => {
   }) {
     const response = await request(http)
       .post('/expenses')
+      .set(authHeaders)
       .send(input)
       .expect(HttpStatus.CREATED);
 
@@ -70,6 +76,7 @@ describe('Dashboard e2e', () => {
   async function uploadProof(expenseId: string, filename = 'receipt.jpg') {
     const response = await request(http)
       .post(`/expenses/${expenseId}/proofs`)
+      .set(authHeaders)
       .attach('file', Buffer.from('receipt content'), filename)
       .expect(HttpStatus.CREATED);
 
@@ -88,6 +95,7 @@ describe('Dashboard e2e', () => {
     it('returns an empty summary initially', async () => {
       const response = await request(http)
         .get('/dashboard/summary')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       expect(response.body).toEqual({
@@ -143,6 +151,7 @@ describe('Dashboard e2e', () => {
 
       const response = await request(http)
         .get('/dashboard/summary')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const summary = response.body as DashboardSummary;
@@ -238,10 +247,12 @@ describe('Dashboard e2e', () => {
 
       await request(http)
         .patch(`/expenses/${archivedExpense.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const response = await request(http)
         .get('/dashboard/summary')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const summary = response.body as DashboardSummary;
@@ -308,6 +319,7 @@ describe('Dashboard e2e', () => {
 
       const response = await request(http)
         .get('/dashboard/summary')
+        .set(authHeaders)
         .query({
           dateFrom: '2026-06-20',
           dateTo: '2026-06-21',
@@ -345,6 +357,7 @@ describe('Dashboard e2e', () => {
     it('returns 400 when dateFrom is after dateTo', async () => {
       const response = await request(http)
         .get('/dashboard/summary')
+        .set(authHeaders)
         .query({
           dateFrom: '2026-06-22',
           dateTo: '2026-06-21',

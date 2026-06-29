@@ -4,6 +4,7 @@ import { HttpStatus, type INestApplication } from '@nestjs/common';
 import type { Server } from 'node:http';
 import type { PrismaService } from '../prisma/prisma.service';
 import { randomUUID } from 'node:crypto';
+import { createAuthHeader } from './test-auth';
 
 type VendorResponse = {
   id: string;
@@ -29,6 +30,7 @@ describe('Vendors e2e', () => {
   let app: INestApplication;
   let http: Server;
   let prisma: PrismaService;
+  let authHeaders: Record<string, string>;
 
   beforeAll(async () => {
     ({ app, http, prisma } = await createTestApp());
@@ -36,6 +38,7 @@ describe('Vendors e2e', () => {
 
   beforeEach(async () => {
     await resetDatabase(prisma);
+    authHeaders = await createAuthHeader(http);
   });
 
   afterAll(async () => {
@@ -47,6 +50,7 @@ describe('Vendors e2e', () => {
     it('returns empty list initially', async () => {
       const listResponse = await request(http)
         .get('/vendors')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
       expect(listResponse.body).toEqual([]);
     });
@@ -61,12 +65,14 @@ describe('Vendors e2e', () => {
 
       const createResponse = await request(http)
         .post('/vendors')
+        .set(authHeaders)
         .send(inputA)
         .expect(HttpStatus.CREATED);
 
       const createdVendor = createResponse.body as VendorResponse;
       const archivedResponse = await request(http)
         .patch(`/vendors/${createdVendor.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const archivedVendor = archivedResponse.body as VendorResponse;
@@ -83,11 +89,13 @@ describe('Vendors e2e', () => {
 
       await request(http)
         .post('/vendors')
+        .set(authHeaders)
         .send(inputB)
         .expect(HttpStatus.CREATED);
 
       const listResponse = await request(http)
         .get('/vendors')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
       const vendorsList = listResponse.body as VendorResponse[];
       expect(vendorsList).toHaveLength(1);
@@ -108,6 +116,7 @@ describe('Vendors e2e', () => {
 
       const createResponseA = await request(http)
         .post('/vendors')
+        .set(authHeaders)
         .send(inputA)
         .expect(HttpStatus.CREATED);
       const vendorA = createResponseA.body as VendorResponse;
@@ -126,6 +135,7 @@ describe('Vendors e2e', () => {
 
       const createResponseB = await request(http)
         .post('/vendors')
+        .set(authHeaders)
         .send(inputB)
         .expect(HttpStatus.CREATED);
       const vendorB = createResponseB.body as VendorResponse;
@@ -135,6 +145,7 @@ describe('Vendors e2e', () => {
       });
       const listResponse = await request(http)
         .get('/vendors')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
       const vendors = listResponse.body as VendorResponse[];
       expect(vendors.map(({ id }) => id)).toEqual([vendorB.id, vendorA.id]);
@@ -152,6 +163,7 @@ describe('Vendors e2e', () => {
 
       const createResponse = await request(http)
         .post('/vendors')
+        .set(authHeaders)
         .send(input)
         .expect(HttpStatus.CREATED);
 
@@ -159,6 +171,7 @@ describe('Vendors e2e', () => {
 
       const findOneResponse = await request(http)
         .get(`/vendors/${createdVendor.id}`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
       const vendor = findOneResponse.body as VendorResponse;
       expect(vendor).toMatchObject(input);
@@ -168,6 +181,7 @@ describe('Vendors e2e', () => {
     it('returns 400 when the vendor ID is not a valid UUID', async () => {
       const response = await request(http)
         .get('/vendors/not-a-uuid')
+        .set(authHeaders)
         .expect(HttpStatus.BAD_REQUEST);
       const error = response.body as ErrorResponse;
       expect(error.message).toBe('Validation failed (uuid v 4 is expected)');
@@ -175,6 +189,7 @@ describe('Vendors e2e', () => {
     it('returns 404 when the vendor does not exist', async () => {
       const response = await request(http)
         .get(`/vendors/${randomUUID()}`)
+        .set(authHeaders)
         .expect(HttpStatus.NOT_FOUND);
       const error = response.body as ErrorResponse;
       expect(error.message).toBe('Vendor not found');
@@ -190,6 +205,7 @@ describe('Vendors e2e', () => {
 
       const createResponse = await request(http)
         .post('/vendors')
+        .set(authHeaders)
         .send(input)
         .expect(HttpStatus.CREATED);
 
@@ -197,9 +213,11 @@ describe('Vendors e2e', () => {
 
       await request(http)
         .patch(`/vendors/${createdVendor.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
       const response = await request(http)
         .get(`/vendors/${createdVendor.id}`)
+        .set(authHeaders)
         .expect(HttpStatus.NOT_FOUND);
 
       const error = response.body as ErrorResponse;
@@ -210,6 +228,7 @@ describe('Vendors e2e', () => {
     it('returns an empty array when no archived vendors exist', async () => {
       const listResponse = await request(http)
         .get('/vendors/archived')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
       expect(listResponse.body).toEqual([]);
     });
@@ -224,12 +243,14 @@ describe('Vendors e2e', () => {
 
       const createResponse = await request(http)
         .post('/vendors')
+        .set(authHeaders)
         .send(inputA)
         .expect(HttpStatus.CREATED);
 
       const createdVendor = createResponse.body as VendorResponse;
       const archivedResponse = await request(http)
         .patch(`/vendors/${createdVendor.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const archivedVendor = archivedResponse.body as VendorResponse;
@@ -246,11 +267,13 @@ describe('Vendors e2e', () => {
 
       await request(http)
         .post('/vendors')
+        .set(authHeaders)
         .send(inputB)
         .expect(HttpStatus.CREATED);
 
       const listResponse = await request(http)
         .get('/vendors/archived')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
       const vendorsList = listResponse.body as VendorResponse[];
       expect(vendorsList).toHaveLength(1);
@@ -271,11 +294,13 @@ describe('Vendors e2e', () => {
 
       const createResponseA = await request(http)
         .post('/vendors')
+        .set(authHeaders)
         .send(inputA)
         .expect(HttpStatus.CREATED);
       const vendorA = createResponseA.body as VendorResponse;
       await request(http)
         .patch(`/vendors/${vendorA.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       await prisma.vendor.update({
@@ -293,11 +318,13 @@ describe('Vendors e2e', () => {
 
       const createResponseB = await request(http)
         .post('/vendors')
+        .set(authHeaders)
         .send(inputB)
         .expect(HttpStatus.CREATED);
       const vendorB = createResponseB.body as VendorResponse;
       await request(http)
         .patch(`/vendors/${vendorB.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       await prisma.vendor.update({
@@ -306,6 +333,7 @@ describe('Vendors e2e', () => {
       });
       const listArchivedResponse = await request(http)
         .get('/vendors/archived')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
       const archivedVendors = listArchivedResponse.body as VendorResponse[];
       expect(archivedVendors.map(({ id }) => id)).toEqual([
@@ -326,6 +354,7 @@ describe('Vendors e2e', () => {
 
       const createResponse = await request(http)
         .post('/vendors')
+        .set(authHeaders)
         .send(input)
         .expect(HttpStatus.CREATED);
 
@@ -343,6 +372,7 @@ describe('Vendors e2e', () => {
 
       const listResponse = await request(http)
         .get('/vendors')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const vendorsList = listResponse.body as VendorResponse[];
@@ -364,6 +394,7 @@ describe('Vendors e2e', () => {
 
       const response = await request(http)
         .post('/vendors')
+        .set(authHeaders)
         .send(input)
         .expect(HttpStatus.BAD_REQUEST);
 
@@ -384,6 +415,7 @@ describe('Vendors e2e', () => {
 
       const listResponse = await request(http)
         .get('/vendors')
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const vendorsList = listResponse.body as VendorResponse[];
@@ -408,6 +440,7 @@ describe('Vendors e2e', () => {
 
         const createResponse = await request(http)
           .post('/vendors')
+          .set(authHeaders)
           .send(inputA)
           .expect(HttpStatus.CREATED);
         const createdVendor = createResponse.body as VendorResponse;
@@ -423,6 +456,7 @@ describe('Vendors e2e', () => {
 
         const response = await request(http)
           .post('/vendors')
+          .set(authHeaders)
           .send(inputB)
           .expect(HttpStatus.CONFLICT);
 
@@ -439,6 +473,7 @@ describe('Vendors e2e', () => {
         ]);
         const listResponse = await request(http)
           .get('/vendors')
+          .set(authHeaders)
           .expect(HttpStatus.OK);
 
         const vendorsList = listResponse.body as VendorResponse[];
@@ -474,6 +509,7 @@ describe('Vendors e2e', () => {
 
       const createResponse = await request(http)
         .post('/vendors')
+        .set(authHeaders)
         .send(createInput)
         .expect(HttpStatus.CREATED);
       const createdVendor = createResponse.body as VendorResponse;
@@ -484,6 +520,7 @@ describe('Vendors e2e', () => {
 
       const updateResponse = await request(http)
         .patch(`/vendors/${createdVendor.id}`)
+        .set(authHeaders)
         .send(updateInput)
         .expect(HttpStatus.OK);
 
@@ -495,6 +532,7 @@ describe('Vendors e2e', () => {
 
       const getResponse = await request(http)
         .get(`/vendors/${createdVendor.id}`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const vendor = getResponse.body as VendorResponse;
@@ -516,6 +554,7 @@ describe('Vendors e2e', () => {
 
       const createResponse = await request(http)
         .post('/vendors')
+        .set(authHeaders)
         .send(input)
         .expect(HttpStatus.CREATED);
       const createdVendor = createResponse.body as VendorResponse;
@@ -525,6 +564,7 @@ describe('Vendors e2e', () => {
       });
       const updateResponse = await request(http)
         .patch(`/vendors/${createdVendor.id}`)
+        .set(authHeaders)
         .send({})
         .expect(HttpStatus.BAD_REQUEST);
       const error = updateResponse.body as ErrorResponse;
@@ -547,6 +587,7 @@ describe('Vendors e2e', () => {
       };
       const response = await request(http)
         .patch('/vendors/not-a-uuid')
+        .set(authHeaders)
         .send(input)
         .expect(HttpStatus.BAD_REQUEST);
       const error = response.body as ErrorResponse;
@@ -562,6 +603,7 @@ describe('Vendors e2e', () => {
       };
       const response = await request(http)
         .patch(`/vendors/${randomUUID()}`)
+        .set(authHeaders)
         .send(input)
         .expect(HttpStatus.NOT_FOUND);
       const error = response.body as ErrorResponse;
@@ -585,6 +627,7 @@ describe('Vendors e2e', () => {
 
         const createResponse = await request(http)
           .post('/vendors')
+          .set(authHeaders)
           .send(inputA)
           .expect(HttpStatus.CREATED);
 
@@ -600,11 +643,13 @@ describe('Vendors e2e', () => {
 
         await request(http)
           .post('/vendors')
+          .set(authHeaders)
           .send(inputB)
           .expect(HttpStatus.CREATED);
 
         const response = await request(http)
           .patch(`/vendors/${createdVendor.id}`)
+          .set(authHeaders)
           .send({
             [field]: value,
           })
@@ -635,6 +680,7 @@ describe('Vendors e2e', () => {
 
       const createResponse = await request(http)
         .post('/vendors')
+        .set(authHeaders)
         .send(input)
         .expect(HttpStatus.CREATED);
       const createdVendor = createResponse.body as VendorResponse;
@@ -644,9 +690,11 @@ describe('Vendors e2e', () => {
       });
       await request(http)
         .patch(`/vendors/${createdVendor.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
       const archivedResponse = await request(http)
         .get(`/vendors/archived`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
       const archivedVendor = archivedResponse.body as VendorResponse[];
       expect(archivedVendor[0].id).toBe(createdVendor.id);
@@ -655,6 +703,7 @@ describe('Vendors e2e', () => {
     it('returns 400 when the vendor ID is not a valid UUID', async () => {
       const archiveResponse = await request(http)
         .patch('/vendors/not-a-uuid/archive')
+        .set(authHeaders)
         .expect(HttpStatus.BAD_REQUEST);
       const error = archiveResponse.body as ErrorResponse;
       expect(error.message).toBe('Validation failed (uuid v 4 is expected)');
@@ -662,6 +711,7 @@ describe('Vendors e2e', () => {
     it('returns 404 when the vendor does not exist', async () => {
       const archiveResponse = await request(http)
         .patch(`/vendors/${randomUUID()}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.NOT_FOUND);
       const error = archiveResponse.body as ErrorResponse;
       expect(error.message).toBe('Vendor not found');
@@ -677,14 +727,17 @@ describe('Vendors e2e', () => {
 
       const createResponse = await request(http)
         .post('/vendors')
+        .set(authHeaders)
         .send(input)
         .expect(HttpStatus.CREATED);
       const createdVendor = createResponse.body as VendorResponse;
       await request(http)
         .patch(`/vendors/${createdVendor.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
       const archiveResponse = await request(http)
         .patch(`/vendors/${createdVendor.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.CONFLICT);
       expect(archiveResponse.body).toEqual({
         message: 'Resource archived',
@@ -711,6 +764,7 @@ describe('Vendors e2e', () => {
 
       const createResponse = await request(http)
         .post('/vendors')
+        .set(authHeaders)
         .send(input)
         .expect(HttpStatus.CREATED);
       const createdVendor = createResponse.body as VendorResponse;
@@ -720,18 +774,22 @@ describe('Vendors e2e', () => {
       });
       await request(http)
         .patch(`/vendors/${createdVendor.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
       const archivedResponse = await request(http)
         .get(`/vendors/archived`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
       const archivedVendor = archivedResponse.body as VendorResponse[];
       expect(archivedVendor[0].id).toBe(createdVendor.id);
       expect(archivedVendor[0].archivedAt).not.toBeNull();
       await request(http)
         .patch(`/vendors/${createdVendor.id}/restore`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
       const restoreResponse = await request(http)
         .get(`/vendors/${createdVendor.id}`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
       const restoredVendor = restoreResponse.body as VendorResponse;
       expect(restoredVendor).toMatchObject({
@@ -743,6 +801,7 @@ describe('Vendors e2e', () => {
     it('returns 404 when the vendor does not exist', async () => {
       const restoreResponse = await request(http)
         .patch(`/vendors/${randomUUID()}/restore`)
+        .set(authHeaders)
         .expect(HttpStatus.NOT_FOUND);
       const error = restoreResponse.body as ErrorResponse;
       expect(error.message).toBe('Vendor not found');
@@ -758,11 +817,13 @@ describe('Vendors e2e', () => {
 
       const createResponse = await request(http)
         .post('/vendors')
+        .set(authHeaders)
         .send(input)
         .expect(HttpStatus.CREATED);
       const createdVendor = createResponse.body as VendorResponse;
       const restoreResponse = await request(http)
         .patch(`/vendors/${createdVendor.id}/restore`)
+        .set(authHeaders)
         .expect(HttpStatus.CONFLICT);
       expect(restoreResponse.body).toEqual({
         message: 'Resource not archived',
@@ -779,6 +840,7 @@ describe('Vendors e2e', () => {
     it('returns 400 when the vendor ID is not a valid UUID', async () => {
       const restoreResponse = await request(http)
         .patch('/vendors/not-a-uuid/restore')
+        .set(authHeaders)
         .expect(HttpStatus.BAD_REQUEST);
       const error = restoreResponse.body as ErrorResponse;
       expect(error.message).toBe('Validation failed (uuid v 4 is expected)');
@@ -795,15 +857,18 @@ describe('Vendors e2e', () => {
       };
       const createResponse = await request(http)
         .post('/vendors')
+        .set(authHeaders)
         .send(input)
         .expect(HttpStatus.CREATED);
       const createdVendor = createResponse.body as VendorResponse;
       await request(http)
         .patch(`/vendors/${createdVendor.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       await request(http)
         .delete(`/vendors/${createdVendor.id}`)
+        .set(authHeaders)
         .expect(HttpStatus.NO_CONTENT);
 
       const deletedVendor = await prisma.vendor.findUnique({
@@ -814,6 +879,7 @@ describe('Vendors e2e', () => {
     it('returns 404 when the vendor does not exist', async () => {
       const deleteResponse = await request(http)
         .delete(`/vendors/${randomUUID()}`)
+        .set(authHeaders)
         .expect(HttpStatus.NOT_FOUND);
       const error = deleteResponse.body as ErrorResponse;
       expect(error.message).toBe('Vendor not found');
@@ -828,12 +894,14 @@ describe('Vendors e2e', () => {
       };
       const createResponse = await request(http)
         .post('/vendors')
+        .set(authHeaders)
         .send(input)
         .expect(HttpStatus.CREATED);
       const createdVendor = createResponse.body as VendorResponse;
 
       const deleteResponse = await request(http)
         .delete(`/vendors/${createdVendor.id}`)
+        .set(authHeaders)
         .expect(HttpStatus.CONFLICT);
 
       const error = deleteResponse.body as ErrorResponse;
@@ -860,6 +928,7 @@ describe('Vendors e2e', () => {
     it('returns 400 when the vendor ID is not a valid UUID', async () => {
       const deleteResponse = await request(http)
         .delete('/vendors/not-a-uuid')
+        .set(authHeaders)
         .expect(HttpStatus.BAD_REQUEST);
       const error = deleteResponse.body as ErrorResponse;
       expect(error.message).toBe('Validation failed (uuid v 4 is expected)');
@@ -874,6 +943,7 @@ describe('Vendors e2e', () => {
       };
       const createResponse = await request(http)
         .post('/vendors')
+        .set(authHeaders)
         .send(input)
         .expect(HttpStatus.CREATED);
       const createdVendor = createResponse.body as VendorResponse;
@@ -889,10 +959,12 @@ describe('Vendors e2e', () => {
 
       await request(http)
         .patch(`/vendors/${createdVendor.id}/archive`)
+        .set(authHeaders)
         .expect(HttpStatus.OK);
 
       const deleteResponse = await request(http)
         .delete(`/vendors/${createdVendor.id}`)
+        .set(authHeaders)
         .expect(HttpStatus.CONFLICT);
 
       const error = deleteResponse.body as ErrorResponse;
