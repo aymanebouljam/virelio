@@ -1,3 +1,5 @@
+import { getAccessToken } from './auth/storage'
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 // Types
@@ -84,6 +86,7 @@ type FetchConfig = {
   method: HttpMethod
   headers: {
     Accept: string
+    Authorization?: string
     'Content-Type'?: string
   }
   body?: string | FormData
@@ -124,6 +127,11 @@ export async function apiConfig({
       config.headers['Content-Type'] = 'application/json'
       config.body = JSON.stringify(input)
     }
+  }
+
+  const accessToken = getAccessToken()
+  if (accessToken) {
+    config.headers['Authorization'] = `Bearer ${accessToken}`
   }
 
   const response = await fetch(url, config)

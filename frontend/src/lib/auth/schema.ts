@@ -42,3 +42,9 @@ export const authUserSchema = z.object({
 })
 
 export type AuthUser = z.infer<typeof authUserSchema>
+
+export const authSessionSchema = authUserSchema.extend({
+  accessToken: z.string().trim().min(1),
+})
+
+export type AuthSession = z.infer<typeof authSessionSchema>
