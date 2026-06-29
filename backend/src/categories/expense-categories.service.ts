@@ -16,9 +16,10 @@ import type { UpdateExpenseCategoryDto } from './dto/update-expense-category.dto
 export class ExpenseCategoriesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll(): Promise<ExpenseCategory[]> {
+  findAll(userId: string): Promise<ExpenseCategory[]> {
     return this.prisma.expenseCategory.findMany({
       where: {
+        userId,
         archivedAt: null,
       },
       orderBy: {
@@ -27,9 +28,10 @@ export class ExpenseCategoriesService {
     });
   }
 
-  findArchived(): Promise<ExpenseCategory[]> {
+  findArchived(userId: string): Promise<ExpenseCategory[]> {
     return this.prisma.expenseCategory.findMany({
       where: {
+        userId,
         archivedAt: {
           not: null,
         },
@@ -40,11 +42,12 @@ export class ExpenseCategoriesService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(userId: string, id: string) {
     try {
       return await this.prisma.expenseCategory.findUniqueOrThrow({
         where: {
           id,
+          userId,
           archivedAt: null,
         },
       });
@@ -59,10 +62,10 @@ export class ExpenseCategoriesService {
     }
   }
 
-  async findOneIncludingArchived(id: string) {
+  async findOneIncludingArchived(userId: string, id: string) {
     try {
       return await this.prisma.expenseCategory.findUniqueOrThrow({
-        where: { id },
+        where: { id, userId },
       });
     } catch (error) {
       if (
@@ -75,10 +78,13 @@ export class ExpenseCategoriesService {
     }
   }
 
-  async create(body: CreateExpenseCategoryDto) {
+  async create(userId: string, body: CreateExpenseCategoryDto) {
     try {
       return await this.prisma.expenseCategory.create({
-        data: body,
+        data: {
+          ...body,
+          userId,
+        },
       });
     } catch (error) {
       if (
@@ -91,7 +97,7 @@ export class ExpenseCategoriesService {
     }
   }
 
-  async update(id: string, body: UpdateExpenseCategoryDto) {
+  async update(userId: string, id: string, body: UpdateExpenseCategoryDto) {
     if (Object.values(body).every((value) => value === undefined)) {
       throw new BadRequestException({
         message: 'Validation failed',
@@ -108,7 +114,7 @@ export class ExpenseCategoriesService {
 
     try {
       return await this.prisma.expenseCategory.update({
-        where: { id },
+        where: { id, userId },
         data: body,
       });
     } catch (error) {
@@ -124,8 +130,8 @@ export class ExpenseCategoriesService {
     }
   }
 
-  async archive(id: string) {
-    const category = await this.findOneIncludingArchived(id);
+  async archive(userId: string, id: string) {
+    const category = await this.findOneIncludingArchived(userId, id);
 
     if (category.archivedAt !== null) {
       throw new ConflictException({
@@ -142,15 +148,15 @@ export class ExpenseCategoriesService {
     }
 
     return this.prisma.expenseCategory.update({
-      where: { id },
+      where: { id, userId },
       data: {
         archivedAt: new Date(),
       },
     });
   }
 
-  async restore(id: string) {
-    const category = await this.findOneIncludingArchived(id);
+  async restore(userId: string, id: string) {
+    const category = await this.findOneIncludingArchived(userId, id);
 
     if (category.archivedAt === null) {
       throw new ConflictException({
@@ -167,14 +173,14 @@ export class ExpenseCategoriesService {
     }
 
     return this.prisma.expenseCategory.update({
-      where: { id },
+      where: { id, userId },
       data: {
         archivedAt: null,
       },
     });
   }
-  async remove(id: string) {
-    const category = await this.findOneIncludingArchived(id);
+  async remove(userId: string, id: string) {
+    const category = await this.findOneIncludingArchived(userId, id);
 
     if (category.archivedAt === null) {
       throw new ConflictException({
@@ -193,7 +199,7 @@ export class ExpenseCategoriesService {
 
     try {
       return await this.prisma.expenseCategory.delete({
-        where: { id },
+        where: { id, userId },
       });
     } catch (error: unknown) {
       const prismaError = error as {

@@ -15,6 +15,8 @@ import { CreateExpenseCategoryDto } from './dto/create-expense-category.dto';
 import { UpdateExpenseCategoryDto } from './dto/update-expense-category.dto';
 import { ExpenseCategoriesService } from './expense-categories.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { JwtUser } from '../auth/auth.types';
 
 @UseGuards(JwtAuthGuard)
 @Controller('expense-categories')
@@ -24,46 +26,59 @@ export class ExpenseCategoriesController {
   ) {}
 
   @Get()
-  findAll() {
-    return this.expenseCategoriesService.findAll();
+  findAll(@CurrentUser() user: JwtUser) {
+    return this.expenseCategoriesService.findAll(user.sub);
   }
 
   @Get('archived')
-  findArchived() {
-    return this.expenseCategoriesService.findArchived();
+  findArchived(@CurrentUser() user: JwtUser) {
+    return this.expenseCategoriesService.findArchived(user.sub);
   }
 
   @Get(':id')
-  findOne(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
-    return this.expenseCategoriesService.findOne(id);
+  findOne(
+    @CurrentUser() user: JwtUser,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
+    return this.expenseCategoriesService.findOne(user.sub, id);
   }
 
   @Post()
-  create(@Body() body: CreateExpenseCategoryDto) {
-    return this.expenseCategoriesService.create(body);
+  create(@CurrentUser() user: JwtUser, @Body() body: CreateExpenseCategoryDto) {
+    return this.expenseCategoriesService.create(user.sub, body);
   }
 
   @Patch(':id')
   update(
+    @CurrentUser() user: JwtUser,
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() body: UpdateExpenseCategoryDto,
   ) {
-    return this.expenseCategoriesService.update(id, body);
+    return this.expenseCategoriesService.update(user.sub, id, body);
   }
 
   @Patch(':id/archive')
-  archive(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
-    return this.expenseCategoriesService.archive(id);
+  archive(
+    @CurrentUser() user: JwtUser,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
+    return this.expenseCategoriesService.archive(user.sub, id);
   }
 
   @Patch(':id/restore')
-  restore(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
-    return this.expenseCategoriesService.restore(id);
+  restore(
+    @CurrentUser() user: JwtUser,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
+    return this.expenseCategoriesService.restore(user.sub, id);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
-    return this.expenseCategoriesService.remove(id);
+  remove(
+    @CurrentUser() user: JwtUser,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
+    return this.expenseCategoriesService.remove(user.sub, id);
   }
 }

@@ -16,10 +16,11 @@ import {
 export class VendorsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll(): Promise<Vendor[]> {
+  findAll(userId: string): Promise<Vendor[]> {
     return this.prisma.vendor.findMany({
       where: {
         archivedAt: null,
+        userId,
       },
       orderBy: {
         createdAt: 'desc',
@@ -27,11 +28,12 @@ export class VendorsService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(userId: string, id: string) {
     try {
       return await this.prisma.vendor.findUniqueOrThrow({
         where: {
           id,
+          userId,
           archivedAt: null,
         },
       });
@@ -45,9 +47,10 @@ export class VendorsService {
       throw error;
     }
   }
-  findArchived(): Promise<Vendor[]> {
+  findArchived(userId: string): Promise<Vendor[]> {
     return this.prisma.vendor.findMany({
       where: {
+        userId,
         archivedAt: {
           not: null,
         },
@@ -57,11 +60,12 @@ export class VendorsService {
       },
     });
   }
-  async findOneIncludingArchived(id: string) {
+  async findOneIncludingArchived(userId: string, id: string) {
     try {
       return await this.prisma.vendor.findUniqueOrThrow({
         where: {
           id,
+          userId,
         },
       });
     } catch (error) {
@@ -75,10 +79,13 @@ export class VendorsService {
     }
   }
 
-  async create(body: CreateVendorDto) {
+  async create(userId: string, body: CreateVendorDto) {
     try {
       return await this.prisma.vendor.create({
-        data: body,
+        data: {
+          ...body,
+          userId,
+        },
       });
     } catch (error) {
       if (
@@ -91,7 +98,7 @@ export class VendorsService {
     }
   }
 
-  async update(id: string, body: UpdateVendorDto) {
+  async update(userId: string, id: string, body: UpdateVendorDto) {
     if (Object.values(body).every((value) => value === undefined)) {
       throw new BadRequestException({
         message: 'Validation failed',
@@ -107,7 +114,7 @@ export class VendorsService {
     }
     try {
       return await this.prisma.vendor.update({
-        where: { id },
+        where: { id, userId },
         data: body,
       });
     } catch (error) {
@@ -123,8 +130,8 @@ export class VendorsService {
     }
   }
 
-  async archive(id: string) {
-    const vendor = await this.findOneIncludingArchived(id);
+  async archive(userId: string, id: string) {
+    const vendor = await this.findOneIncludingArchived(userId, id);
     if (vendor.archivedAt !== null) {
       throw new ConflictException({
         message: 'Resource archived',
@@ -139,15 +146,15 @@ export class VendorsService {
       });
     }
     return this.prisma.vendor.update({
-      where: { id },
+      where: { id, userId },
       data: {
         archivedAt: new Date(),
       },
     });
   }
 
-  async restore(id: string) {
-    const vendor = await this.findOneIncludingArchived(id);
+  async restore(userId: string, id: string) {
+    const vendor = await this.findOneIncludingArchived(userId, id);
     if (vendor.archivedAt === null) {
       throw new ConflictException({
         message: 'Resource not archived',
@@ -162,15 +169,15 @@ export class VendorsService {
       });
     }
     return this.prisma.vendor.update({
-      where: { id },
+      where: { id, userId },
       data: {
         archivedAt: null,
       },
     });
   }
 
-  async remove(id: string) {
-    const vendor = await this.findOneIncludingArchived(id);
+  async remove(userId: string, id: string) {
+    const vendor = await this.findOneIncludingArchived(userId, id);
 
     if (vendor.archivedAt === null) {
       throw new ConflictException({
@@ -188,7 +195,7 @@ export class VendorsService {
 
     try {
       return await this.prisma.vendor.delete({
-        where: { id },
+        where: { id, userId },
       });
     } catch (error: unknown) {
       const prismaError = error as {

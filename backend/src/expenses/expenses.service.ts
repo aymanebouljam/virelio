@@ -14,9 +14,10 @@ import type { UpdateExpenseDto } from './dto/update-expense.dto';
 export class ExpensesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll(): Promise<Expense[]> {
+  findAll(userId: string): Promise<Expense[]> {
     return this.prisma.expense.findMany({
       where: {
+        userId,
         archivedAt: null,
       },
       orderBy: {
@@ -25,9 +26,10 @@ export class ExpensesService {
     });
   }
 
-  findArchived(): Promise<Expense[]> {
+  findArchived(userId: string): Promise<Expense[]> {
     return this.prisma.expense.findMany({
       where: {
+        userId,
         archivedAt: {
           not: null,
         },
@@ -38,11 +40,12 @@ export class ExpensesService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(userId: string, id: string) {
     try {
       return await this.prisma.expense.findUniqueOrThrow({
         where: {
           id,
+          userId,
           archivedAt: null,
         },
       });
@@ -57,11 +60,12 @@ export class ExpensesService {
     }
   }
 
-  async findOneDetailed(id: string) {
+  async findOneDetailed(userId: string, id: string) {
     try {
       return await this.prisma.expense.findUniqueOrThrow({
         where: {
           id,
+          userId,
           archivedAt: null,
         },
         include: {
@@ -81,10 +85,10 @@ export class ExpensesService {
     }
   }
 
-  async findOneIncludingArchived(id: string) {
+  async findOneIncludingArchived(userId: string, id: string) {
     try {
       return await this.prisma.expense.findUniqueOrThrow({
-        where: { id },
+        where: { id, userId },
       });
     } catch (error) {
       if (
@@ -97,11 +101,12 @@ export class ExpensesService {
     }
   }
 
-  async create(body: CreateExpenseDto) {
-    await this.assertRelations(body.vendorId, body.categoryId);
+  async create(userId: string, body: CreateExpenseDto) {
+    await this.assertRelations(userId, body.vendorId, body.categoryId);
 
     return this.prisma.expense.create({
       data: {
+        userId,
         vendorId: body.vendorId,
         categoryId: body.categoryId,
         description: body.description,
@@ -112,7 +117,7 @@ export class ExpensesService {
     });
   }
 
-  async update(id: string, body: UpdateExpenseDto) {
+  async update(userId: string, id: string, body: UpdateExpenseDto) {
     if (Object.values(body).every((value) => value === undefined)) {
       throw new BadRequestException({
         message: 'Validation failed',
@@ -127,9 +132,10 @@ export class ExpensesService {
       });
     }
 
-    const existingExpense = await this.findOneIncludingArchived(id);
+    const existingExpense = await this.findOneIncludingArchived(userId, id);
 
     await this.assertRelations(
+      userId,
       body.vendorId ?? existingExpense.vendorId,
       body.categoryId === undefined
         ? existingExpense.categoryId
@@ -138,7 +144,7 @@ export class ExpensesService {
 
     try {
       return await this.prisma.expense.update({
-        where: { id },
+        where: { id, userId },
         data: {
           ...body,
           expenseDate:
@@ -158,8 +164,8 @@ export class ExpensesService {
     }
   }
 
-  async archive(id: string) {
-    const expense = await this.findOneIncludingArchived(id);
+  async archive(userId: string, id: string) {
+    const expense = await this.findOneIncludingArchived(userId, id);
 
     if (expense.archivedAt !== null) {
       throw new ConflictException({
@@ -176,15 +182,15 @@ export class ExpensesService {
     }
 
     return this.prisma.expense.update({
-      where: { id },
+      where: { id, userId },
       data: {
         archivedAt: new Date(),
       },
     });
   }
 
-  async restore(id: string) {
-    const expense = await this.findOneIncludingArchived(id);
+  async restore(userId: string, id: string) {
+    const expense = await this.findOneIncludingArchived(userId, id);
 
     if (expense.archivedAt === null) {
       throw new ConflictException({
@@ -200,18 +206,18 @@ export class ExpensesService {
       });
     }
 
-    await this.assertRelations(expense.vendorId, expense.categoryId);
+    await this.assertRelations(userId, expense.vendorId, expense.categoryId);
 
     return this.prisma.expense.update({
-      where: { id },
+      where: { id, userId },
       data: {
         archivedAt: null,
       },
     });
   }
 
-  async remove(id: string) {
-    const expense = await this.findOneIncludingArchived(id);
+  async remove(userId: string, id: string) {
+    const expense = await this.findOneIncludingArchived(userId, id);
 
     if (expense.archivedAt === null) {
       throw new ConflictException({
@@ -228,16 +234,20 @@ export class ExpensesService {
     }
 
     return this.prisma.expense.delete({
-      where: { id },
+      where: { id, userId },
     });
   }
 
-  private async assertRelations(vendorId: string, categoryId?: string | null) {
+  private async assertRelations(
+    userId: string,
+    vendorId: string,
+    categoryId?: string | null,
+  ) {
     const vendor = await this.prisma.vendor.findUnique({
       where: { id: vendorId },
     });
 
-    if (!vendor || vendor.archivedAt !== null) {
+    if (!vendor || vendor.userId !== userId || vendor.archivedAt !== null) {
       throw new NotFoundException({
         message: 'Vendor not found',
       });
@@ -251,7 +261,11 @@ export class ExpensesService {
       where: { id: categoryId },
     });
 
-    if (!category || category.archivedAt !== null) {
+    if (
+      !category ||
+      category.userId !== userId ||
+      category.archivedAt !== null
+    ) {
       throw new NotFoundException({
         message: 'Expense category not found',
       });

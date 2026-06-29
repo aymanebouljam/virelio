@@ -15,55 +15,68 @@ import { CreateVendorDto } from './dto/create-vendor.dto';
 import { VendorsService } from './vendors.service';
 import { UpdateVendorDto } from './dto/update-vendor.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { JwtUser } from '../auth/auth.types';
 
 @UseGuards(JwtAuthGuard)
 @Controller('vendors')
 export class VendorsController {
   constructor(private readonly vendorsService: VendorsService) {}
 
-  // GET
   @Get()
-  findAll() {
-    return this.vendorsService.findAll();
+  findAll(@CurrentUser() user: JwtUser) {
+    return this.vendorsService.findAll(user.sub);
   }
 
   @Get('archived')
-  findArchived() {
-    return this.vendorsService.findArchived();
+  findArchived(@CurrentUser() user: JwtUser) {
+    return this.vendorsService.findArchived(user.sub);
   }
 
   @Get(':id')
-  findOne(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
-    return this.vendorsService.findOne(id);
+  findOne(
+    @CurrentUser() user: JwtUser,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
+    return this.vendorsService.findOne(user.sub, id);
   }
-  // POST
 
   @Post()
-  create(@Body() body: CreateVendorDto) {
-    return this.vendorsService.create(body);
+  create(@CurrentUser() user: JwtUser, @Body() body: CreateVendorDto) {
+    return this.vendorsService.create(user.sub, body);
   }
-  // PATCH
+
   @Patch(':id/archive')
-  archive(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
-    return this.vendorsService.archive(id);
+  archive(
+    @CurrentUser() user: JwtUser,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
+    return this.vendorsService.archive(user.sub, id);
   }
 
   @Patch(':id/restore')
-  restore(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
-    return this.vendorsService.restore(id);
+  restore(
+    @CurrentUser() user: JwtUser,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
+    return this.vendorsService.restore(user.sub, id);
   }
+
   @Patch(':id')
   update(
+    @CurrentUser() user: JwtUser,
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() body: UpdateVendorDto,
   ) {
-    return this.vendorsService.update(id, body);
+    return this.vendorsService.update(user.sub, id, body);
   }
 
-  // Delete
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
-    return this.vendorsService.remove(id);
+  remove(
+    @CurrentUser() user: JwtUser,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
+    return this.vendorsService.remove(user.sub, id);
   }
 }

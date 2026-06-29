@@ -49,6 +49,7 @@ export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getSummary(
+    userId: string,
     query: GetDashboardSummaryQueryDto = {},
   ): Promise<DashboardSummary> {
     const dateFilter = this.buildDateFilter(query);
@@ -65,10 +66,11 @@ export class DashboardService {
       proofs,
     ] = await Promise.all([
       this.prisma.vendor.count({
-        where: { archivedAt: null },
+        where: { userId, archivedAt: null },
       }),
       this.prisma.expense.count({
         where: {
+          userId,
           archivedAt: null,
           categoryId: null,
         },
@@ -77,12 +79,13 @@ export class DashboardService {
         where: {
           ...proofDateFilter,
           expense: {
+            userId,
             archivedAt: null,
           },
         },
       }),
       this.prisma.expense.findMany({
-        where: { archivedAt: null, ...expenseDateFilter },
+        where: { userId, archivedAt: null, ...expenseDateFilter },
         include: {
           vendor: {
             select: {
@@ -105,6 +108,7 @@ export class DashboardService {
         where: {
           ...proofDateFilter,
           expense: {
+            userId,
             archivedAt: null,
           },
         },

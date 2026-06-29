@@ -19,6 +19,8 @@ import { diskStorage } from 'multer';
 import { ProofsService } from './proofs.service';
 import { getTmpUploadDir } from './proofs-paths';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { JwtUser } from '../auth/auth.types';
 
 function buildStoredFilename(originalName: string) {
   const extension = extname(originalName);
@@ -46,6 +48,7 @@ export class ProofsController {
     }),
   )
   uploadProof(
+    @CurrentUser() user: JwtUser,
     @Param('expenseId', new ParseUUIDPipe({ version: '4' })) expenseId: string,
     @UploadedFile() file?: Express.Multer.File,
   ) {
@@ -63,15 +66,16 @@ export class ProofsController {
       });
     }
 
-    return this.proofsService.upload(expenseId, file);
+    return this.proofsService.upload(user.sub, expenseId, file);
   }
 
   @Delete(':proofId')
   @HttpCode(HttpStatus.NO_CONTENT)
   removeProof(
+    @CurrentUser() user: JwtUser,
     @Param('expenseId', new ParseUUIDPipe({ version: '4' })) expenseId: string,
     @Param('proofId', new ParseUUIDPipe({ version: '4' })) proofId: string,
   ) {
-    return this.proofsService.remove(expenseId, proofId);
+    return this.proofsService.remove(user.sub, expenseId, proofId);
   }
 }
