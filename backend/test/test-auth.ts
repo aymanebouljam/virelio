@@ -1,7 +1,7 @@
 import request from 'supertest';
 import type { Server } from 'node:http';
 
-export async function createAuthHeader(http: Server) {
+export async function createAuth(http: Server) {
   const email = 'owner@local.dev';
   const password = 'password123';
   const fullName = 'Local Owner';
@@ -15,9 +15,12 @@ export async function createAuthHeader(http: Server) {
   const response = (await request(http).post('/auth/login').send({
     email,
     password,
-  })) as { body: { accessToken: string } };
+  })) as { body: { id: string; accessToken: string } };
 
   return {
-    Authorization: `Bearer ${response.body.accessToken}`,
+    userId: response.body.id,
+    authHeaders: {
+      Authorization: `Bearer ${response.body.accessToken}`,
+    },
   };
 }

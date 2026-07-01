@@ -4,7 +4,7 @@ import { HttpStatus, type INestApplication } from '@nestjs/common';
 import type { Server } from 'node:http';
 import type { PrismaService } from '../prisma/prisma.service';
 import { randomUUID } from 'node:crypto';
-import { createAuthHeader } from './test-auth';
+import { createAuth } from './test-auth';
 
 type VendorResponse = {
   id: string;
@@ -31,6 +31,7 @@ describe('Vendors e2e', () => {
   let http: Server;
   let prisma: PrismaService;
   let authHeaders: Record<string, string>;
+  let userId: string;
 
   beforeAll(async () => {
     ({ app, http, prisma } = await createTestApp());
@@ -38,7 +39,7 @@ describe('Vendors e2e', () => {
 
   beforeEach(async () => {
     await resetDatabase(prisma);
-    authHeaders = await createAuthHeader(http);
+    ({ authHeaders, userId } = await createAuth(http));
   });
 
   afterAll(async () => {
@@ -949,6 +950,7 @@ describe('Vendors e2e', () => {
       const createdVendor = createResponse.body as VendorResponse;
       await prisma.expense.create({
         data: {
+          userId,
           vendorId: createdVendor.id,
           description: 'Office supplies purchase',
           amount: 1250.5,

@@ -6,7 +6,7 @@ import { createTestApp, resetDatabase } from './test-app';
 import { DashboardSummary } from '../src/dashboard/dashboard.service';
 import { getUploadsRoot } from '../src/proofs/proofs-paths';
 import { rm } from 'node:fs/promises';
-import { createAuthHeader } from './test-auth';
+import { createAuth } from './test-auth';
 
 describe('Dashboard e2e', () => {
   let app: INestApplication;
@@ -21,7 +21,7 @@ describe('Dashboard e2e', () => {
   beforeEach(async () => {
     await resetDatabase(prisma);
     await rm(getUploadsRoot(), { recursive: true, force: true });
-    authHeaders = await createAuthHeader(http);
+    ({ authHeaders } = await createAuth(http));
   });
 
   afterAll(async () => {
