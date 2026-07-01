@@ -4,6 +4,7 @@ import 'dotenv/config';
 import { vendors } from './seed-data/vendors';
 import { categories } from './seed-data/categories';
 import { expenses } from './seed-data/expenses';
+import { seedUser } from './seed-data/user';
 
 const adapter = new PrismaPg({
   connectionString: process.env['DATABASE_URL'],
@@ -12,13 +13,22 @@ const adapter = new PrismaPg({
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
+  const user = await prisma.user.create({
+    data: seedUser,
+  });
   await prisma.vendor.createMany({
-    data: vendors,
+    data: vendors.map((vendor) => ({
+      ...vendor,
+      userId: user.id,
+    })),
     skipDuplicates: true,
   });
 
   await prisma.expenseCategory.createMany({
-    data: categories,
+    data: categories.map((category) => ({
+      ...category,
+      userId: user.id,
+    })),
     skipDuplicates: true,
   });
 
@@ -83,7 +93,10 @@ async function main() {
 
     if (!existingExpense) {
       await prisma.expense.create({
-        data: expense,
+        data: {
+          userId: user.id,
+          ...expense,
+        },
       });
     }
   }

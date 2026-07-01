@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import type { Server } from 'node:http';
 import type { PrismaService } from '../prisma/prisma.service';
 import { createTestApp, resetDatabase } from './test-app';
-import { createAuthHeader } from './test-auth';
+import { createAuth } from './test-auth';
 
 type ExpenseCategoryResponse = {
   id: string;
@@ -28,6 +28,7 @@ describe('ExpenseCategories e2e', () => {
   let http: Server;
   let prisma: PrismaService;
   let authHeaders: Record<string, string>;
+  let userId: string;
 
   beforeAll(async () => {
     ({ app, http, prisma } = await createTestApp());
@@ -35,7 +36,7 @@ describe('ExpenseCategories e2e', () => {
 
   beforeEach(async () => {
     await resetDatabase(prisma);
-    authHeaders = await createAuthHeader(http);
+    ({ authHeaders, userId } = await createAuth(http));
   });
 
   afterAll(async () => {
@@ -888,6 +889,7 @@ describe('ExpenseCategories e2e', () => {
 
       await prisma.expense.create({
         data: {
+          userId,
           vendorId: vendor.id,
           categoryId: category.id,
           description: 'Office supplies purchase',
@@ -915,12 +917,18 @@ describe('ExpenseCategories e2e', () => {
         where: { id: category.id },
       });
 
+      if (persistedCategory === null) {
+        throw new Error('Expected persistedCategory to exist');
+      }
+
       expect(persistedCategory).toMatchObject({
         id: category.id,
         name: 'Office',
         color: '#64748b',
       });
-      expect(persistedCategory?.archivedAt).not.toBeNull();
+      if (persistedCategory.archivedAt === null) {
+        throw new Error('Expected archivedAt to be set');
+      }
 
       const persistedExpense = await prisma.expense.findFirst({
         where: { categoryId: category.id },

@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import type { Server } from 'node:http';
 import type { PrismaService } from '../prisma/prisma.service';
 import { createTestApp, resetDatabase } from './test-app';
-import { createAuthHeader } from './test-auth';
+import { createAuth } from './test-auth';
 
 type ExpenseResponse = {
   id: string;
@@ -67,7 +67,7 @@ describe('Expenses e2e', () => {
 
   beforeEach(async () => {
     await resetDatabase(prisma);
-    authHeaders = await createAuthHeader(http);
+    ({ authHeaders } = await createAuth(http));
   });
 
   afterAll(async () => {

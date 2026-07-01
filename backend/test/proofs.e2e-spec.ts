@@ -6,7 +6,7 @@ import request from 'supertest';
 import type { PrismaService } from '../prisma/prisma.service';
 import { createTestApp, resetDatabase } from './test-app';
 import { getUploadsRoot } from '../src/proofs/proofs-paths';
-import { createAuthHeader } from './test-auth';
+import { createAuth } from './test-auth';
 
 type ErrorResponse = {
   message: string;
@@ -39,7 +39,7 @@ describe('Proofs e2e', () => {
   beforeEach(async () => {
     await resetDatabase(prisma);
     await rm(getUploadsRoot(), { recursive: true, force: true });
-    authHeaders = await createAuthHeader(http);
+    ({ authHeaders } = await createAuth(http));
   });
 
   afterAll(async () => {

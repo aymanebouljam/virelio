@@ -21,6 +21,8 @@ model Vendor {
   archivedAt DateTime?
 
   expenses Expense[]
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   String    @db.Uuid
 }
 
 model ExpenseCategory {
@@ -32,6 +34,8 @@ model ExpenseCategory {
   archivedAt DateTime?
 
   expenses Expense[]
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   String    @db.Uuid
 }
 
 model Expense {
@@ -51,6 +55,8 @@ model Expense {
 
   vendor   Vendor           @relation(fields: [vendorId], references: [id], onDelete: Restrict)
   category ExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   String           @db.Uuid
 }
 
 model ProofDocument {
@@ -72,4 +78,8 @@ model User {
   fullName     String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  vendors           Vendor[]
+  expenses          Expense[]
+  ExpenseCategories ExpenseCategory[]
 }

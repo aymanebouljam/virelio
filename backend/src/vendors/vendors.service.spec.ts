@@ -9,6 +9,7 @@ import { Prisma } from '../../generated/prisma/client';
 
 describe('VendorsService', () => {
   let service: VendorsService;
+  const userId = 'user-1';
 
   const findManyMock = jest.fn();
   const findFirstOrThrowMock = jest.fn();
@@ -38,11 +39,11 @@ describe('VendorsService', () => {
     const vendors = [{ id: '1', name: 'Atlas', archivedAt: null }];
     findManyMock.mockResolvedValue(vendors);
 
-    const result = await service.findAll();
+    const result = await service.findAll(userId);
 
     expect(result).toEqual(vendors);
     expect(findManyMock).toHaveBeenCalledWith({
-      where: { archivedAt: null },
+      where: { archivedAt: null, userId },
       orderBy: { createdAt: 'desc' },
     });
   });
@@ -52,10 +53,11 @@ describe('VendorsService', () => {
     const vendor = { id, name: 'Atlas', archivedAt: null };
     findUniqueOrThrowMock.mockResolvedValueOnce(vendor);
 
-    await expect(service.findOne(id)).resolves.toEqual(vendor);
+    await expect(service.findOne(userId, id)).resolves.toEqual(vendor);
     expect(findUniqueOrThrowMock).toHaveBeenLastCalledWith({
       where: {
         id,
+        userId,
         archivedAt: null,
       },
     });
@@ -70,10 +72,13 @@ describe('VendorsService', () => {
       }),
     );
 
-    await expect(service.findOne(id)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.findOne(userId, id)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
     expect(findUniqueOrThrowMock).toHaveBeenCalledWith({
       where: {
         id,
+        userId,
         archivedAt: null,
       },
     });
@@ -84,10 +89,13 @@ describe('VendorsService', () => {
     const vendor = { id, name: 'Atlas', archivedAt: new Date() };
     findUniqueOrThrowMock.mockResolvedValueOnce(vendor);
 
-    await expect(service.findOneIncludingArchived(id)).resolves.toEqual(vendor);
+    await expect(service.findOneIncludingArchived(userId, id)).resolves.toEqual(
+      vendor,
+    );
     expect(findUniqueOrThrowMock).toHaveBeenCalledWith({
       where: {
         id,
+        userId,
       },
     });
   });
@@ -101,12 +109,13 @@ describe('VendorsService', () => {
       }),
     );
 
-    await expect(service.findOneIncludingArchived(id)).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
+    await expect(
+      service.findOneIncludingArchived(userId, id),
+    ).rejects.toBeInstanceOf(NotFoundException);
     expect(findUniqueOrThrowMock).toHaveBeenCalledWith({
       where: {
         id,
+        userId,
       },
     });
   });
@@ -115,11 +124,12 @@ describe('VendorsService', () => {
     const vendors = [{ id: '1', name: 'Atlas', archivedAt: new Date() }];
     findManyMock.mockResolvedValue(vendors);
 
-    const result = await service.findArchived();
+    const result = await service.findArchived(userId);
 
     expect(result).toEqual(vendors);
     expect(findManyMock).toHaveBeenCalledWith({
       where: {
+        userId,
         archivedAt: {
           not: null,
         },
@@ -134,9 +144,9 @@ describe('VendorsService', () => {
     const input = { name: 'Atlas', email: 'atlas@example.com' };
     const vendor = { ...input, id: '1', archivedAt: null };
     createMock.mockResolvedValueOnce(vendor);
-    const result = await service.create(input);
+    const result = await service.create(userId, input);
     expect(result).toEqual(vendor);
-    expect(createMock).toHaveBeenCalledWith({ data: input });
+    expect(createMock).toHaveBeenCalledWith({ data: { ...input, userId } });
   });
 
   it('create throws unique conflict error when a unique field already exists', async () => {
@@ -149,10 +159,10 @@ describe('VendorsService', () => {
       }),
     );
 
-    await expect(service.create(input)).rejects.toBeInstanceOf(
+    await expect(service.create(userId, input)).rejects.toBeInstanceOf(
       ConflictException,
     );
-    expect(createMock).toHaveBeenCalledWith({ data: input });
+    expect(createMock).toHaveBeenCalledWith({ data: { ...input, userId } });
   });
 
   // update
@@ -166,17 +176,19 @@ describe('VendorsService', () => {
       archivedAt: null,
     };
     updateMock.mockResolvedValueOnce(updatedVendor);
-    await expect(service.update('1', input)).resolves.toEqual(updatedVendor);
+    await expect(service.update(userId, '1', input)).resolves.toEqual(
+      updatedVendor,
+    );
     expect(updateMock).toHaveBeenCalledWith({
-      where: { id: '1' },
+      where: { id: '1', userId },
       data: input,
     });
   });
 
   it('update rejects empty body', async () => {
-    await expect(service.update('vendor-id', {})).rejects.toBeInstanceOf(
-      BadRequestException,
-    );
+    await expect(
+      service.update(userId, 'vendor-id', {}),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('update throws not found exception when vendor does not exist', async () => {
@@ -187,11 +199,11 @@ describe('VendorsService', () => {
         clientVersion: 'test',
       }),
     );
-    await expect(service.update('1', input)).rejects.toBeInstanceOf(
+    await expect(service.update(userId, '1', input)).rejects.toBeInstanceOf(
       NotFoundException,
     );
     expect(updateMock).toHaveBeenCalledWith({
-      where: { id: '1' },
+      where: { id: '1', userId },
       data: input,
     });
   });
@@ -204,11 +216,11 @@ describe('VendorsService', () => {
         clientVersion: 'test',
       }),
     );
-    await expect(service.update('1', input)).rejects.toBeInstanceOf(
+    await expect(service.update(userId, '1', input)).rejects.toBeInstanceOf(
       ConflictException,
     );
     expect(updateMock).toHaveBeenCalledWith({
-      where: { id: '1' },
+      where: { id: '1', userId },
       data: input,
     });
   });
@@ -229,14 +241,14 @@ describe('VendorsService', () => {
     findUniqueOrThrowMock.mockResolvedValue(vendor);
     updateMock.mockResolvedValue(archivedVendor);
 
-    const result = await service.archive('1');
+    const result = await service.archive(userId, '1');
     expect(result).toEqual(archivedVendor);
 
     expect(findUniqueOrThrowMock).toHaveBeenCalledWith({
-      where: { id: '1' },
+      where: { id: '1', userId },
     });
     expect(updateMock).toHaveBeenCalledWith({
-      where: { id: '1' },
+      where: { id: '1', userId },
       data: { archivedAt: expect.any(Date) as unknown },
     });
   });
@@ -250,12 +262,12 @@ describe('VendorsService', () => {
 
     findUniqueOrThrowMock.mockResolvedValue(archived);
 
-    await expect(service.archive('1')).rejects.toBeInstanceOf(
+    await expect(service.archive(userId, '1')).rejects.toBeInstanceOf(
       ConflictException,
     );
 
     expect(findUniqueOrThrowMock).toHaveBeenCalledWith({
-      where: { id: '1' },
+      where: { id: '1', userId },
     });
 
     expect(updateMock).not.toHaveBeenCalled();
@@ -277,14 +289,14 @@ describe('VendorsService', () => {
     findUniqueOrThrowMock.mockResolvedValue(vendor);
     updateMock.mockResolvedValue(restoredVendor);
 
-    const result = await service.restore('1');
+    const result = await service.restore(userId, '1');
     expect(result).toEqual(restoredVendor);
 
     expect(findUniqueOrThrowMock).toHaveBeenCalledWith({
-      where: { id: '1' },
+      where: { id: '1', userId },
     });
     expect(updateMock).toHaveBeenCalledWith({
-      where: { id: '1' },
+      where: { id: '1', userId },
       data: { archivedAt: null },
     });
   });
@@ -298,12 +310,12 @@ describe('VendorsService', () => {
 
     findUniqueOrThrowMock.mockResolvedValue(activeVendor);
 
-    await expect(service.restore('1')).rejects.toBeInstanceOf(
+    await expect(service.restore(userId, '1')).rejects.toBeInstanceOf(
       ConflictException,
     );
 
     expect(findUniqueOrThrowMock).toHaveBeenCalledWith({
-      where: { id: '1' },
+      where: { id: '1', userId },
     });
 
     expect(updateMock).not.toHaveBeenCalled();
@@ -320,14 +332,14 @@ describe('VendorsService', () => {
     findUniqueOrThrowMock.mockResolvedValueOnce(archivedVendor);
     removeMock.mockResolvedValueOnce(archivedVendor);
 
-    const result = await service.remove('1');
+    const result = await service.remove(userId, '1');
     expect(result).toEqual(archivedVendor);
 
     expect(findUniqueOrThrowMock).toHaveBeenCalledWith({
-      where: { id: '1' },
+      where: { id: '1', userId },
     });
     expect(removeMock).toHaveBeenCalledWith({
-      where: { id: '1' },
+      where: { id: '1', userId },
     });
   });
 
@@ -340,10 +352,12 @@ describe('VendorsService', () => {
 
     findUniqueOrThrowMock.mockResolvedValue(activeVendor);
 
-    await expect(service.remove('1')).rejects.toBeInstanceOf(ConflictException);
+    await expect(service.remove(userId, '1')).rejects.toBeInstanceOf(
+      ConflictException,
+    );
 
     expect(findUniqueOrThrowMock).toHaveBeenCalledWith({
-      where: { id: '1' },
+      where: { id: '1', userId },
     });
     expect(removeMock).not.toHaveBeenCalled();
   });
@@ -364,17 +378,17 @@ describe('VendorsService', () => {
       }),
     );
 
-    await expect(service.remove('1')).rejects.toMatchObject({
+    await expect(service.remove(userId, '1')).rejects.toMatchObject({
       response: {
         message: 'Vendor cannot be deleted because it has expenses',
       },
     });
 
     expect(findUniqueOrThrowMock).toHaveBeenCalledWith({
-      where: { id: '1' },
+      where: { id: '1', userId },
     });
     expect(removeMock).toHaveBeenCalledWith({
-      where: { id: '1' },
+      where: { id: '1', userId },
     });
   });
   it('remove rejects deletion when the vendor is linked to expenses through driver adapter metadata', async () => {
@@ -395,14 +409,14 @@ describe('VendorsService', () => {
       },
     });
 
-    await expect(service.remove('1')).rejects.toMatchObject({
+    await expect(service.remove(userId, '1')).rejects.toMatchObject({
       response: {
         message: 'Vendor cannot be deleted because it has expenses',
       },
     });
 
     expect(removeMock).toHaveBeenCalledWith({
-      where: { id: '1' },
+      where: { id: '1', userId },
     });
   });
 });

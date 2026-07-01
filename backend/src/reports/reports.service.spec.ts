@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 describe('ReportsService', () => {
   let service: ReportsService;
+  const userId = 'user-1';
 
   const expenseFindManyMock = jest.fn();
 
@@ -52,7 +53,7 @@ describe('ReportsService', () => {
       },
     ]);
 
-    await expect(service.getExpenseReport()).resolves.toEqual({
+    await expect(service.getExpenseReport(userId)).resolves.toEqual({
       totalAmount: '300.50',
       expenseCount: 2,
       categoryTotals: [
@@ -98,6 +99,7 @@ describe('ReportsService', () => {
     expect(expenseFindManyMock).toHaveBeenCalledWith({
       where: {
         archivedAt: null,
+        userId,
       },
       include: {
         vendor: {
@@ -122,7 +124,7 @@ describe('ReportsService', () => {
   it('filters expense report by date range', async () => {
     expenseFindManyMock.mockResolvedValueOnce([]);
 
-    await service.getExpenseReport({
+    await service.getExpenseReport(userId, {
       dateFrom: '2026-06-20',
       dateTo: '2026-06-21',
     });
@@ -130,6 +132,7 @@ describe('ReportsService', () => {
     expect(expenseFindManyMock).toHaveBeenCalledWith({
       where: {
         archivedAt: null,
+        userId,
         expenseDate: {
           gte: new Date('2026-06-20'),
           lte: new Date('2026-06-21T23:59:59.999Z'),
@@ -157,7 +160,7 @@ describe('ReportsService', () => {
 
   it('rejects invalid date range', async () => {
     await expect(
-      service.getExpenseReport({
+      service.getExpenseReport(userId, {
         dateFrom: '2026-06-22',
         dateTo: '2026-06-21',
       }),

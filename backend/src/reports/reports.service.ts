@@ -30,12 +30,14 @@ export class ReportsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getExpenseReport(
+    userId: string,
     query: GetExpenseReportQueryDto = {},
   ): Promise<ExpenseReport> {
     const expenseDateFilter = this.buildExpenseDateFilter(query);
 
     const expenses = await this.prisma.expense.findMany({
       where: {
+        userId,
         archivedAt: null,
         ...expenseDateFilter,
       },

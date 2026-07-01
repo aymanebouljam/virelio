@@ -9,12 +9,12 @@ import { Expense, ProofDocument } from '../../generated/prisma/client';
 export class ProofsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async upload(expenseId: string, file: Express.Multer.File) {
+  async upload(userId: string, expenseId: string, file: Express.Multer.File) {
     const expenseDir = getExpenseProofDir(expenseId);
     const finalPath = join(expenseDir, file.filename);
     const publicPath = `uploads/proofs/${expenseId}/${file.filename}`;
     try {
-      await this.assertExpense(expenseId);
+      await this.assertExpense(userId, expenseId);
       await mkdir(expenseDir, { recursive: true });
       await rename(file.path, finalPath);
 
@@ -35,10 +35,10 @@ export class ProofsService {
     }
   }
 
-  async remove(expenseId: string, proofId: string) {
-    await this.assertExpense(expenseId);
+  async remove(userId: string, expenseId: string, proofId: string) {
+    await this.assertExpense(userId, expenseId);
 
-    const proof = await this.assertProofDocument(expenseId, proofId);
+    const proof = await this.assertProofDocument(userId, expenseId, proofId);
     const absolutePath = getAbsoluteProofPath(proof.storagePath);
 
     await this.unlinkSafely(absolutePath);
@@ -56,10 +56,14 @@ export class ProofsService {
     }
   }
 
-  private async assertExpense(expenseId: string): Promise<Expense> {
+  private async assertExpense(
+    userId: string,
+    expenseId: string,
+  ): Promise<Expense> {
     const expense = await this.prisma.expense.findUnique({
       where: {
         id: expenseId,
+        userId,
         archivedAt: null,
       },
     });
@@ -74,11 +78,12 @@ export class ProofsService {
   }
 
   private async assertProofDocument(
+    userId: string,
     expenseId: string,
     proofId: string,
   ): Promise<ProofDocument> {
     const proof = await this.prisma.proofDocument.findUnique({
-      where: { id: proofId, expenseId: expenseId },
+      where: { id: proofId, expenseId },
     });
 
     if (!proof) {
