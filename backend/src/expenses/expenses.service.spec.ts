@@ -9,6 +9,7 @@ import { ExpensesService } from './expenses.service';
 
 describe('ExpensesService', () => {
   let service: ExpensesService;
+  const userId = 'user-1';
 
   const expenseFindManyMock = jest.fn();
   const expenseFindUniqueOrThrowMock = jest.fn();
@@ -46,11 +47,11 @@ describe('ExpensesService', () => {
     ];
     expenseFindManyMock.mockResolvedValueOnce(expenses);
 
-    const result = await service.findAll();
+    const result = await service.findAll(userId);
 
     expect(result).toEqual(expenses);
     expect(expenseFindManyMock).toHaveBeenCalledWith({
-      where: { archivedAt: null },
+      where: { userId, archivedAt: null },
       orderBy: { expenseDate: 'desc' },
     });
   });
@@ -61,11 +62,12 @@ describe('ExpensesService', () => {
     ];
     expenseFindManyMock.mockResolvedValueOnce(expenses);
 
-    const result = await service.findArchived();
+    const result = await service.findArchived(userId);
 
     expect(result).toEqual(expenses);
     expect(expenseFindManyMock).toHaveBeenCalledWith({
       where: {
+        userId,
         archivedAt: {
           not: null,
         },
@@ -82,10 +84,11 @@ describe('ExpensesService', () => {
     };
     expenseFindUniqueOrThrowMock.mockResolvedValueOnce(expense);
 
-    await expect(service.findOne('1')).resolves.toEqual(expense);
+    await expect(service.findOne(userId, '1')).resolves.toEqual(expense);
     expect(expenseFindUniqueOrThrowMock).toHaveBeenCalledWith({
       where: {
         id: '1',
+        userId,
         archivedAt: null,
       },
     });
@@ -99,7 +102,7 @@ describe('ExpensesService', () => {
       }),
     );
 
-    await expect(service.findOne('1')).rejects.toBeInstanceOf(
+    await expect(service.findOne(userId, '1')).rejects.toBeInstanceOf(
       NotFoundException,
     );
   });
@@ -137,12 +140,13 @@ describe('ExpensesService', () => {
 
     expenseFindUniqueOrThrowMock.mockResolvedValueOnce(expense);
 
-    await expect(service.findOneDetailed('expense-1')).resolves.toEqual(
+    await expect(service.findOneDetailed(userId, 'expense-1')).resolves.toEqual(
       expense,
     );
     expect(expenseFindUniqueOrThrowMock).toHaveBeenCalledWith({
       where: {
         id: 'expense-1',
+        userId,
         archivedAt: null,
       },
       include: {
@@ -161,9 +165,9 @@ describe('ExpensesService', () => {
       }),
     );
 
-    await expect(service.findOneDetailed('expense-1')).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
+    await expect(
+      service.findOneDetailed(userId, 'expense-1'),
+    ).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('findOneIncludingArchived returns expense by id', async () => {
@@ -174,11 +178,11 @@ describe('ExpensesService', () => {
     };
     expenseFindUniqueOrThrowMock.mockResolvedValueOnce(expense);
 
-    await expect(service.findOneIncludingArchived('1')).resolves.toEqual(
-      expense,
-    );
+    await expect(
+      service.findOneIncludingArchived(userId, '1'),
+    ).resolves.toEqual(expense);
     expect(expenseFindUniqueOrThrowMock).toHaveBeenCalledWith({
-      where: { id: '1' },
+      where: { id: '1', userId },
     });
   });
 
@@ -190,9 +194,9 @@ describe('ExpensesService', () => {
       }),
     );
 
-    await expect(service.findOneIncludingArchived('1')).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
+    await expect(
+      service.findOneIncludingArchived(userId, '1'),
+    ).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('create returns new stored expense', async () => {
@@ -205,8 +209,8 @@ describe('ExpensesService', () => {
       notes: 'Monthly stationery',
     };
 
-    const vendor = { id: 'vendor-1', archivedAt: null };
-    const category = { id: 'category-1', archivedAt: null };
+    const vendor = { id: 'vendor-1', userId, archivedAt: null };
+    const category = { id: 'category-1', userId, archivedAt: null };
     const createdExpense = {
       id: 'expense-1',
       ...input,
@@ -218,11 +222,12 @@ describe('ExpensesService', () => {
     expenseCategoryFindUniqueMock.mockResolvedValueOnce(category);
     expenseCreateMock.mockResolvedValueOnce(createdExpense);
 
-    const result = await service.create(input);
+    const result = await service.create(userId, input);
 
     expect(result).toEqual(createdExpense);
     expect(expenseCreateMock).toHaveBeenCalledWith({
       data: {
+        userId,
         vendorId: input.vendorId,
         categoryId: input.categoryId,
         description: input.description,
@@ -237,7 +242,7 @@ describe('ExpensesService', () => {
     vendorFindUniqueMock.mockResolvedValueOnce(null);
 
     await expect(
-      service.create({
+      service.create(userId, {
         vendorId: 'vendor-1',
         categoryId: 'category-1',
         description: 'Office supplies',
@@ -253,12 +258,13 @@ describe('ExpensesService', () => {
   it('create throws not found when category does not exist', async () => {
     vendorFindUniqueMock.mockResolvedValueOnce({
       id: 'vendor-1',
+      userId,
       archivedAt: null,
     });
     expenseCategoryFindUniqueMock.mockResolvedValueOnce(null);
 
     await expect(
-      service.create({
+      service.create(userId, {
         vendorId: 'vendor-1',
         categoryId: 'category-1',
         description: 'Office supplies',
@@ -297,19 +303,21 @@ describe('ExpensesService', () => {
     expenseFindUniqueOrThrowMock.mockResolvedValueOnce(existingExpense);
     vendorFindUniqueMock.mockResolvedValueOnce({
       id: 'vendor-1',
+      userId,
       archivedAt: null,
     });
     expenseCategoryFindUniqueMock.mockResolvedValueOnce({
       id: 'category-1',
+      userId,
       archivedAt: null,
     });
     expenseUpdateMock.mockResolvedValueOnce(updatedExpense);
 
-    await expect(service.update('expense-1', input)).resolves.toEqual(
+    await expect(service.update(userId, 'expense-1', input)).resolves.toEqual(
       updatedExpense,
     );
     expect(expenseUpdateMock).toHaveBeenCalledWith({
-      where: { id: 'expense-1' },
+      where: { id: 'expense-1', userId },
       data: {
         ...input,
         expenseDate: new Date(input.expenseDate),
@@ -318,9 +326,9 @@ describe('ExpensesService', () => {
   });
 
   it('update rejects empty body', async () => {
-    await expect(service.update('expense-1', {})).rejects.toBeInstanceOf(
-      BadRequestException,
-    );
+    await expect(
+      service.update(userId, 'expense-1', {}),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('update throws not found when expense does not exist', async () => {
@@ -332,7 +340,9 @@ describe('ExpensesService', () => {
     );
 
     await expect(
-      service.update('expense-1', { description: 'Updated description' }),
+      service.update(userId, 'expense-1', {
+        description: 'Updated description',
+      }),
     ).rejects.toBeInstanceOf(NotFoundException);
 
     expect(expenseUpdateMock).not.toHaveBeenCalled();
@@ -353,11 +363,11 @@ describe('ExpensesService', () => {
     expenseFindUniqueOrThrowMock.mockResolvedValueOnce(activeExpense);
     expenseUpdateMock.mockResolvedValueOnce(archivedExpense);
 
-    const result = await service.archive('expense-1');
+    const result = await service.archive(userId, 'expense-1');
 
     expect(result).toEqual(archivedExpense);
     expect(expenseUpdateMock).toHaveBeenCalledWith({
-      where: { id: 'expense-1' },
+      where: { id: 'expense-1', userId },
       data: {
         archivedAt: expect.any(Date) as unknown,
       },
@@ -370,7 +380,7 @@ describe('ExpensesService', () => {
       archivedAt: new Date(),
     });
 
-    await expect(service.archive('expense-1')).rejects.toBeInstanceOf(
+    await expect(service.archive(userId, 'expense-1')).rejects.toBeInstanceOf(
       ConflictException,
     );
 
@@ -393,19 +403,21 @@ describe('ExpensesService', () => {
     expenseFindUniqueOrThrowMock.mockResolvedValueOnce(archivedExpense);
     vendorFindUniqueMock.mockResolvedValueOnce({
       id: 'vendor-1',
+      userId,
       archivedAt: null,
     });
     expenseCategoryFindUniqueMock.mockResolvedValueOnce({
       id: 'category-1',
+      userId,
       archivedAt: null,
     });
     expenseUpdateMock.mockResolvedValueOnce(restoredExpense);
 
-    const result = await service.restore('expense-1');
+    const result = await service.restore(userId, 'expense-1');
 
     expect(result).toEqual(restoredExpense);
     expect(expenseUpdateMock).toHaveBeenCalledWith({
-      where: { id: 'expense-1' },
+      where: { id: 'expense-1', userId },
       data: {
         archivedAt: null,
       },
@@ -418,7 +430,7 @@ describe('ExpensesService', () => {
       archivedAt: null,
     });
 
-    await expect(service.restore('expense-1')).rejects.toBeInstanceOf(
+    await expect(service.restore(userId, 'expense-1')).rejects.toBeInstanceOf(
       ConflictException,
     );
 
@@ -435,11 +447,11 @@ describe('ExpensesService', () => {
     expenseFindUniqueOrThrowMock.mockResolvedValueOnce(archivedExpense);
     expenseDeleteMock.mockResolvedValueOnce(archivedExpense);
 
-    const result = await service.remove('expense-1');
+    const result = await service.remove(userId, 'expense-1');
 
     expect(result).toEqual(archivedExpense);
     expect(expenseDeleteMock).toHaveBeenCalledWith({
-      where: { id: 'expense-1' },
+      where: { id: 'expense-1', userId },
     });
   });
 
@@ -449,7 +461,7 @@ describe('ExpensesService', () => {
       archivedAt: null,
     });
 
-    await expect(service.remove('expense-1')).rejects.toBeInstanceOf(
+    await expect(service.remove(userId, 'expense-1')).rejects.toBeInstanceOf(
       ConflictException,
     );
 
@@ -459,7 +471,7 @@ describe('ExpensesService', () => {
     vendorFindUniqueMock.mockResolvedValueOnce(null);
 
     await expect(
-      service.create({
+      service.create(userId, {
         vendorId: 'vendor-1',
         categoryId: 'category-1',
         description: 'Office supplies',
@@ -483,11 +495,12 @@ describe('ExpensesService', () => {
   it('create throws vendor not found when vendor is archived', async () => {
     vendorFindUniqueMock.mockResolvedValueOnce({
       id: 'vendor-1',
+      userId,
       archivedAt: new Date(),
     });
 
     await expect(
-      service.create({
+      service.create(userId, {
         vendorId: 'vendor-1',
         categoryId: 'category-1',
         description: 'Office supplies',
@@ -511,12 +524,13 @@ describe('ExpensesService', () => {
   it('create throws expense category not found when category does not exist', async () => {
     vendorFindUniqueMock.mockResolvedValueOnce({
       id: 'vendor-1',
+      userId,
       archivedAt: null,
     });
     expenseCategoryFindUniqueMock.mockResolvedValueOnce(null);
 
     await expect(
-      service.create({
+      service.create(userId, {
         vendorId: 'vendor-1',
         categoryId: 'category-1',
         description: 'Office supplies',
@@ -542,15 +556,17 @@ describe('ExpensesService', () => {
   it('create throws expense category not found when category is archived', async () => {
     vendorFindUniqueMock.mockResolvedValueOnce({
       id: 'vendor-1',
+      userId,
       archivedAt: null,
     });
     expenseCategoryFindUniqueMock.mockResolvedValueOnce({
       id: 'category-1',
+      userId,
       archivedAt: new Date(),
     });
 
     await expect(
-      service.create({
+      service.create(userId, {
         vendorId: 'vendor-1',
         categoryId: 'category-1',
         description: 'Office supplies',
@@ -588,7 +604,7 @@ describe('ExpensesService', () => {
     vendorFindUniqueMock.mockResolvedValueOnce(null);
 
     await expect(
-      service.update('expense-1', { vendorId: 'vendor-2' }),
+      service.update(userId, 'expense-1', { vendorId: 'vendor-2' }),
     ).rejects.toMatchObject({
       response: {
         message: 'Vendor not found',
@@ -596,7 +612,7 @@ describe('ExpensesService', () => {
     });
 
     expect(expenseFindUniqueOrThrowMock).toHaveBeenCalledWith({
-      where: { id: 'expense-1' },
+      where: { id: 'expense-1', userId },
     });
     expect(vendorFindUniqueMock).toHaveBeenCalledWith({
       where: { id: 'vendor-2' },
@@ -619,11 +635,12 @@ describe('ExpensesService', () => {
     expenseFindUniqueOrThrowMock.mockResolvedValueOnce(existingExpense);
     vendorFindUniqueMock.mockResolvedValueOnce({
       id: 'vendor-2',
+      userId,
       archivedAt: new Date(),
     });
 
     await expect(
-      service.update('expense-1', { vendorId: 'vendor-2' }),
+      service.update(userId, 'expense-1', { vendorId: 'vendor-2' }),
     ).rejects.toMatchObject({
       response: {
         message: 'Vendor not found',
@@ -651,12 +668,13 @@ describe('ExpensesService', () => {
     expenseFindUniqueOrThrowMock.mockResolvedValueOnce(existingExpense);
     vendorFindUniqueMock.mockResolvedValueOnce({
       id: 'vendor-1',
+      userId,
       archivedAt: null,
     });
     expenseCategoryFindUniqueMock.mockResolvedValueOnce(null);
 
     await expect(
-      service.update('expense-1', { categoryId: 'category-2' }),
+      service.update(userId, 'expense-1', { categoryId: 'category-2' }),
     ).rejects.toMatchObject({
       response: {
         message: 'Expense category not found',
@@ -686,15 +704,17 @@ describe('ExpensesService', () => {
     expenseFindUniqueOrThrowMock.mockResolvedValueOnce(existingExpense);
     vendorFindUniqueMock.mockResolvedValueOnce({
       id: 'vendor-1',
+      userId,
       archivedAt: null,
     });
     expenseCategoryFindUniqueMock.mockResolvedValueOnce({
       id: 'category-2',
+      userId,
       archivedAt: new Date(),
     });
 
     await expect(
-      service.update('expense-1', { categoryId: 'category-2' }),
+      service.update(userId, 'expense-1', { categoryId: 'category-2' }),
     ).rejects.toMatchObject({
       response: {
         message: 'Expense category not found',
@@ -717,10 +737,11 @@ describe('ExpensesService', () => {
 
     vendorFindUniqueMock.mockResolvedValueOnce({
       id: 'vendor-1',
+      userId,
       archivedAt: new Date(),
     });
 
-    await expect(service.restore('expense-1')).rejects.toMatchObject({
+    await expect(service.restore(userId, 'expense-1')).rejects.toMatchObject({
       response: {
         message: 'Vendor not found',
       },
@@ -743,14 +764,16 @@ describe('ExpensesService', () => {
 
     vendorFindUniqueMock.mockResolvedValueOnce({
       id: 'vendor-1',
+      userId,
       archivedAt: null,
     });
     expenseCategoryFindUniqueMock.mockResolvedValueOnce({
       id: 'category-1',
+      userId,
       archivedAt: new Date(),
     });
 
-    await expect(service.restore('expense-1')).rejects.toMatchObject({
+    await expect(service.restore(userId, 'expense-1')).rejects.toMatchObject({
       response: {
         message: 'Expense category not found',
       },

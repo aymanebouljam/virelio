@@ -13,6 +13,7 @@ jest.mock('node:fs/promises', () => ({
 
 describe('ProofsService', () => {
   let service: ProofsService;
+  const userId = 'user-1';
 
   const expenseFindUniqueMock = jest.fn();
   const proofCreateMock = jest.fn();
@@ -38,6 +39,7 @@ describe('ProofsService', () => {
   it('uploads proof metadata for an existing active expense', async () => {
     expenseFindUniqueMock.mockResolvedValueOnce({
       id: 'expense-1',
+      userId,
     });
 
     const expectedDirectory = getExpenseProofDir('expense-1');
@@ -64,11 +66,12 @@ describe('ProofsService', () => {
       path: '/tmp/generated-file-name.pdf',
     } as Express.Multer.File;
 
-    const result = await service.upload('expense-1', file);
+    const result = await service.upload(userId, 'expense-1', file);
 
     expect(expenseFindUniqueMock).toHaveBeenCalledWith({
       where: {
         id: 'expense-1',
+        userId,
         archivedAt: null,
       },
     });
@@ -103,9 +106,9 @@ describe('ProofsService', () => {
       path: '/tmp/generated-file-name.pdf',
     } as Express.Multer.File;
 
-    await expect(service.upload('expense-1', file)).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
+    await expect(
+      service.upload(userId, 'expense-1', file),
+    ).rejects.toBeInstanceOf(NotFoundException);
 
     expect(unlink).toHaveBeenCalledWith(file.path);
     expect(mkdir).not.toHaveBeenCalled();
@@ -123,15 +126,18 @@ describe('ProofsService', () => {
       storagePath: 'uploads/proofs/expense-1/generated-file-name.pdf',
       createdAt: new Date('2026-06-19T10:00:00.000Z'),
     };
-    expenseFindUniqueMock.mockResolvedValueOnce({ id: proof.expenseId });
+    expenseFindUniqueMock.mockResolvedValueOnce({
+      id: proof.expenseId,
+      userId,
+    });
     proofFindUniqueMock.mockResolvedValueOnce(proof);
 
     proofDeleteMock.mockResolvedValueOnce(proof);
 
-    const result = await service.remove(proof.expenseId, proof.id);
+    const result = await service.remove(userId, proof.expenseId, proof.id);
 
     expect(expenseFindUniqueMock).toHaveBeenCalledWith({
-      where: { id: proof.expenseId, archivedAt: null },
+      where: { id: proof.expenseId, userId, archivedAt: null },
     });
     expect(proofFindUniqueMock).toHaveBeenCalledWith({
       where: { id: proof.id, expenseId: proof.expenseId },
@@ -145,26 +151,26 @@ describe('ProofsService', () => {
     expenseFindUniqueMock.mockResolvedValueOnce(null);
 
     await expect(
-      service.remove('no-expense', 'proof-1'),
+      service.remove(userId, 'no-expense', 'proof-1'),
     ).rejects.toBeInstanceOf(NotFoundException);
 
     expect(expenseFindUniqueMock).toHaveBeenCalledWith({
-      where: { id: 'no-expense', archivedAt: null },
+      where: { id: 'no-expense', userId, archivedAt: null },
     });
     expect(proofFindUniqueMock).not.toHaveBeenCalled();
     expect(proofDeleteMock).not.toHaveBeenCalled();
   });
 
   it('rejects removing a proof document that does not exist', async () => {
-    expenseFindUniqueMock.mockResolvedValueOnce({ id: 'expense-1' });
+    expenseFindUniqueMock.mockResolvedValueOnce({ id: 'expense-1', userId });
     proofFindUniqueMock.mockResolvedValueOnce(null);
 
     await expect(
-      service.remove('expense-1', 'no-proof-id'),
+      service.remove(userId, 'expense-1', 'no-proof-id'),
     ).rejects.toBeInstanceOf(NotFoundException);
 
     expect(expenseFindUniqueMock).toHaveBeenCalledWith({
-      where: { id: 'expense-1', archivedAt: null },
+      where: { id: 'expense-1', userId, archivedAt: null },
     });
     expect(proofFindUniqueMock).toHaveBeenCalledWith({
       where: { id: 'no-proof-id', expenseId: 'expense-1' },

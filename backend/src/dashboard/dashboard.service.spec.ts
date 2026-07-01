@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 describe('DashboardService', () => {
   let service: DashboardService;
+  const userId = 'user-1';
 
   const vendorCountMock = jest.fn();
   const expenseCountMock = jest.fn();
@@ -79,7 +80,7 @@ describe('DashboardService', () => {
       },
     ]);
 
-    await expect(service.getSummary()).resolves.toEqual({
+    await expect(service.getSummary(userId)).resolves.toEqual({
       totalSpend: '300.50',
       activeVendors: 4,
       uncategorizedExpenses: 2,
@@ -160,10 +161,11 @@ describe('DashboardService', () => {
     });
 
     expect(vendorCountMock).toHaveBeenCalledWith({
-      where: { archivedAt: null },
+      where: { userId, archivedAt: null },
     });
     expect(expenseCountMock).toHaveBeenCalledWith({
       where: {
+        userId,
         archivedAt: null,
         categoryId: null,
       },
@@ -171,13 +173,14 @@ describe('DashboardService', () => {
     expect(proofCountMock).toHaveBeenCalledWith({
       where: {
         expense: {
+          userId,
           archivedAt: null,
         },
       },
     });
 
     expect(expenseFindManyMock).toHaveBeenCalledWith({
-      where: { archivedAt: null },
+      where: { userId, archivedAt: null },
       include: {
         vendor: {
           select: {
@@ -199,6 +202,7 @@ describe('DashboardService', () => {
     expect(proofFindManyMock).toHaveBeenCalledWith({
       where: {
         expense: {
+          userId,
           archivedAt: null,
         },
       },
@@ -224,7 +228,7 @@ describe('DashboardService', () => {
     expenseFindManyMock.mockResolvedValueOnce([]);
     proofFindManyMock.mockResolvedValueOnce([]);
 
-    await expect(service.getSummary()).resolves.toEqual({
+    await expect(service.getSummary(userId)).resolves.toEqual({
       totalSpend: '0.00',
       activeVendors: 0,
       uncategorizedExpenses: 0,
@@ -274,7 +278,7 @@ describe('DashboardService', () => {
     ]);
 
     await expect(
-      service.getSummary({
+      service.getSummary(userId, {
         dateFrom: '2026-06-20',
         dateTo: '2026-06-21',
       }),
@@ -286,6 +290,7 @@ describe('DashboardService', () => {
 
     expect(expenseCountMock).toHaveBeenCalledWith({
       where: {
+        userId,
         archivedAt: null,
         categoryId: null,
       },
@@ -293,6 +298,7 @@ describe('DashboardService', () => {
 
     expect(expenseFindManyMock).toHaveBeenCalledWith({
       where: {
+        userId,
         archivedAt: null,
         expenseDate: {
           gte: new Date('2026-06-20'),
@@ -321,7 +327,7 @@ describe('DashboardService', () => {
 
   it('rejects dashboard summary when dateFrom is after dateTo', async () => {
     await expect(
-      service.getSummary({
+      service.getSummary(userId, {
         dateFrom: '2026-06-22',
         dateTo: '2026-06-21',
       }),
