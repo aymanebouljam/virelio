@@ -1,10 +1,15 @@
 import request from 'supertest';
 import type { Server } from 'node:http';
 
-export async function createAuth(http: Server) {
-  const email = 'owner@local.dev';
-  const password = 'password123';
-  const fullName = 'Local Owner';
+type AuthInput = {
+  email?: string;
+  password?: string;
+  fullName?: string;
+};
+export async function createAuth(http: Server, input: AuthInput = {}) {
+  const email = input.email ?? 'owner@local.dev';
+  const password = input.password ?? 'password123';
+  const fullName = input.fullName ?? 'Local Owner';
 
   await request(http).post('/auth/register').send({
     email,
