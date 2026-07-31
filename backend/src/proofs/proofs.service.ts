@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { mkdir, rename, unlink } from 'node:fs/promises';
+import { access, mkdir, rename, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { PrismaService } from '../../prisma/prisma.service';
 import { getAbsoluteProofPath, getExpenseProofDir } from './proofs-paths';
@@ -35,10 +35,30 @@ export class ProofsService {
     }
   }
 
+  async getDownload(userId: string, expenseId: string, proofId: string) {
+    await this.assertExpense(userId, expenseId);
+
+    const proof = await this.assertProofDocument(expenseId, proofId);
+    const absolutePath = getAbsoluteProofPath(proof.storagePath);
+
+    try {
+      await access(absolutePath);
+    } catch {
+      throw new NotFoundException({
+        message: 'Proof file not found',
+      });
+    }
+
+    return {
+      proof,
+      absolutePath,
+    };
+  }
+
   async remove(userId: string, expenseId: string, proofId: string) {
     await this.assertExpense(userId, expenseId);
 
-    const proof = await this.assertProofDocument(userId, expenseId, proofId);
+    const proof = await this.assertProofDocument(expenseId, proofId);
     const absolutePath = getAbsoluteProofPath(proof.storagePath);
 
     await this.unlinkSafely(absolutePath);
@@ -78,7 +98,6 @@ export class ProofsService {
   }
 
   private async assertProofDocument(
-    userId: string,
     expenseId: string,
     proofId: string,
   ): Promise<ProofDocument> {
