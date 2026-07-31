@@ -21,6 +21,14 @@ export async function uploadExpenseProof(expenseId: string, file: File) {
   })) as ProofDocument
 }
 
+export async function downloadExpenseProof(expenseId: string, proofId: string) {
+  return (await apiConfig({
+    path: `expenses/${expenseId}/proofs`,
+    id: proofId,
+    responseType: 'blob',
+  })) as Blob
+}
+
 export async function removeExpenseProof(expenseId: string, proofId: string): Promise<null> {
   return (await apiConfig({
     path: `expenses/${expenseId}/proofs`,
