@@ -72,6 +72,47 @@ describe('Tenant ownership e2e', () => {
     };
   }
 
+  it('allows vendor and category unique values to be reused by another user', async () => {
+    const vendorInput = {
+      name: 'Shared Vendor',
+      email: 'shared@example.com',
+      phone: '+212600000099',
+      website: 'https://shared.example.com',
+    };
+
+    const categoryInput = {
+      name: 'Shared Category',
+      color: '#64748b',
+    };
+
+    const ownerVendor = (await request(http)
+      .post('/vendors')
+      .set(ownerHeaders)
+      .send(vendorInput)
+      .expect(HttpStatus.CREATED)) as ApiResponse;
+
+    const otherUserVendor = (await request(http)
+      .post('/vendors')
+      .set(otherUserHeaders)
+      .send(vendorInput)
+      .expect(HttpStatus.CREATED)) as ApiResponse;
+
+    const ownerCategory = (await request(http)
+      .post('/expense-categories')
+      .set(ownerHeaders)
+      .send(categoryInput)
+      .expect(HttpStatus.CREATED)) as ApiResponse;
+
+    const otherUserCategory = (await request(http)
+      .post('/expense-categories')
+      .set(otherUserHeaders)
+      .send(categoryInput)
+      .expect(HttpStatus.CREATED)) as ApiResponse;
+
+    expect(otherUserVendor.body.id).not.toBe(ownerVendor.body.id);
+    expect(otherUserCategory.body.id).not.toBe(ownerCategory.body.id);
+  });
+
   it('excludes another user records from list endpoints', async () => {
     await createOwnerRecords();
 

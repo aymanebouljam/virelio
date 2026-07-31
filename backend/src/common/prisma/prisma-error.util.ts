@@ -19,11 +19,17 @@ export function throwPrismaConflict(
 
   const target =
     meta?.target ?? meta?.driverAdapterError?.cause?.constraint?.fields;
-  const fields = Array.isArray(target)
+  const rawFields = Array.isArray(target)
     ? target.filter((field): field is string => typeof field === 'string')
     : typeof target === 'string'
       ? [target]
       : [];
+  const normalizeField = (field: string) =>
+    field.startsWith('"') && field.endsWith('"') ? field.slice(1, -1) : field;
+
+  const fields = rawFields
+    .map(normalizeField)
+    .filter((field) => field !== 'userId');
 
   throw new ConflictException({
     message: 'Validation failed',
