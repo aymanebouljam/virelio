@@ -174,6 +174,15 @@ describe('Proofs e2e', () => {
   });
 
   describe('GET /expenses/:expenseId/proofs/:proofId', () => {
+    it('does not expose the proof through its legacy public path', async () => {
+      const expense = await createExpense();
+      const createdProof = await createProof(expense);
+
+      await request(http)
+        .get(`/${createdProof.storagePath}`)
+        .expect(HttpStatus.NOT_FOUND);
+    });
+
     it('downloads an owned proof through the authenticated endpoint', async () => {
       const expense = await createExpense();
       const createdProof = await createProof(expense);

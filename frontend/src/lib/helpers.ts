@@ -24,13 +24,3 @@ export function formatFileSize(sizeBytes: number) {
 export function formatDateTime(value: string) {
   return new Date(value).toLocaleString()
 }
-
-export function getProofUrl(storagePath: string): string {
-  const baseUrl = import.meta.env.VITE_API_BASE_URL
-
-  if (!baseUrl) {
-    throw new Error('VITE_API_BASE_URL is not defined')
-  }
-
-  return `${baseUrl.replace(/\/$/, '')}/${storagePath.replace(/^\/+/, '')}`
-}
