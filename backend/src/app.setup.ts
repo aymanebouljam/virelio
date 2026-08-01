@@ -1,7 +1,6 @@
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { getUploadsRoot } from './proofs/proofs-paths';
 
 export function configureApp(app: NestExpressApplication) {
   const configService = app.get(ConfigService);
@@ -27,8 +26,4 @@ export function configureApp(app: NestExpressApplication) {
       },
     }),
   );
-
-  app.useStaticAssets(getUploadsRoot(), {
-    prefix: '/uploads',
-  });
 }

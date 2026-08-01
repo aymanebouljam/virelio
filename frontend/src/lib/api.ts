@@ -80,6 +80,7 @@ type ApiConfigOptions = {
   id?: string
   action?: string
   queryParams?: Record<string, string | number | boolean>
+  responseType?: 'json' | 'blob'
 }
 
 type FetchConfig = {
@@ -99,6 +100,7 @@ export async function apiConfig({
   id,
   action,
   queryParams,
+  responseType = 'json',
 }: ApiConfigOptions = {}) {
   const url = new URL(`${getApiBaseUrl()}/${path.replace(/^\/+/, '')}`)
   if (id !== undefined) {
@@ -135,9 +137,15 @@ export async function apiConfig({
   }
 
   const response = await fetch(url, config)
-  const body = await validateResponse(response)
+
   if (!response.ok) {
+    const body = (await validateResponse(response)) as ApiErrorResponse | null
     parseError(body)
   }
-  return body
+
+  if (responseType === 'blob') {
+    return response.blob()
+  }
+
+  return validateResponse(response)
 }

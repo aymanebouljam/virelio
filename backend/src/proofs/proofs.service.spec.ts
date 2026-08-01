@@ -1,11 +1,12 @@
 import { NotFoundException } from '@nestjs/common';
-import { mkdir, rename, unlink } from 'node:fs/promises';
+import { access, mkdir, rename, unlink } from 'node:fs/promises';
 import { ProofsService } from './proofs.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { join } from 'node:path';
 import { getExpenseProofDir } from './proofs-paths';
 
 jest.mock('node:fs/promises', () => ({
+  access: jest.fn(),
   mkdir: jest.fn(),
   rename: jest.fn(),
   unlink: jest.fn(),
@@ -114,6 +115,72 @@ describe('ProofsService', () => {
     expect(mkdir).not.toHaveBeenCalled();
     expect(rename).not.toHaveBeenCalled();
     expect(proofCreateMock).not.toHaveBeenCalled();
+  });
+
+  it('returns an owned proof download path', async () => {
+    const proof = {
+      id: 'proof-1',
+      expenseId: 'expense-1',
+      originalName: 'invoice.pdf',
+      mimeType: 'application/pdf',
+      sizeBytes: 245760,
+      storagePath: 'uploads/proofs/expense-1/generated-file-name.pdf',
+      createdAt: new Date('2026-06-19T10:00:00.000Z'),
+    };
+
+    expenseFindUniqueMock.mockResolvedValueOnce({
+      id: proof.expenseId,
+      userId,
+    });
+    proofFindUniqueMock.mockResolvedValueOnce(proof);
+
+    const result = await service.getDownload(userId, proof.expenseId, proof.id);
+
+    expect(expenseFindUniqueMock).toHaveBeenCalledWith({
+      where: {
+        id: proof.expenseId,
+        userId,
+        archivedAt: null,
+      },
+    });
+    expect(proofFindUniqueMock).toHaveBeenCalledWith({
+      where: {
+        id: proof.id,
+        expenseId: proof.expenseId,
+      },
+    });
+    expect(access).toHaveBeenCalledWith(
+      expect.stringContaining('generated-file-name.pdf'),
+    );
+    expect(result.proof).toEqual(proof);
+    expect(result.absolutePath).toContain('generated-file-name.pdf');
+  });
+
+  it('rejects a download when the stored proof file is missing', async () => {
+    const proof = {
+      id: 'proof-1',
+      expenseId: 'expense-1',
+      originalName: 'invoice.pdf',
+      mimeType: 'application/pdf',
+      sizeBytes: 245760,
+      storagePath: 'uploads/proofs/expense-1/generated-file-name.pdf',
+      createdAt: new Date('2026-06-19T10:00:00.000Z'),
+    };
+
+    expenseFindUniqueMock.mockResolvedValueOnce({
+      id: proof.expenseId,
+      userId,
+    });
+    proofFindUniqueMock.mockResolvedValueOnce(proof);
+    jest.mocked(access).mockRejectedValueOnce(new Error('Missing file'));
+
+    await expect(
+      service.getDownload(userId, proof.expenseId, proof.id),
+    ).rejects.toMatchObject({
+      response: {
+        message: 'Proof file not found',
+      },
+    });
   });
 
   it('removes an existing proof document', async () => {

@@ -2,17 +2,19 @@ import {
   BadRequestException,
   Controller,
   Delete,
+  Get,
   HttpCode,
   HttpStatus,
   Param,
   ParseUUIDPipe,
   Post,
+  StreamableFile,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { mkdirSync } from 'node:fs';
+import { createReadStream, mkdirSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { extname } from 'node:path';
 import { diskStorage } from 'multer';
@@ -67,6 +69,24 @@ export class ProofsController {
     }
 
     return this.proofsService.upload(user.sub, expenseId, file);
+  }
+
+  @Get(':proofId')
+  async downloadProof(
+    @CurrentUser() user: JwtUser,
+    @Param('expenseId', new ParseUUIDPipe({ version: '4' })) expenseId: string,
+    @Param('proofId', new ParseUUIDPipe({ version: '4' })) proofId: string,
+  ) {
+    const { proof, absolutePath } = await this.proofsService.getDownload(
+      user.sub,
+      expenseId,
+      proofId,
+    );
+
+    return new StreamableFile(createReadStream(absolutePath), {
+      type: proof.mimeType,
+      length: proof.sizeBytes,
+    });
   }
 
   @Delete(':proofId')

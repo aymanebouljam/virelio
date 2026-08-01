@@ -173,6 +173,56 @@ describe('Proofs e2e', () => {
     });
   });
 
+  describe('GET /expenses/:expenseId/proofs/:proofId', () => {
+    it('does not expose the proof through its legacy public path', async () => {
+      const expense = await createExpense();
+      const createdProof = await createProof(expense);
+
+      await request(http)
+        .get(`/${createdProof.storagePath}`)
+        .expect(HttpStatus.NOT_FOUND);
+    });
+
+    it('downloads an owned proof through the authenticated endpoint', async () => {
+      const expense = await createExpense();
+      const createdProof = await createProof(expense);
+
+      const response = await request(http)
+        .get(`/expenses/${expense.id}/proofs/${createdProof.id}`)
+        .set(authHeaders)
+        .expect(HttpStatus.OK)
+        .expect('Content-Type', /^text\/plain/);
+
+      expect(response.text).toBe(content);
+      expect(response.headers['content-length']).toBe(
+        String(Buffer.byteLength(content)),
+      );
+    });
+
+    it('returns 401 without authentication', async () => {
+      const expense = await createExpense();
+      const createdProof = await createProof(expense);
+
+      await request(http)
+        .get(`/expenses/${expense.id}/proofs/${createdProof.id}`)
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+
+    it('returns 404 when another user requests the proof', async () => {
+      const expense = await createExpense();
+      const createdProof = await createProof(expense);
+      const { authHeaders: otherUserHeaders } = await createAuth(http, {
+        email: 'proof-viewer@local.dev',
+        fullName: 'Proof Viewer',
+      });
+
+      await request(http)
+        .get(`/expenses/${expense.id}/proofs/${createdProof.id}`)
+        .set(otherUserHeaders)
+        .expect(HttpStatus.NOT_FOUND);
+    });
+  });
+
   describe('DELETE /expenses/:expenseId/proofs/:proofId', () => {
     it('remove a proof for an active expense', async () => {
       const expense = await createExpense();

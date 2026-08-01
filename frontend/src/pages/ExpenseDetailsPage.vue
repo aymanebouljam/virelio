@@ -4,14 +4,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { ApiError } from '@/lib/api'
 import { fetchExpense } from '@/lib/expenses/api'
 import { expenseDetailSchema, type ExpenseDetail } from '@/lib/expenses/schema'
-import {
-  formatAmount,
-  formatDate,
-  formatDateTime,
-  formatFileSize,
-  getProofUrl,
-} from '@/lib/helpers'
-import { removeExpenseProof, uploadExpenseProof } from '@/lib/proofs/api'
+import { formatAmount, formatDate, formatDateTime, formatFileSize } from '@/lib/helpers'
+import { downloadExpenseProof, removeExpenseProof, uploadExpenseProof } from '@/lib/proofs/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -26,6 +20,8 @@ const removingProofId = ref<string | null>(null)
 const uploadError = ref('')
 const proofActionError = ref('')
 const uploading = ref(false)
+
+const downloadingProofId = ref<string | null>(null)
 
 async function loadExpense() {
   try {
@@ -72,6 +68,31 @@ async function onProofSelected(event: Event) {
   } finally {
     uploading.value = false
     input.value = ''
+  }
+}
+
+async function downloadProof(proofId: string, originalName: string) {
+  if (!expense.value) {
+    return
+  }
+
+  proofActionError.value = ''
+  downloadingProofId.value = proofId
+
+  try {
+    const blob = await downloadExpenseProof(expense.value.id, proofId)
+    const objectUrl = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+
+    link.href = objectUrl
+    link.download = originalName
+    link.click()
+
+    URL.revokeObjectURL(objectUrl)
+  } catch (err) {
+    proofActionError.value = err instanceof ApiError ? err.message : 'Downloading proof failed'
+  } finally {
+    downloadingProofId.value = null
   }
 }
 
@@ -257,7 +278,7 @@ onMounted(loadExpense)
                 <input
                   type="file"
                   class="hidden"
-                  :disabled="uploading || removingProofId !== null"
+                  :disabled="uploading || removingProofId !== null || downloadingProofId !== null"
                   @change="onProofSelected"
                 />
                 {{ uploading ? 'Uploading...' : 'Upload proof' }}
@@ -288,14 +309,14 @@ onMounted(loadExpense)
                 :key="proof.id"
                 class="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3"
               >
-                <a
-                  :href="getProofUrl(proof.storagePath)"
-                  target="_blank"
-                  rel="noreferrer"
-                  class="text-sm font-medium text-stone-900 underline decoration-stone-300 underline-offset-4 transition hover:text-stone-700"
+                <button
+                  type="button"
+                  class="text-left text-sm font-medium text-stone-900 underline decoration-stone-300 underline-offset-4 transition hover:text-stone-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  :disabled="downloadingProofId === proof.id"
+                  @click="downloadProof(proof.id, proof.originalName)"
                 >
-                  {{ proof.originalName }}
-                </a>
+                  {{ downloadingProofId === proof.id ? 'Downloading...' : proof.originalName }}
+                </button>
 
                 <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-500">
                   <span>{{ proof.mimeType }}</span>
@@ -307,7 +328,7 @@ onMounted(loadExpense)
                   <button
                     type="button"
                     class="inline-flex items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-60"
-                    :disabled="removingProofId === proof.id"
+                    :disabled="removingProofId === proof.id || downloadingProofId !== null"
                     @click="removeProof(proof.id)"
                   >
                     {{ removingProofId === proof.id ? 'Removing...' : 'Remove' }}
