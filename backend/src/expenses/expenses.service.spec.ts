@@ -56,6 +56,53 @@ describe('ExpensesService', () => {
     });
   });
 
+  it('findAll applies search, relation, and inclusive date filters', async () => {
+    expenseFindManyMock.mockResolvedValueOnce([]);
+
+    await service.findAll(userId, {
+      search: '  office  ',
+      vendorId: 'vendor-1',
+      categoryId: 'category-1',
+      dateFrom: '2026-01-01',
+      dateTo: '2026-01-31',
+    });
+
+    expect(expenseFindManyMock).toHaveBeenCalledWith({
+      where: {
+        userId,
+        archivedAt: null,
+        vendorId: 'vendor-1',
+        categoryId: 'category-1',
+        expenseDate: {
+          gte: new Date('2026-01-01T00:00:00.000Z'),
+          lte: new Date('2026-01-31T23:59:59.999Z'),
+        },
+        OR: [
+          { description: { contains: 'office', mode: 'insensitive' } },
+          { notes: { contains: 'office', mode: 'insensitive' } },
+          {
+            vendor: { name: { contains: 'office', mode: 'insensitive' } },
+          },
+          {
+            category: { name: { contains: 'office', mode: 'insensitive' } },
+          },
+        ],
+      },
+      orderBy: { expenseDate: 'desc' },
+    });
+  });
+
+  it('findAll rejects an inverted date range', () => {
+    expect(() =>
+      service.findAll(userId, {
+        dateFrom: '2026-02-01',
+        dateTo: '2026-01-31',
+      }),
+    ).toThrow(BadRequestException);
+
+    expect(expenseFindManyMock).not.toHaveBeenCalled();
+  });
+
   it('findArchived returns archived expenses ordered by archivedAt desc', async () => {
     const expenses = [
       { id: '1', description: 'Office supplies', archivedAt: new Date() },

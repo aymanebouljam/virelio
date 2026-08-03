@@ -9,6 +9,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { CreateExpenseDto } from './dto/create-expense.dto';
@@ -17,6 +18,7 @@ import { ExpensesService } from './expenses.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { JwtUser } from '../auth/auth.types';
+import { GetExpensesQueryDto } from './dto/get-expenses-query.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('expenses')
@@ -24,8 +26,8 @@ export class ExpensesController {
   constructor(private readonly expensesService: ExpensesService) {}
 
   @Get()
-  findAll(@CurrentUser() user: JwtUser) {
-    return this.expensesService.findAll(user.sub);
+  findAll(@CurrentUser() user: JwtUser, @Query() query: GetExpensesQueryDto) {
+    return this.expensesService.findAll(user.sub, query);
   }
 
   @Get('archived')
