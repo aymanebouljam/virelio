@@ -1,0 +1,27 @@
+# Changelog
+
+All notable changes to Virelio will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.1.0] - 2026-08-03
+
+### Added
+
+- Vendor creation, editing, archiving, restoration, permanent removal, and detail views.
+- Expense category management with optional color values.
+- Expense creation, editing, archiving, restoration, permanent removal, and detail views.
+- Private receipt and invoice uploads, authenticated downloads, and removal.
+- Dashboard spending summaries, category breakdowns, recent activity, and date filtering.
+- Date-filtered expense reports with category totals and detailed expense rows.
+- User registration, JWT authentication, protected routes, session hydration, and logout.
+- Per-user ownership isolation across vendors, categories, expenses, proofs, dashboards, and reports.
+- Tenant-scoped uniqueness for vendor contact information and category names.
+- Backend unit and end-to-end coverage for the primary application workflows.
+
+### Security
+
+- Restricted proof-document access to authenticated owners and removed public upload serving.
