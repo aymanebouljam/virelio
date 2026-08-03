@@ -1,8 +1,15 @@
 import { apiConfig } from '../api'
 import type { Vendor, VendorFormValues } from './schema'
 
-export async function fetchVendors() {
-  return (await apiConfig({ path: 'vendors' })) as Vendor[]
+export type VendorFilters = {
+  search?: string
+}
+
+export async function fetchVendors(filters: VendorFilters = {}) {
+  return (await apiConfig({
+    path: 'vendors',
+    queryParams: filters.search ? { search: filters.search } : undefined,
+  })) as Vendor[]
 }
 
 export async function fetchVendor(id: string) {

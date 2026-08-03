@@ -9,17 +9,33 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { throwPrismaNotFound } from '../common/prisma/prisma-error.util';
 import type { CreateExpenseDto } from './dto/create-expense.dto';
 import type { UpdateExpenseDto } from './dto/update-expense.dto';
+import type { GetExpensesQueryDto } from './dto/get-expenses-query.dto';
 
 @Injectable()
 export class ExpensesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll(userId: string): Promise<Expense[]> {
+  findAll(userId: string, query: GetExpensesQueryDto = {}): Promise<Expense[]> {
+    const search = query.search?.trim();
+    const expenseDate = this.buildExpenseDateFilter(query);
+    const where: Prisma.ExpenseWhereInput = {
+      userId,
+      archivedAt: null,
+      ...(query.vendorId && { vendorId: query.vendorId }),
+      ...(query.categoryId && { categoryId: query.categoryId }),
+      ...(expenseDate && { expenseDate }),
+      ...(search && {
+        OR: [
+          { description: { contains: search, mode: 'insensitive' } },
+          { notes: { contains: search, mode: 'insensitive' } },
+          { vendor: { name: { contains: search, mode: 'insensitive' } } },
+          { category: { name: { contains: search, mode: 'insensitive' } } },
+        ],
+      }),
+    };
+
     return this.prisma.expense.findMany({
-      where: {
-        userId,
-        archivedAt: null,
-      },
+      where,
       orderBy: {
         expenseDate: 'desc',
       },
@@ -270,5 +286,39 @@ export class ExpensesService {
         message: 'Expense category not found',
       });
     }
+  }
+
+  private buildExpenseDateFilter(
+    query: GetExpensesQueryDto,
+  ): Prisma.DateTimeFilter | undefined {
+    if (!query.dateFrom && !query.dateTo) {
+      return undefined;
+    }
+
+    const dateFrom = query.dateFrom ? new Date(query.dateFrom) : undefined;
+    const dateTo = query.dateTo ? new Date(query.dateTo) : undefined;
+
+    if (dateTo) {
+      dateTo.setUTCHours(23, 59, 59, 999);
+    }
+
+    if (dateFrom && dateTo && dateFrom.getTime() > dateTo.getTime()) {
+      throw new BadRequestException({
+        message: 'Validation failed',
+        errors: [
+          {
+            field: 'dateRange',
+            constraints: {
+              isValid: 'Date From must be before or equal to date To',
+            },
+          },
+        ],
+      });
+    }
+
+    return {
+      ...(dateFrom && { gte: dateFrom }),
+      ...(dateTo && { lte: dateTo }),
+    };
   }
 }

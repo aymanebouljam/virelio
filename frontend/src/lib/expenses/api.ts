@@ -1,8 +1,23 @@
 import { apiConfig } from '../api'
 import type { Expense, ExpenseDetail, ExpensePayload } from './schema'
 
-export async function fetchExpenses() {
-  return (await apiConfig({ path: 'expenses' })) as Expense[]
+export type ExpenseFilters = {
+  search?: string
+  vendorId?: string
+  categoryId?: string
+  dateFrom?: string
+  dateTo?: string
+}
+
+export async function fetchExpenses(filters: ExpenseFilters = {}) {
+  const queryParams = Object.fromEntries(
+    Object.entries(filters).filter((entry): entry is [string, string] => Boolean(entry[1])),
+  )
+
+  return (await apiConfig({
+    path: 'expenses',
+    queryParams,
+  })) as Expense[]
 }
 
 export async function fetchArchivedExpenses() {

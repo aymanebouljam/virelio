@@ -48,6 +48,40 @@ describe('VendorsService', () => {
     });
   });
 
+  it('findAll searches active vendor contact fields case-insensitively', async () => {
+    const vendors = [{ id: '1', name: 'Atlas', archivedAt: null }];
+    findManyMock.mockResolvedValue(vendors);
+
+    await expect(
+      service.findAll(userId, { search: '  atlas  ' }),
+    ).resolves.toEqual(vendors);
+
+    expect(findManyMock).toHaveBeenCalledWith({
+      where: {
+        archivedAt: null,
+        userId,
+        OR: [
+          { name: { contains: 'atlas', mode: 'insensitive' } },
+          { email: { contains: 'atlas', mode: 'insensitive' } },
+          { phone: { contains: 'atlas', mode: 'insensitive' } },
+          { website: { contains: 'atlas', mode: 'insensitive' } },
+        ],
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  });
+
+  it('findAll ignores a blank search value', async () => {
+    findManyMock.mockResolvedValue([]);
+
+    await service.findAll(userId, { search: '   ' });
+
+    expect(findManyMock).toHaveBeenCalledWith({
+      where: { archivedAt: null, userId },
+      orderBy: { createdAt: 'desc' },
+    });
+  });
+
   it('findOne returns vendor by id', async () => {
     const id = '1';
     const vendor = { id, name: 'Atlas', archivedAt: null };
