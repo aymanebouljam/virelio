@@ -4,7 +4,7 @@ import 'dotenv/config';
 import { vendors } from './seed-data/vendors';
 import { categories } from './seed-data/categories';
 import { expenses } from './seed-data/expenses';
-import { seedUser } from './seed-data/user';
+import { createSeedUser } from './seed-data/user';
 
 const adapter = new PrismaPg({
   connectionString: process.env['DATABASE_URL'],
@@ -14,7 +14,7 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const user = await prisma.user.create({
-    data: seedUser,
+    data: await createSeedUser(),
   });
   await prisma.vendor.createMany({
     data: vendors.map((vendor) => ({
