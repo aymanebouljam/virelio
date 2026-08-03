@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ZodError } from 'zod'
 import { ApiError } from '@/lib/api'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { archiveExpense, createExpense, fetchExpenses, updateExpense } from '@/lib/expenses/api'
 import {
   expenseFormSchema,
@@ -21,6 +21,7 @@ import { mapZodErrors } from '@/lib/zod'
 const expenses = ref<Expense[]>([])
 const vendors = ref<Vendor[]>([])
 const categories = ref<ExpenseCategory[]>([])
+const route = useRoute()
 const router = useRouter()
 
 const loading = ref(true)
@@ -31,6 +32,60 @@ const editingId = ref<string | null>(null)
 const submitting = ref(false)
 const submitError = ref('')
 const formErrors = ref<Record<string, string>>({})
+
+const filters = reactive({
+  search: readQueryValue('search'),
+  vendorId: readQueryValue('vendorId'),
+  categoryId: readQueryValue('categoryId'),
+  dateFrom: readQueryValue('dateFrom'),
+  dateTo: readQueryValue('dateTo'),
+})
+
+const hasFilters = computed(() => Object.values(readRouteFilters()).some(Boolean))
+
+function readQueryValue(key: string) {
+  const value = route.query[key]
+  return typeof value === 'string' ? value : ''
+}
+
+function readRouteFilters() {
+  return {
+    search: readQueryValue('search') || undefined,
+    vendorId: readQueryValue('vendorId') || undefined,
+    categoryId: readQueryValue('categoryId') || undefined,
+    dateFrom: readQueryValue('dateFrom') || undefined,
+    dateTo: readQueryValue('dateTo') || undefined,
+  }
+}
+
+function syncFiltersFromRoute() {
+  filters.search = readQueryValue('search')
+  filters.vendorId = readQueryValue('vendorId')
+  filters.categoryId = readQueryValue('categoryId')
+  filters.dateFrom = readQueryValue('dateFrom')
+  filters.dateTo = readQueryValue('dateTo')
+}
+
+async function applyFilters() {
+  const query = Object.fromEntries(
+    Object.entries(filters)
+      .map(([key, value]) => [key, value.trim()])
+      .filter((entry) => entry[1]),
+  )
+
+  await router.replace({ query })
+}
+
+async function clearFilters() {
+  Object.assign(filters, {
+    search: '',
+    vendorId: '',
+    categoryId: '',
+    dateFrom: '',
+    dateTo: '',
+  })
+  await applyFilters()
+}
 
 const today = new Date().toISOString().slice(0, 10)
 
@@ -143,20 +198,30 @@ function normalizeError(err: unknown) {
   submitError.value = 'Something went wrong'
 }
 
+function getListError(err: unknown) {
+  return err instanceof ApiError ? (err.content?.dateRange ?? err.message) : 'Something went wrong'
+}
+
+async function fetchValidatedExpenses() {
+  const rawExpenses = await fetchExpenses(readRouteFilters())
+
+  return rawExpenses
+    .map((expense) => expenseSchema.safeParse(expense))
+    .filter((result) => result.success)
+    .map((result) => result.data)
+}
+
 async function loadExpensesPage() {
   try {
     error.value = ''
 
-    const [rawExpenses, rawVendors, rawCategories] = await Promise.all([
-      fetchExpenses(),
+    const [validatedExpenses, rawVendors, rawCategories] = await Promise.all([
+      fetchValidatedExpenses(),
       fetchVendors(),
       fetchExpenseCategories(),
     ])
 
-    expenses.value = rawExpenses
-      .map((expense) => expenseSchema.safeParse(expense))
-      .filter((result) => result.success)
-      .map((result) => result.data)
+    expenses.value = validatedExpenses
 
     vendors.value = rawVendors
       .map((vendor) => vendorSchema.safeParse(vendor))
@@ -168,7 +233,18 @@ async function loadExpensesPage() {
       .filter((result) => result.success)
       .map((result) => result.data)
   } catch (err) {
-    error.value = err instanceof ApiError ? err.message : 'Something went wrong'
+    error.value = getListError(err)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function reloadExpenses() {
+  try {
+    error.value = ''
+    expenses.value = await fetchValidatedExpenses()
+  } catch (err) {
+    error.value = getListError(err)
   } finally {
     loading.value = false
   }
@@ -192,7 +268,11 @@ async function submitForm() {
         return
       }
 
-      expenses.value = [result.data, ...expenses.value]
+      if (hasFilters.value) {
+        await reloadExpenses()
+      } else {
+        expenses.value = [result.data, ...expenses.value]
+      }
     } else if (!isSameForm(form.value, baseline.value)) {
       const result = expenseSchema.safeParse(await updateExpense(editingId.value, payload))
 
@@ -202,9 +282,13 @@ async function submitForm() {
         return
       }
 
-      expenses.value = expenses.value.map((expense) =>
-        expense.id === result.data.id ? result.data : expense,
-      )
+      if (hasFilters.value) {
+        await reloadExpenses()
+      } else {
+        expenses.value = expenses.value.map((expense) =>
+          expense.id === result.data.id ? result.data : expense,
+        )
+      }
     }
 
     resetForm()
@@ -229,6 +313,15 @@ async function archive(expense: Expense) {
     actionError.value = err instanceof ApiError ? err.message : 'Archiving expense failed'
   }
 }
+
+watch(
+  () => route.fullPath,
+  () => {
+    syncFiltersFromRoute()
+    loading.value = true
+    void reloadExpenses()
+  },
+)
 
 onMounted(loadExpensesPage)
 </script>
@@ -264,6 +357,94 @@ onMounted(loadExpensesPage)
         {{ actionError }}
       </div>
     </header>
+
+    <form
+      class="grid gap-3 rounded-3xl border border-stone-200 bg-white p-4 shadow-sm sm:grid-cols-2 xl:grid-cols-6"
+      role="search"
+      @submit.prevent="applyFilters"
+    >
+      <label class="sm:col-span-2 xl:col-span-2">
+        <span class="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-stone-400">
+          Search
+        </span>
+        <input
+          v-model="filters.search"
+          type="search"
+          maxlength="240"
+          placeholder="Description, notes, vendor, or category"
+          class="min-h-11 w-full rounded-2xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-stone-400"
+        />
+      </label>
+
+      <label>
+        <span class="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-stone-400">
+          Vendor
+        </span>
+        <select
+          v-model="filters.vendorId"
+          class="min-h-11 w-full rounded-2xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-stone-400"
+        >
+          <option value="">All vendors</option>
+          <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
+            {{ vendor.name }}
+          </option>
+        </select>
+      </label>
+
+      <label>
+        <span class="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-stone-400">
+          Category
+        </span>
+        <select
+          v-model="filters.categoryId"
+          class="min-h-11 w-full rounded-2xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-stone-400"
+        >
+          <option value="">All categories</option>
+          <option v-for="category in categories" :key="category.id" :value="category.id">
+            {{ category.name }}
+          </option>
+        </select>
+      </label>
+
+      <label>
+        <span class="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-stone-400">
+          From
+        </span>
+        <input
+          v-model="filters.dateFrom"
+          type="date"
+          class="min-h-11 w-full rounded-2xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-stone-400"
+        />
+      </label>
+
+      <label>
+        <span class="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-stone-400">
+          To
+        </span>
+        <input
+          v-model="filters.dateTo"
+          type="date"
+          class="min-h-11 w-full rounded-2xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-stone-400"
+        />
+      </label>
+
+      <div class="flex items-end gap-3 sm:col-span-2 xl:col-span-6">
+        <button
+          type="submit"
+          class="inline-flex min-h-11 items-center justify-center rounded-2xl bg-stone-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-stone-700"
+        >
+          Apply filters
+        </button>
+        <button
+          v-if="hasFilters"
+          type="button"
+          class="inline-flex min-h-11 items-center justify-center rounded-2xl border border-stone-200 bg-stone-50 px-4 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:bg-stone-100 hover:text-stone-900"
+          @click="clearFilters"
+        >
+          Clear
+        </button>
+      </div>
+    </form>
 
     <section v-if="showForm" class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
       <h3 class="text-lg font-semibold tracking-tight text-stone-900">
@@ -430,7 +611,12 @@ onMounted(loadExpensesPage)
         v-else-if="expenses.length === 0"
         class="rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-12 text-center"
       >
-        <p class="text-base font-medium text-stone-700">No expenses yet</p>
+        <p class="text-base font-medium text-stone-700">
+          {{ hasFilters ? 'No matching expenses' : 'No expenses yet' }}
+        </p>
+        <p v-if="hasFilters" class="mt-2 text-sm text-stone-500">
+          Adjust or clear the current filters to see more expenses.
+        </p>
       </div>
 
       <div v-else class="space-y-3">

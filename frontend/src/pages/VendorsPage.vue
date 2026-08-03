@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { createVendor, fetchVendors, updateVendor, archiveVendor } from '@/lib/vendors/api'
 
 import { ApiError } from '@/lib/api'
@@ -13,6 +14,10 @@ import { ZodError } from 'zod'
 import { mapZodErrors } from '@/lib/zod'
 
 const vendors = ref<Vendor[]>([])
+const route = useRoute()
+const router = useRouter()
+const search = ref(readSearchQuery() ?? '')
+const hasSearch = computed(() => readSearchQuery() !== undefined)
 const vendor = ref<VendorFormValues>({
   name: '',
   email: '',
@@ -39,6 +44,29 @@ const form = ref<VendorFormValues>({
 })
 
 const formErrors = ref<Record<string, string>>({})
+
+function readSearchQuery() {
+  const value = route.query.search
+  return typeof value === 'string' && value.length > 0 ? value : undefined
+}
+
+async function applySearch() {
+  const normalizedSearch = search.value.trim()
+  const query = { ...route.query }
+
+  if (normalizedSearch) {
+    query.search = normalizedSearch
+  } else {
+    delete query.search
+  }
+
+  await router.replace({ query })
+}
+
+async function clearSearch() {
+  search.value = ''
+  await applySearch()
+}
 
 function resetForm() {
   form.value = {
@@ -86,7 +114,7 @@ async function loadVendors() {
   try {
     error.value = ''
     const validatedVendors = []
-    for (const vendor of await fetchVendors()) {
+    for (const vendor of await fetchVendors({ search: readSearchQuery() })) {
       const result = vendorSchema.safeParse(vendor)
       if (!result.success) {
         continue
@@ -158,7 +186,11 @@ async function submitVendorForm() {
         actionError.value = 'Failed to fetch created vendor'
         return
       }
-      vendors.value = [result.data as Vendor, ...vendors.value]
+      if (hasSearch.value) {
+        await clearSearch()
+      } else {
+        vendors.value = [result.data as Vendor, ...vendors.value]
+      }
     } else if (!isSameVendorForm(payload, vendor.value)) {
       const result = vendorSchema.safeParse(await updateVendor(editingVendorId.value, payload))
       if (!result.success) {
@@ -168,9 +200,13 @@ async function submitVendorForm() {
       }
 
       const updatedVendor = result.data as Vendor
-      vendors.value = vendors.value.map((vendor) =>
-        vendor.id === updatedVendor.id ? updatedVendor : vendor,
-      )
+      if (hasSearch.value) {
+        await clearSearch()
+      } else {
+        vendors.value = vendors.value.map((vendor) =>
+          vendor.id === updatedVendor.id ? updatedVendor : vendor,
+        )
+      }
     }
 
     closeVendorForm()
@@ -192,6 +228,15 @@ async function archive({ id }: Vendor) {
     actionError.value = err instanceof ApiError ? err.message : 'Archiving vendor failed'
   }
 }
+
+watch(
+  () => route.query.search,
+  () => {
+    search.value = readSearchQuery() ?? ''
+    loading.value = true
+    void loadVendors()
+  },
+)
 
 onMounted(loadVendors)
 </script>
@@ -229,6 +274,40 @@ onMounted(loadVendors)
         {{ actionError }}
       </div>
     </header>
+
+    <form
+      class="flex flex-col gap-3 rounded-3xl border border-stone-200 bg-white p-4 shadow-sm sm:flex-row"
+      role="search"
+      @submit.prevent="applySearch"
+    >
+      <label class="flex-1">
+        <span class="sr-only">Search vendors</span>
+        <input
+          v-model="search"
+          type="search"
+          maxlength="120"
+          placeholder="Search by name, email, phone, or website"
+          class="min-h-11 w-full rounded-2xl border border-stone-200 bg-white px-4 py-2 text-sm text-stone-700 outline-none transition focus:border-stone-400"
+        />
+      </label>
+
+      <button
+        type="submit"
+        class="inline-flex min-h-11 items-center justify-center rounded-2xl bg-stone-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-stone-700"
+      >
+        Search
+      </button>
+
+      <button
+        v-if="hasSearch"
+        type="button"
+        class="inline-flex min-h-11 items-center justify-center rounded-2xl border border-stone-200 bg-stone-50 px-4 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:bg-stone-100 hover:text-stone-900"
+        @click="clearSearch"
+      >
+        Clear
+      </button>
+    </form>
+
     <section
       v-if="showVendorForm"
       class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm"
@@ -392,9 +471,15 @@ onMounted(loadVendors)
         v-else-if="vendors.length === 0"
         class="rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-12 text-center"
       >
-        <p class="text-base font-medium text-stone-700">No vendors yet</p>
+        <p class="text-base font-medium text-stone-700">
+          {{ hasSearch ? 'No matching vendors' : 'No vendors yet' }}
+        </p>
         <p class="mt-2 text-sm text-stone-500">
-          Add your first vendor to start organizing expense records.
+          {{
+            hasSearch
+              ? 'Try a different search term or clear the current search.'
+              : 'Add your first vendor to start organizing expense records.'
+          }}
         </p>
       </div>
 
