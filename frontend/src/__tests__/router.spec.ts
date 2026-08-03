@@ -1,0 +1,102 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { AuthUser } from '@/lib/auth/schema'
+
+const auth = vi.hoisted(() => {
+  const currentUser = { value: null as AuthUser | null }
+  const isAuthenticated = { value: false }
+
+  return {
+    clearAccessToken: vi.fn<() => void>(() => {
+      currentUser.value = null
+      isAuthenticated.value = false
+    }),
+    currentUser,
+    fetchCurrentUser: vi.fn<() => Promise<AuthUser>>(),
+    isAuthenticated,
+  }
+})
+
+vi.mock('@/lib/auth/storage', () => ({
+  clearAccessToken: auth.clearAccessToken,
+  currentUser: auth.currentUser,
+  getAccessToken: () => null,
+  isAuthenticated: auth.isAuthenticated,
+}))
+
+vi.mock('@/lib/auth/api', () => ({
+  fetchCurrentUser: auth.fetchCurrentUser,
+}))
+
+const testUser: AuthUser = {
+  id: 'user-1',
+  email: 'owner@example.test',
+  fullName: 'Local Owner',
+  createdAt: '2026-08-03T00:00:00.000Z',
+  updatedAt: '2026-08-03T00:00:00.000Z',
+}
+
+async function navigate(path: string) {
+  const { default: router } = await import('@/router')
+  await router.push(path)
+  await router.isReady()
+  return router
+}
+
+describe('authentication route guard', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.resetModules()
+    auth.currentUser.value = null
+    auth.isAuthenticated.value = false
+  })
+
+  it('redirects unauthenticated users from protected routes', async () => {
+    const router = await navigate('/expenses?search=office')
+
+    expect(router.currentRoute.value.name).toBe('login')
+    expect(router.currentRoute.value.query).toEqual({
+      redirect: '/expenses?search=office',
+    })
+    expect(auth.fetchCurrentUser).not.toHaveBeenCalled()
+  })
+
+  it('allows unauthenticated users to open guest routes', async () => {
+    const router = await navigate('/login')
+
+    expect(router.currentRoute.value.name).toBe('login')
+    expect(auth.fetchCurrentUser).not.toHaveBeenCalled()
+  })
+
+  it('hydrates the current user before opening a protected route', async () => {
+    auth.isAuthenticated.value = true
+    auth.fetchCurrentUser.mockResolvedValue(testUser)
+
+    const router = await navigate('/vendors')
+
+    expect(router.currentRoute.value.name).toBe('vendors')
+    expect(auth.fetchCurrentUser).toHaveBeenCalledOnce()
+    expect(auth.currentUser.value).toEqual(testUser)
+  })
+
+  it('redirects authenticated users away from guest routes', async () => {
+    auth.isAuthenticated.value = true
+    auth.currentUser.value = testUser
+
+    const router = await navigate('/login')
+
+    expect(router.currentRoute.value.name).toBe('dashboard')
+    expect(auth.fetchCurrentUser).not.toHaveBeenCalled()
+  })
+
+  it('clears invalid sessions and preserves the intended destination', async () => {
+    const { ApiError } = await import('@/lib/api')
+    auth.isAuthenticated.value = true
+    auth.fetchCurrentUser.mockRejectedValue(new ApiError('Invalid token'))
+
+    const router = await navigate('/reports')
+
+    expect(auth.clearAccessToken).toHaveBeenCalledOnce()
+    expect(router.currentRoute.value.name).toBe('login')
+    expect(router.currentRoute.value.query).toEqual({ redirect: '/reports' })
+  })
+})
