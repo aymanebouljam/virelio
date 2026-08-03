@@ -7,6 +7,7 @@ import { Prisma, type Vendor } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { CreateVendorDto } from './dto/create-vendor.dto';
 import type { UpdateVendorDto } from './dto/update-vendor.dto';
+import type { GetVendorsQueryDto } from './dto/get-vendors-query.dto';
 import {
   throwPrismaConflict,
   throwPrismaNotFound,
@@ -16,12 +17,23 @@ import {
 export class VendorsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll(userId: string): Promise<Vendor[]> {
+  findAll(userId: string, query: GetVendorsQueryDto = {}): Promise<Vendor[]> {
+    const search = query.search?.trim();
+    const where: Prisma.VendorWhereInput = {
+      archivedAt: null,
+      userId,
+      ...(search && {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { phone: { contains: search, mode: 'insensitive' } },
+          { website: { contains: search, mode: 'insensitive' } },
+        ],
+      }),
+    };
+
     return this.prisma.vendor.findMany({
-      where: {
-        archivedAt: null,
-        userId,
-      },
+      where,
       orderBy: {
         createdAt: 'desc',
       },

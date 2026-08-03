@@ -9,6 +9,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { CreateVendorDto } from './dto/create-vendor.dto';
@@ -17,6 +18,7 @@ import { UpdateVendorDto } from './dto/update-vendor.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { JwtUser } from '../auth/auth.types';
+import { GetVendorsQueryDto } from './dto/get-vendors-query.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('vendors')
@@ -24,8 +26,8 @@ export class VendorsController {
   constructor(private readonly vendorsService: VendorsService) {}
 
   @Get()
-  findAll(@CurrentUser() user: JwtUser) {
-    return this.vendorsService.findAll(user.sub);
+  findAll(@CurrentUser() user: JwtUser, @Query() query: GetVendorsQueryDto) {
+    return this.vendorsService.findAll(user.sub, query);
   }
 
   @Get('archived')
