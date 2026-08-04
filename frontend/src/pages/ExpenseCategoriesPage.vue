@@ -149,7 +149,6 @@ async function submitForm() {
 
     resetForm()
   } catch (err) {
-    console.error(err)
     normalizeError(err)
   } finally {
     submitting.value = false
@@ -213,7 +212,7 @@ onMounted(loadCategories)
         {{ editingId ? 'Edit category' : 'Create category' }}
       </h3>
 
-      <form class="mt-6 space-y-5" @submit.prevent="submitForm">
+      <form aria-label="Category form" class="mt-6 space-y-5" @submit.prevent="submitForm">
         <div class="grid gap-4 sm:grid-cols-[1fr_auto]">
           <label class="block">
             <span class="mb-2 block text-sm font-medium text-stone-700">Name</span>
@@ -274,7 +273,7 @@ onMounted(loadCategories)
     </section>
 
     <section class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-      <div v-if="loading" class="space-y-3">
+      <div v-if="loading" class="space-y-3" role="status" aria-label="Loading categories">
         <div class="h-5 w-40 animate-pulse rounded bg-stone-200"></div>
         <div class="space-y-2">
           <div class="h-16 animate-pulse rounded-2xl bg-stone-100"></div>
