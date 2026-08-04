@@ -97,7 +97,7 @@ onMounted(loadArchivedVendors)
     </header>
 
     <section class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-      <div v-if="loading" class="space-y-3">
+      <div v-if="loading" class="space-y-3" role="status" aria-label="Loading archived vendors">
         <div class="h-5 w-48 animate-pulse rounded bg-stone-200"></div>
         <div class="space-y-2">
           <div class="h-16 animate-pulse rounded-2xl bg-stone-100"></div>
