@@ -3,6 +3,7 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { ApiError } from '@/lib/api'
 import type { AuthUser, ProfileFormValues } from '@/lib/auth/schema'
 import { currentUser } from '@/lib/auth/storage'
+import { formatDateTime } from '@/lib/helpers'
 import ProfileSettingsPage from '@/pages/ProfileSettingsPage.vue'
 
 const authApi = vi.hoisted(() => ({
@@ -11,12 +12,15 @@ const authApi = vi.hoisted(() => ({
 
 vi.mock('@/lib/auth/api', () => authApi)
 
+const createdAt = '2026-08-05T09:00:00.000Z'
+const updatedAt = '2026-08-05T10:00:00.000Z'
+
 const user: AuthUser = {
   id: 'user-1',
   email: 'owner@example.test',
   fullName: 'Local Owner',
-  createdAt: '2026-08-05T09:00:00.000Z',
-  updatedAt: '2026-08-05T09:00:00.000Z',
+  createdAt,
+  updatedAt,
 }
 
 function getForm(wrapper: VueWrapper) {
@@ -39,14 +43,17 @@ describe('profile settings workflow', () => {
     expect(wrapper.get('#profile-full-name').element).toHaveProperty('value', 'Local Owner')
     expect(wrapper.get('#profile-email').element).toHaveProperty('value', 'owner@example.test')
     expect(wrapper.get('button[type="submit"]').attributes()).toHaveProperty('disabled')
+    expect(wrapper.get(`time[datetime="${createdAt}"]`).text()).toBe(formatDateTime(createdAt))
+    expect(wrapper.get(`time[datetime="${updatedAt}"]`).text()).toBe(formatDateTime(updatedAt))
   })
 
   it('updates the profile and current session user', async () => {
+    const nextUpdatedAt = '2026-08-05T11:00:00.000Z'
     const updatedUser: AuthUser = {
       ...user,
       email: 'updated@example.test',
       fullName: 'Updated Owner',
-      updatedAt: '2026-08-05T10:00:00.000Z',
+      updatedAt: nextUpdatedAt,
     }
     authApi.updateProfile.mockResolvedValue(updatedUser)
     const wrapper = mount(ProfileSettingsPage)
@@ -62,6 +69,9 @@ describe('profile settings workflow', () => {
     })
     expect(currentUser.value).toEqual(updatedUser)
     expect(wrapper.get('[role="status"]').text()).toBe('Profile updated')
+    expect(wrapper.get(`time[datetime="${nextUpdatedAt}"]`).text()).toBe(
+      formatDateTime(nextUpdatedAt),
+    )
     expect(wrapper.get('button[type="submit"]').attributes()).toHaveProperty('disabled')
   })
 

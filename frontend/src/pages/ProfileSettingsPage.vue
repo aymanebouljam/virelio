@@ -5,6 +5,7 @@ import { ApiError } from '@/lib/api'
 import { updateProfile } from '@/lib/auth/api'
 import { profileFormSchema, type ProfileFormValues } from '@/lib/auth/schema'
 import { currentUser } from '@/lib/auth/storage'
+import { formatDateTime } from '@/lib/helpers'
 import { mapZodErrors } from '@/lib/zod'
 
 const initialProfile: ProfileFormValues = {
@@ -99,6 +100,28 @@ async function submit() {
         />
         <p v-if="formErrors.email" class="text-sm text-red-600">{{ formErrors.email }}</p>
       </div>
+
+      <dl
+        v-if="currentUser"
+        class="grid gap-4 border-t border-stone-100 pt-5 text-sm sm:grid-cols-2"
+      >
+        <div>
+          <dt class="text-stone-500">Member since</dt>
+          <dd class="mt-1 font-medium text-stone-700">
+            <time :datetime="currentUser.createdAt">
+              {{ formatDateTime(currentUser.createdAt) }}
+            </time>
+          </dd>
+        </div>
+        <div>
+          <dt class="text-stone-500">Last updated</dt>
+          <dd class="mt-1 font-medium text-stone-700">
+            <time :datetime="currentUser.updatedAt">
+              {{ formatDateTime(currentUser.updatedAt) }}
+            </time>
+          </dd>
+        </div>
+      </dl>
 
       <p
         v-if="submitError"
