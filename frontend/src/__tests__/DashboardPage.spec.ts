@@ -1,0 +1,186 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises } from '@vue/test-utils'
+import type { RouteRecordRaw } from 'vue-router'
+import { ApiError } from '@/lib/api'
+import type { DashboardSummary } from '@/lib/dashboard/schema'
+import DashboardPage from '@/pages/DashboardPage.vue'
+import { mountWithRouter } from './test-mount'
+
+const dashboardApi = vi.hoisted(() => ({
+  fetchDashboardSummary:
+    vi.fn<(filters?: { dateFrom?: string; dateTo?: string }) => Promise<DashboardSummary>>(),
+}))
+
+vi.mock('@/lib/dashboard/api', () => dashboardApi)
+
+const routes: RouteRecordRaw[] = [
+  { path: '/', name: 'dashboard', component: DashboardPage },
+  {
+    path: '/expenses/:id',
+    name: 'expenseDetails',
+    component: { template: '<p>Expense details</p>' },
+  },
+]
+
+const summary: DashboardSummary = {
+  totalSpend: '425.50',
+  activeVendors: 3,
+  uncategorizedExpenses: 1,
+  proofDocuments: 2,
+  recentExpenses: [],
+  recentProofs: [],
+  recentActivity: [
+    {
+      id: 'expense-1',
+      type: 'expense',
+      title: 'Client-site flight',
+      subtitle: 'Atlas Supplies',
+      occurredAt: '2026-08-05T09:00:00.000Z',
+      expenseId: 'expense-1',
+    },
+    {
+      id: 'proof-1',
+      type: 'proof',
+      title: 'receipt.pdf',
+      subtitle: 'Client-site flight',
+      occurredAt: '2026-08-05T10:00:00.000Z',
+      expenseId: 'expense-1',
+    },
+  ],
+  categoryBreakdown: [
+    {
+      categoryId: 'category-1',
+      categoryName: 'Travel',
+      totalAmount: '300.00',
+      expenseCount: 2,
+    },
+    {
+      categoryId: null,
+      categoryName: 'Uncategorized',
+      totalAmount: '125.50',
+      expenseCount: 1,
+    },
+  ],
+}
+
+function emptySummary(): DashboardSummary {
+  return {
+    totalSpend: '0.00',
+    activeVendors: 0,
+    uncategorizedExpenses: 0,
+    proofDocuments: 0,
+    recentExpenses: [],
+    recentProofs: [],
+    recentActivity: [],
+    categoryBreakdown: [],
+  }
+}
+
+async function mountPage(initialRoute = '/') {
+  const result = await mountWithRouter(DashboardPage, routes, initialRoute)
+  await flushPromises()
+  return result
+}
+
+describe('dashboard workflows', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    dashboardApi.fetchDashboardSummary.mockResolvedValue(summary)
+  })
+
+  it('shows loading before rendering metrics, category breakdown, and recent activity', async () => {
+    let resolveSummary!: (summary: DashboardSummary) => void
+    dashboardApi.fetchDashboardSummary.mockReturnValue(
+      new Promise<DashboardSummary>((resolve) => {
+        resolveSummary = resolve
+      }),
+    )
+
+    const { wrapper } = await mountPage()
+
+    expect(wrapper.get('[role="status"]').attributes('aria-label')).toBe('Loading dashboard')
+
+    resolveSummary(summary)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('$425.50')
+    expect(wrapper.text()).toContain('Active vendors 3')
+    expect(wrapper.text()).toContain('Uncategorized 1')
+    expect(wrapper.text()).toContain('Proof documents 2')
+    expect(wrapper.text()).toContain('Travel')
+    expect(wrapper.text()).toContain('2 expenses')
+    expect(wrapper.text()).toContain('Client-site flight')
+    expect(wrapper.text()).toContain('receipt.pdf')
+    expect(wrapper.findAll('a[href="/expenses/expense-1"]')).toHaveLength(2)
+  })
+
+  it('renders empty dashboard sections', async () => {
+    dashboardApi.fetchDashboardSummary.mockResolvedValue(emptySummary())
+
+    const { wrapper } = await mountPage()
+
+    expect(wrapper.text()).toContain('$0.00')
+    expect(wrapper.text()).toContain('No activity yet')
+    expect(wrapper.text()).toContain('No category activity yet')
+  })
+
+  it('shows API loading failures', async () => {
+    dashboardApi.fetchDashboardSummary.mockRejectedValue(new ApiError('service unavailable'))
+
+    const { wrapper } = await mountPage()
+
+    expect(wrapper.text()).toContain('Could not load dashboard')
+    expect(wrapper.text()).toContain('Service unavailable')
+  })
+
+  it('hydrates a direct date range from the URL', async () => {
+    const filters = { dateFrom: '2026-08-01', dateTo: '2026-08-31' }
+
+    const { wrapper } = await mountPage('/?dateFrom=2026-08-01&dateTo=2026-08-31')
+
+    expect(dashboardApi.fetchDashboardSummary).toHaveBeenCalledWith(filters)
+    expect(wrapper.get('#dashboard-date-from').element).toHaveProperty('value', filters.dateFrom)
+    expect(wrapper.get('#dashboard-date-to').element).toHaveProperty('value', filters.dateTo)
+  })
+
+  it('updates the URL and reloads when the date range changes', async () => {
+    const { router, wrapper } = await mountPage()
+
+    await wrapper.get('#dashboard-date-from').setValue('2026-08-01')
+    await flushPromises()
+    await wrapper.get('#dashboard-date-to').setValue('2026-08-31')
+    await flushPromises()
+
+    const filters = { dateFrom: '2026-08-01', dateTo: '2026-08-31' }
+    expect(router.currentRoute.value.query).toEqual(filters)
+    expect(dashboardApi.fetchDashboardSummary).toHaveBeenLastCalledWith(filters)
+  })
+
+  it('clears the active date range', async () => {
+    const { router, wrapper } = await mountPage('/?dateFrom=2026-08-01&dateTo=2026-08-31')
+
+    await wrapper.get('button').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({})
+    expect(wrapper.get('#dashboard-date-from').element).toHaveProperty('value', '')
+    expect(wrapper.get('#dashboard-date-to').element).toHaveProperty('value', '')
+    expect(dashboardApi.fetchDashboardSummary).toHaveBeenLastCalledWith({
+      dateFrom: undefined,
+      dateTo: undefined,
+    })
+  })
+
+  it('shows inverted date-range errors from the API', async () => {
+    dashboardApi.fetchDashboardSummary.mockRejectedValue(
+      new ApiError('invalid filters', {
+        dateRange: 'From date must be before or equal to date to',
+      }),
+    )
+
+    const { wrapper } = await mountPage('/?dateFrom=2026-08-31&dateTo=2026-08-01')
+
+    expect(wrapper.text()).toContain('Could not load dashboard')
+    expect(wrapper.text()).toContain('From date must be before or equal to date to')
+  })
+})

@@ -72,10 +72,13 @@ async function submit() {
         <h1 class="text-2xl font-semibold tracking-tight text-stone-900">Create account</h1>
       </header>
 
-      <form class="mt-6 space-y-4" @submit.prevent="submit">
+      <form aria-label="Registration form" class="mt-6 space-y-4" @submit.prevent="submit">
         <div class="space-y-2">
-          <label class="text-sm font-medium text-stone-700">Full name</label>
+          <label for="register-full-name" class="text-sm font-medium text-stone-700">
+            Full name
+          </label>
           <input
+            id="register-full-name"
             v-model="form.fullName"
             type="text"
             class="min-h-11 w-full rounded-2xl border border-stone-200 px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-stone-400"
@@ -84,8 +87,9 @@ async function submit() {
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-medium text-stone-700">Email</label>
+          <label for="register-email" class="text-sm font-medium text-stone-700">Email</label>
           <input
+            id="register-email"
             v-model="form.email"
             type="email"
             class="min-h-11 w-full rounded-2xl border border-stone-200 px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-stone-400"
@@ -94,8 +98,11 @@ async function submit() {
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-medium text-stone-700">Password</label>
+          <label for="register-password" class="text-sm font-medium text-stone-700">
+            Password
+          </label>
           <input
+            id="register-password"
             v-model="form.password"
             type="password"
             class="min-h-11 w-full rounded-2xl border border-stone-200 px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-stone-400"
@@ -104,8 +111,11 @@ async function submit() {
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-medium text-stone-700">Confirm password</label>
+          <label for="register-password-confirmation" class="text-sm font-medium text-stone-700">
+            Confirm password
+          </label>
           <input
+            id="register-password-confirmation"
             v-model="form.passwordConfirmation"
             type="password"
             class="min-h-11 w-full rounded-2xl border border-stone-200 px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-stone-400"

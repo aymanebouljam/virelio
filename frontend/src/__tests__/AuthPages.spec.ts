@@ -1,0 +1,174 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises, type VueWrapper } from '@vue/test-utils'
+import type { Component } from 'vue'
+import type { RouteRecordRaw } from 'vue-router'
+import { ApiError } from '@/lib/api'
+import type { AuthSession, AuthUser, LoginFormValues, RegisterFormValues } from '@/lib/auth/schema'
+import { clearAccessToken, getAccessToken, isAuthenticated } from '@/lib/auth/storage'
+import LoginPage from '@/pages/LoginPage.vue'
+import RegisterPage from '@/pages/RegisterPage.vue'
+import { mountWithRouter } from './test-mount'
+
+const authApi = vi.hoisted(() => ({
+  login: vi.fn<(input: LoginFormValues) => Promise<AuthSession>>(),
+  register: vi.fn<(input: RegisterFormValues) => Promise<AuthUser>>(),
+}))
+
+vi.mock('@/lib/auth/api', () => authApi)
+
+const routes: RouteRecordRaw[] = [
+  { path: '/', name: 'dashboard', component: { template: '<p>Dashboard</p>' } },
+  { path: '/expenses', name: 'expenses', component: { template: '<p>Expenses</p>' } },
+  { path: '/login', name: 'login', component: LoginPage },
+  { path: '/register', name: 'register', component: RegisterPage },
+]
+
+const user: AuthUser = {
+  id: 'user-1',
+  email: 'owner@example.test',
+  fullName: 'Local Owner',
+  createdAt: '2026-08-05T09:00:00.000Z',
+  updatedAt: '2026-08-05T09:00:00.000Z',
+}
+
+const session: AuthSession = {
+  ...user,
+  accessToken: 'test-token',
+}
+
+function getForm(wrapper: VueWrapper, label: string) {
+  return wrapper.get(`form[aria-label="${label}"]`)
+}
+
+async function mountPage(component: Component, initialRoute: string) {
+  const result = await mountWithRouter(component, routes, initialRoute)
+  await flushPromises()
+  return result
+}
+
+async function fillLoginForm(wrapper: VueWrapper) {
+  await wrapper.get('#login-email').setValue('owner@example.test')
+  await wrapper.get('#login-password').setValue('test-password')
+}
+
+async function fillRegistrationForm(wrapper: VueWrapper) {
+  await wrapper.get('#register-full-name').setValue('Local Owner')
+  await wrapper.get('#register-email').setValue('owner@example.test')
+  await wrapper.get('#register-password').setValue('test-password')
+  await wrapper.get('#register-password-confirmation').setValue('test-password')
+}
+
+beforeEach(() => {
+  vi.resetAllMocks()
+  clearAccessToken()
+})
+
+afterEach(() => {
+  clearAccessToken()
+})
+
+describe('login workflow', () => {
+  it('stores the session and opens the dashboard after login', async () => {
+    authApi.login.mockResolvedValue(session)
+    const { router, wrapper } = await mountPage(LoginPage, '/login')
+
+    await fillLoginForm(wrapper)
+    await getForm(wrapper, 'Login form').trigger('submit')
+    await flushPromises()
+
+    expect(authApi.login).toHaveBeenCalledExactlyOnceWith({
+      email: 'owner@example.test',
+      password: 'test-password',
+    })
+    expect(getAccessToken()).toBe('test-token')
+    expect(localStorage.getItem('virelio.accessToken')).toBe('test-token')
+    expect(isAuthenticated.value).toBe(true)
+    expect(router.currentRoute.value.path).toBe('/')
+  })
+
+  it('honors the redirect query after login', async () => {
+    authApi.login.mockResolvedValue(session)
+    const { router, wrapper } = await mountPage(
+      LoginPage,
+      '/login?redirect=%2Fexpenses%3Fsearch%3Dflight',
+    )
+
+    await fillLoginForm(wrapper)
+    await getForm(wrapper, 'Login form').trigger('submit')
+    await flushPromises()
+
+    expect(router.currentRoute.value.fullPath).toBe('/expenses?search=flight')
+  })
+
+  it('shows local login validation errors', async () => {
+    const { wrapper } = await mountPage(LoginPage, '/login')
+
+    await wrapper.get('#login-email').setValue('invalid')
+    await wrapper.get('#login-password').setValue('short')
+    await getForm(wrapper, 'Login form').trigger('submit')
+
+    expect(wrapper.text()).toContain('Email must be a valid email address')
+    expect(wrapper.text()).toContain('Password must be at least 8 characters')
+    expect(authApi.login).not.toHaveBeenCalled()
+  })
+
+  it('shows rejected login errors without creating a session', async () => {
+    authApi.login.mockRejectedValue(new ApiError('invalid credentials'))
+    const { wrapper } = await mountPage(LoginPage, '/login')
+
+    await fillLoginForm(wrapper)
+    await getForm(wrapper, 'Login form').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Invalid credentials')
+    expect(getAccessToken()).toBeNull()
+    expect(isAuthenticated.value).toBe(false)
+  })
+})
+
+describe('registration workflow', () => {
+  it('registers an account and opens the login page', async () => {
+    authApi.register.mockResolvedValue(user)
+    const { router, wrapper } = await mountPage(RegisterPage, '/register')
+
+    await fillRegistrationForm(wrapper)
+    await getForm(wrapper, 'Registration form').trigger('submit')
+    await flushPromises()
+
+    expect(authApi.register).toHaveBeenCalledExactlyOnceWith({
+      fullName: 'Local Owner',
+      email: 'owner@example.test',
+      password: 'test-password',
+      passwordConfirmation: 'test-password',
+    })
+    expect(router.currentRoute.value.path).toBe('/login')
+  })
+
+  it('shows registration validation errors', async () => {
+    const { wrapper } = await mountPage(RegisterPage, '/register')
+
+    await wrapper.get('#register-full-name').setValue('A')
+    await wrapper.get('#register-email').setValue('invalid')
+    await wrapper.get('#register-password').setValue('test-password')
+    await wrapper.get('#register-password-confirmation').setValue('different-password')
+    await getForm(wrapper, 'Registration form').trigger('submit')
+
+    expect(wrapper.text()).toContain('Full name is required')
+    expect(wrapper.text()).toContain('Email must be a valid email address')
+    expect(wrapper.text()).toContain('Passwords do not match')
+    expect(authApi.register).not.toHaveBeenCalled()
+  })
+
+  it('shows registration API field errors', async () => {
+    authApi.register.mockRejectedValue(
+      new ApiError('invalid form input', { email: 'Email is already registered' }),
+    )
+    const { wrapper } = await mountPage(RegisterPage, '/register')
+
+    await fillRegistrationForm(wrapper)
+    await getForm(wrapper, 'Registration form').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Email is already registered')
+  })
+})
