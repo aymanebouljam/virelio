@@ -451,7 +451,7 @@ onMounted(loadExpensesPage)
         {{ editingId ? 'Edit expense' : 'Create expense' }}
       </h3>
 
-      <form class="mt-6 space-y-5" @submit.prevent="submitForm">
+      <form aria-label="Expense form" class="mt-6 space-y-5" @submit.prevent="submitForm">
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="block">
             <span class="mb-2 block text-sm font-medium text-stone-700">Vendor</span>

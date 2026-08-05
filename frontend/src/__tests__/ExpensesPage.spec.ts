@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import type { RouteRecordRaw } from 'vue-router'
 import { ApiError } from '@/lib/api'
@@ -72,6 +72,10 @@ const flight: Expense = {
   archivedAt: null,
 }
 
+function expense(overrides: Partial<Expense>): Expense {
+  return { ...flight, ...overrides }
+}
+
 function getButton(wrapper: VueWrapper, text: string) {
   const button = wrapper.findAll('button').find((candidate) => candidate.text() === text)
   if (!button) throw new Error(`${text} button not found`)
@@ -87,6 +91,18 @@ function getFilterField(wrapper: VueWrapper, label: string) {
   return field.get('input, select')
 }
 
+function getExpenseForm(wrapper: VueWrapper) {
+  return wrapper.get('form[aria-label="Expense form"]')
+}
+
+function getExpenseField(wrapper: VueWrapper, label: string) {
+  const field = getExpenseForm(wrapper)
+    .findAll('label')
+    .find((candidate) => candidate.find('span').text() === label)
+  if (!field) throw new Error(`${label} expense field not found`)
+  return field.get('input, select, textarea')
+}
+
 async function mountPage(initialRoute = '/expenses') {
   const result = await mountWithRouter(ExpensesPage, routes, initialRoute)
   await flushPromises()
@@ -99,6 +115,10 @@ describe('expense listing and filters', () => {
     expensesApi.fetchExpenses.mockResolvedValue([])
     vendorsApi.fetchVendors.mockResolvedValue([atlas])
     categoriesApi.fetchExpenseCategories.mockResolvedValue([travel])
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
   })
 
   it('shows loading and empty states', async () => {
@@ -222,5 +242,115 @@ describe('expense listing and filters', () => {
 
     expect(wrapper.text()).toContain('Could not load expenses')
     expect(wrapper.text()).toContain('From date must be before or equal to date to')
+  })
+
+  it('creates an expense with loaded options and refreshes the filtered list', async () => {
+    const hotel = expense({
+      id: 'expense-2',
+      description: 'Client hotel',
+      amount: '300.00',
+      expenseDate: '2026-08-06T00:00:00.000Z',
+      notes: null,
+    })
+    expensesApi.fetchExpenses.mockResolvedValueOnce([flight]).mockResolvedValueOnce([hotel, flight])
+    expensesApi.createExpense.mockResolvedValue(hotel)
+    const { wrapper } = await mountPage('/expenses?search=client')
+
+    await getButton(wrapper, 'Add expense').trigger('click')
+    expect(getExpenseField(wrapper, 'Vendor').text()).toContain('Atlas Supplies')
+    expect(getExpenseField(wrapper, 'Category').text()).toContain('Travel')
+
+    await getExpenseField(wrapper, 'Vendor').setValue(atlas.id)
+    await getExpenseField(wrapper, 'Category').setValue(travel.id)
+    await getExpenseField(wrapper, 'Description').setValue('Client hotel')
+    await getExpenseField(wrapper, 'Amount').setValue('300')
+    await getExpenseField(wrapper, 'Expense date').setValue('2026-08-06')
+    await getExpenseForm(wrapper).trigger('submit')
+    await flushPromises()
+
+    expect(expensesApi.createExpense).toHaveBeenCalledExactlyOnceWith({
+      vendorId: atlas.id,
+      categoryId: travel.id,
+      description: 'Client hotel',
+      amount: 300,
+      expenseDate: '2026-08-06',
+      notes: undefined,
+    })
+    expect(expensesApi.fetchExpenses).toHaveBeenLastCalledWith({
+      search: 'client',
+      vendorId: undefined,
+      categoryId: undefined,
+      dateFrom: undefined,
+      dateTo: undefined,
+    })
+    expect(wrapper.text()).toContain('Client hotel')
+    expect(wrapper.text()).toContain('Client-site flight')
+    expect(wrapper.find('form[aria-label="Expense form"]').exists()).toBe(false)
+  })
+
+  it('edits an expense in place', async () => {
+    const updatedFlight = expense({ description: 'Rescheduled client-site flight' })
+    expensesApi.fetchExpenses.mockResolvedValue([flight])
+    expensesApi.updateExpense.mockResolvedValue(updatedFlight)
+    const { wrapper } = await mountPage()
+
+    await getButton(wrapper, 'Edit').trigger('click')
+    await getExpenseField(wrapper, 'Description').setValue('Rescheduled client-site flight')
+    await getExpenseForm(wrapper).trigger('submit')
+    await flushPromises()
+
+    expect(expensesApi.updateExpense).toHaveBeenCalledExactlyOnceWith('expense-1', {
+      vendorId: atlas.id,
+      categoryId: travel.id,
+      description: 'Rescheduled client-site flight',
+      amount: 125.5,
+      expenseDate: '2026-08-05',
+      notes: 'Quarterly visit',
+    })
+    expect(wrapper.text()).toContain('Rescheduled client-site flight')
+    expect(wrapper.find('form[aria-label="Expense form"]').exists()).toBe(false)
+  })
+
+  it('archives a confirmed expense', async () => {
+    expensesApi.fetchExpenses.mockResolvedValue([flight])
+    expensesApi.archiveExpense.mockResolvedValue(
+      expense({ archivedAt: '2026-08-05T10:00:00.000Z' }),
+    )
+    const confirmMock = vi.fn<() => boolean>(() => true)
+    vi.stubGlobal('confirm', confirmMock)
+    const { wrapper } = await mountPage()
+
+    await getButton(wrapper, 'Archive').trigger('click')
+    await flushPromises()
+
+    expect(confirmMock).toHaveBeenCalledExactlyOnceWith(
+      'Are you sure you want to archive this expense?',
+    )
+    expect(expensesApi.archiveExpense).toHaveBeenCalledExactlyOnceWith('expense-1')
+    expect(wrapper.text()).not.toContain('Client-site flight')
+    expect(wrapper.text()).toContain('No expenses yet')
+  })
+
+  it('shows form validation and API field errors', async () => {
+    expensesApi.createExpense.mockRejectedValue(
+      new ApiError('invalid form input', { description: 'Description is already in use' }),
+    )
+    const { wrapper } = await mountPage()
+
+    await getButton(wrapper, 'Add expense').trigger('click')
+    await getExpenseForm(wrapper).trigger('submit')
+
+    expect(wrapper.text()).toContain('Vendor is required')
+    expect(wrapper.text()).toContain('Description is required')
+    expect(wrapper.text()).toContain('Amount must be greater than 0')
+    expect(expensesApi.createExpense).not.toHaveBeenCalled()
+
+    await getExpenseField(wrapper, 'Vendor').setValue(atlas.id)
+    await getExpenseField(wrapper, 'Description').setValue('Client flight')
+    await getExpenseField(wrapper, 'Amount').setValue('125.5')
+    await getExpenseForm(wrapper).trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Description is already in use')
   })
 })
