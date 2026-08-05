@@ -93,9 +93,17 @@ async function logout() {
                 {{ currentUser.email }}
               </p>
 
+              <RouterLink
+                to="/profile"
+                class="mt-3 block rounded-2xl px-4 py-3 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
+                active-class="bg-stone-900 text-white hover:bg-stone-900 hover:text-white"
+              >
+                Profile settings
+              </RouterLink>
+
               <button
                 type="button"
-                class="mt-3 inline-flex w-full items-center rounded-2xl px-4 py-3 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
+                class="inline-flex w-full items-center rounded-2xl px-4 py-3 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
                 @click="logout"
               >
                 Logout

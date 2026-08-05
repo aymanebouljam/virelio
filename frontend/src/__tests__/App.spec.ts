@@ -8,8 +8,17 @@ import { mountWithRouter } from './test-mount'
 const routes: RouteRecordRaw[] = [
   { path: '/', component: { template: '<p>Dashboard page</p>' } },
   { path: '/login', component: { template: '<p>Login page</p>' } },
+  { path: '/profile', component: { template: '<p>Profile page</p>' } },
   { path: '/:pathMatch(.*)*', component: { template: '<p>Page</p>' } },
 ]
+
+const user = {
+  id: 'user-1',
+  email: 'owner@example.test',
+  fullName: 'Local Owner',
+  createdAt: '2026-08-03T00:00:00.000Z',
+  updatedAt: '2026-08-03T00:00:00.000Z',
+}
 
 describe('App', () => {
   afterEach(() => {
@@ -27,13 +36,7 @@ describe('App', () => {
 
   it('clears the session and navigates to login on logout', async () => {
     setAccessToken('test-token')
-    currentUser.value = {
-      id: 'user-1',
-      email: 'owner@example.test',
-      fullName: 'Local Owner',
-      createdAt: '2026-08-03T00:00:00.000Z',
-      updatedAt: '2026-08-03T00:00:00.000Z',
-    }
+    currentUser.value = user
     const { router, wrapper } = await mountWithRouter(App, routes)
     const logoutButton = wrapper.findAll('button').find((button) => button.text() === 'Logout')
 
@@ -47,5 +50,20 @@ describe('App', () => {
     expect(isAuthenticated.value).toBe(false)
     expect(currentUser.value).toBeNull()
     expect(router.currentRoute.value.path).toBe('/login')
+  })
+
+  it('links authenticated users to profile settings', async () => {
+    setAccessToken('test-token')
+    currentUser.value = user
+    const { router, wrapper } = await mountWithRouter(App, routes)
+
+    const profileLink = wrapper.get('a[href="/profile"]')
+    expect(profileLink.text()).toBe('Profile settings')
+
+    await profileLink.trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/profile')
+    expect(wrapper.text()).toContain('Profile page')
   })
 })
