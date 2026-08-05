@@ -7,7 +7,7 @@ import { Prisma, type Vendor } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { CreateVendorDto } from './dto/create-vendor.dto';
 import type { UpdateVendorDto } from './dto/update-vendor.dto';
-import type { GetVendorsQueryDto } from './dto/get-vendors-query.dto';
+import type { GetVendorsPageQueryDto } from './dto/get-vendors-query.dto';
 import {
   throwPrismaConflict,
   throwPrismaNotFound,
@@ -17,27 +17,39 @@ import {
 export class VendorsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll(userId: string, query: GetVendorsQueryDto = {}): Promise<Vendor[]> {
-    const search = query.search?.trim();
-    const where: Prisma.VendorWhereInput = {
-      archivedAt: null,
-      userId,
-      ...(search && {
-        OR: [
-          { name: { contains: search, mode: 'insensitive' } },
-          { email: { contains: search, mode: 'insensitive' } },
-          { phone: { contains: search, mode: 'insensitive' } },
-          { website: { contains: search, mode: 'insensitive' } },
-        ],
-      }),
-    };
-
+  findAll(userId: string): Promise<Vendor[]> {
     return this.prisma.vendor.findMany({
-      where,
+      where: this.buildActiveVendorFilter(userId),
       orderBy: {
         createdAt: 'desc',
       },
     });
+  }
+
+  async findPage(userId: string, query: GetVendorsPageQueryDto = {}) {
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 10;
+    const where = this.buildActiveVendorFilter(userId, query.search);
+
+    const [items, totalItems] = await Promise.all([
+      this.prisma.vendor.findMany({
+        where,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.vendor.count({ where }),
+    ]);
+
+    return {
+      items,
+      pagination: {
+        page,
+        pageSize,
+        totalItems,
+        totalPages: Math.ceil(totalItems / pageSize),
+      },
+    };
   }
 
   async findOne(userId: string, id: string) {
@@ -246,5 +258,25 @@ export class VendorsService {
       }
       throw error;
     }
+  }
+
+  private buildActiveVendorFilter(
+    userId: string,
+    search?: string,
+  ): Prisma.VendorWhereInput {
+    const normalizedSearch = search?.trim();
+
+    return {
+      archivedAt: null,
+      userId,
+      ...(normalizedSearch && {
+        OR: [
+          { name: { contains: normalizedSearch, mode: 'insensitive' } },
+          { email: { contains: normalizedSearch, mode: 'insensitive' } },
+          { phone: { contains: normalizedSearch, mode: 'insensitive' } },
+          { website: { contains: normalizedSearch, mode: 'insensitive' } },
+        ],
+      }),
+    };
   }
 }

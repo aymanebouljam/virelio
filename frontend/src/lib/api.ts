@@ -13,6 +13,16 @@ type ApiErrorResponse = {
   errors?: FieldError[]
 }
 
+export type PaginatedResponse<T> = {
+  items: T[]
+  pagination: {
+    page: number
+    pageSize: number
+    totalItems: number
+    totalPages: number
+  }
+}
+
 // Helpers
 
 export class ApiError extends Error {

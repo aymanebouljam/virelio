@@ -18,6 +18,16 @@ type VendorResponse = {
   archivedAt: string | null;
 };
 
+type VendorPageResponse = {
+  items: VendorResponse[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  };
+};
+
 type ErrorResponse = {
   message: string;
   errors: {
@@ -150,6 +160,128 @@ describe('Vendors e2e', () => {
         .expect(HttpStatus.OK);
       const vendors = listResponse.body as VendorResponse[];
       expect(vendors.map(({ id }) => id)).toEqual([vendorB.id, vendorA.id]);
+    });
+  });
+  describe('GET /vendors/page', () => {
+    it('returns empty first-page metadata by default', async () => {
+      const response = await request(http)
+        .get('/vendors/page')
+        .set(authHeaders)
+        .expect(HttpStatus.OK);
+
+      expect(response.body).toEqual({
+        items: [],
+        pagination: {
+          page: 1,
+          pageSize: 10,
+          totalItems: 0,
+          totalPages: 0,
+        },
+      });
+    });
+
+    it('paginates active vendors for the authenticated user', async () => {
+      const { userId: otherUserId } = await createAuth(http, {
+        email: 'other@local.dev',
+      });
+      await prisma.vendor.createMany({
+        data: [
+          {
+            userId,
+            name: 'Vendor 1',
+            createdAt: new Date('2026-01-01T00:00:00.000Z'),
+          },
+          {
+            userId,
+            name: 'Vendor 2',
+            createdAt: new Date('2026-01-02T00:00:00.000Z'),
+          },
+          {
+            userId,
+            name: 'Vendor 3',
+            createdAt: new Date('2026-01-03T00:00:00.000Z'),
+          },
+          {
+            userId,
+            name: 'Vendor 4',
+            createdAt: new Date('2026-01-04T00:00:00.000Z'),
+          },
+          {
+            userId,
+            name: 'Archived vendor',
+            createdAt: new Date('2026-01-05T00:00:00.000Z'),
+            archivedAt: new Date('2026-01-06T00:00:00.000Z'),
+          },
+          {
+            userId: otherUserId,
+            name: 'Another user vendor',
+            createdAt: new Date('2026-01-07T00:00:00.000Z'),
+          },
+        ],
+      });
+
+      const response = await request(http)
+        .get('/vendors/page')
+        .query({ page: 2, pageSize: 2 })
+        .set(authHeaders)
+        .expect(HttpStatus.OK);
+      const page = response.body as VendorPageResponse;
+
+      expect(page.items.map(({ name }) => name)).toEqual([
+        'Vendor 2',
+        'Vendor 1',
+      ]);
+      expect(page.pagination).toEqual({
+        page: 2,
+        pageSize: 2,
+        totalItems: 4,
+        totalPages: 2,
+      });
+    });
+
+    it('applies search before calculating pagination', async () => {
+      await prisma.vendor.createMany({
+        data: [
+          { userId, name: 'Atlas Supplies' },
+          { userId, name: 'Travel Partner', website: 'https://atlas.example' },
+          { userId, name: 'Nova Services' },
+        ],
+      });
+
+      const response = await request(http)
+        .get('/vendors/page')
+        .query({ search: 'atlas', page: 1, pageSize: 1 })
+        .set(authHeaders)
+        .expect(HttpStatus.OK);
+      const page = response.body as VendorPageResponse;
+
+      expect(page.items).toHaveLength(1);
+      expect(page.items[0]?.name).not.toBe('Nova Services');
+      expect(page.pagination).toEqual({
+        page: 1,
+        pageSize: 1,
+        totalItems: 2,
+        totalPages: 2,
+      });
+    });
+
+    it.each([
+      ['page', '0'],
+      ['page', '1.5'],
+      ['pageSize', '0'],
+      ['pageSize', '101'],
+    ])('rejects invalid %s=%s', async (field, value) => {
+      const response = await request(http)
+        .get('/vendors/page')
+        .query({ [field]: value })
+        .set(authHeaders)
+        .expect(HttpStatus.BAD_REQUEST);
+      const error = response.body as ErrorResponse;
+
+      expect(error.message).toBe('Validation failed');
+      expect(error.errors).toEqual(
+        expect.arrayContaining([expect.objectContaining({ field })]),
+      );
     });
   });
   describe('GET /vendors/:id', () => {
