@@ -5,6 +5,7 @@ import {
   type AuthSession,
   type AuthUser,
   type LoginFormValues,
+  type ProfileFormValues,
   type RegisterFormValues,
 } from './schema'
 
@@ -40,6 +41,17 @@ export async function fetchCurrentUser() {
       path: 'auth',
       action: 'me',
       method: 'GET',
+    }),
+  ) as AuthUser
+}
+
+export async function updateProfile(input: ProfileFormValues) {
+  return authUserSchema.parse(
+    await apiConfig({
+      path: 'auth',
+      action: 'me',
+      method: 'PATCH',
+      input,
     }),
   ) as AuthUser
 }
