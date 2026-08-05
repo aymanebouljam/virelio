@@ -78,6 +78,16 @@ describe('authentication route guard', () => {
     expect(auth.currentUser.value).toEqual(testUser)
   })
 
+  it('protects and opens the profile settings route', async () => {
+    auth.isAuthenticated.value = true
+    auth.fetchCurrentUser.mockResolvedValue(testUser)
+
+    const router = await navigate('/profile')
+
+    expect(router.currentRoute.value.name).toBe('profile')
+    expect(auth.fetchCurrentUser).toHaveBeenCalledOnce()
+  })
+
   it('redirects authenticated users away from guest routes', async () => {
     auth.isAuthenticated.value = true
     auth.currentUser.value = testUser

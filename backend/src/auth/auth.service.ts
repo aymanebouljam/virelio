@@ -1,13 +1,25 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { throwPrismaConflict } from '../common/prisma/prisma-error.util';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+
+const userProfileSelect: Prisma.UserSelect = {
+  id: true,
+  email: true,
+  fullName: true,
+  createdAt: true,
+  updatedAt: true,
+};
 
 @Injectable()
 export class AuthService {
@@ -40,13 +52,7 @@ export class AuthService {
         passwordHash,
         fullName: body.fullName,
       },
-      select: {
-        id: true,
-        email: true,
-        fullName: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: userProfileSelect,
     });
   }
 
@@ -94,13 +100,39 @@ export class AuthService {
       where: {
         id: userId,
       },
-      select: {
-        id: true,
-        email: true,
-        fullName: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: userProfileSelect,
     });
+  }
+
+  async updateProfile(userId: string, body: UpdateProfileDto) {
+    if (Object.values(body).every((value) => value === undefined)) {
+      throw new BadRequestException({
+        message: 'Validation failed',
+        errors: [
+          {
+            field: 'body',
+            constraints: {
+              isNotEmpty: 'Update body cannot be empty',
+            },
+          },
+        ],
+      });
+    }
+
+    try {
+      return await this.prisma.user.update({
+        where: { id: userId },
+        data: body,
+        select: userProfileSelect,
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throwPrismaConflict(error, 'user');
+      }
+      throw error;
+    }
   }
 }

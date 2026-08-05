@@ -3,6 +3,7 @@ import type { Server } from 'node:http';
 import request from 'supertest';
 import type { PrismaService } from '../prisma/prisma.service';
 import { createTestApp, resetDatabase } from './test-app';
+import { createAuth } from './test-auth';
 
 type User = {
   id: string;
@@ -11,6 +12,11 @@ type User = {
   passwordHash: string;
   createdAt: Date;
   updatedAt: Date;
+};
+
+type ErrorResponse = {
+  message: string;
+  errors: { field: string }[];
 };
 
 describe('Auth e2e', () => {
@@ -142,6 +148,99 @@ describe('Auth e2e', () => {
       expect(response.body).toEqual({
         message: 'Invalid credentials',
       });
+    });
+  });
+
+  describe('PATCH /auth/me', () => {
+    it('updates and persists the authenticated user profile', async () => {
+      const { authHeaders } = await createAuth(http);
+
+      const response = await request(http)
+        .patch('/auth/me')
+        .set(authHeaders)
+        .send({
+          email: 'updated@local.dev',
+          fullName: 'Updated Owner',
+        })
+        .expect(HttpStatus.OK);
+
+      expect(response.body).toMatchObject({
+        email: 'updated@local.dev',
+        fullName: 'Updated Owner',
+      });
+      expect(response.body).not.toHaveProperty('passwordHash');
+
+      const storedUser = await prisma.user.findUnique({
+        where: { email: 'updated@local.dev' },
+      });
+      expect(storedUser).toMatchObject({
+        email: 'updated@local.dev',
+        fullName: 'Updated Owner',
+      });
+
+      const currentUser = await request(http)
+        .get('/auth/me')
+        .set(authHeaders)
+        .expect(HttpStatus.OK);
+      expect(currentUser.body).toMatchObject({
+        email: 'updated@local.dev',
+        fullName: 'Updated Owner',
+      });
+    });
+
+    it.each([
+      { caseName: 'an empty body', input: {}, fields: ['body'] },
+      {
+        caseName: 'invalid fields',
+        input: { email: 'invalid-email', fullName: 'A' },
+        fields: ['email', 'fullName'],
+      },
+    ])('rejects $caseName', async ({ input, fields }) => {
+      const { authHeaders } = await createAuth(http);
+      const response = await request(http)
+        .patch('/auth/me')
+        .set(authHeaders)
+        .send(input)
+        .expect(HttpStatus.BAD_REQUEST);
+
+      const error = response.body as ErrorResponse;
+      expect(error.message).toBe('Validation failed');
+      for (const field of fields) {
+        expect(error.errors).toEqual(
+          expect.arrayContaining([expect.objectContaining({ field })]),
+        );
+      }
+    });
+
+    it('rejects an email already used by another user', async () => {
+      const { authHeaders } = await createAuth(http);
+      await request(http)
+        .post('/auth/register')
+        .send({
+          email: 'taken@local.dev',
+          password: 'password123',
+          fullName: 'Another Owner',
+        })
+        .expect(HttpStatus.CREATED);
+
+      const response = await request(http)
+        .patch('/auth/me')
+        .set(authHeaders)
+        .send({ email: 'taken@local.dev' })
+        .expect(HttpStatus.CONFLICT);
+
+      const error = response.body as ErrorResponse;
+      expect(error.message).toBe('Validation failed');
+      expect(error.errors).toEqual(
+        expect.arrayContaining([expect.objectContaining({ field: 'email' })]),
+      );
+    });
+
+    it('requires authentication', async () => {
+      await request(http)
+        .patch('/auth/me')
+        .send({ fullName: 'Updated Owner' })
+        .expect(HttpStatus.UNAUTHORIZED);
     });
   });
 });
