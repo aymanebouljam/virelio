@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Profile settings for updating the authenticated user's full name and email address.
+
 ## [0.2.0] - 2026-08-05
 
 ### Added
