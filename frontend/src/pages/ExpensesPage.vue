@@ -451,7 +451,7 @@ onMounted(loadExpensesPage)
         {{ editingId ? 'Edit expense' : 'Create expense' }}
       </h3>
 
-      <form class="mt-6 space-y-5" @submit.prevent="submitForm">
+      <form aria-label="Expense form" class="mt-6 space-y-5" @submit.prevent="submitForm">
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="block">
             <span class="mb-2 block text-sm font-medium text-stone-700">Vendor</span>
@@ -591,7 +591,7 @@ onMounted(loadExpensesPage)
     </section>
 
     <section class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-      <div v-if="loading" class="space-y-3">
+      <div v-if="loading" class="space-y-3" role="status" aria-label="Loading expenses">
         <div class="h-5 w-40 animate-pulse rounded bg-stone-200"></div>
         <div class="space-y-2">
           <div class="h-16 animate-pulse rounded-2xl bg-stone-100"></div>
