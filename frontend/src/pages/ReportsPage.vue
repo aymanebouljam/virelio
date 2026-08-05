@@ -106,8 +106,14 @@ onMounted(loadReport)
       class="flex flex-col gap-3 rounded-3xl border border-stone-200 bg-white p-4 shadow-sm sm:flex-row sm:flex-wrap sm:items-end"
     >
       <div class="flex flex-col gap-2">
-        <label class="text-xs font-medium uppercase tracking-[0.18em] text-stone-400"> From </label>
+        <label
+          for="report-date-from"
+          class="text-xs font-medium uppercase tracking-[0.18em] text-stone-400"
+        >
+          From
+        </label>
         <input
+          id="report-date-from"
           :value="dateFrom"
           type="date"
           class="min-h-11 rounded-2xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-stone-400"
@@ -121,8 +127,14 @@ onMounted(loadReport)
       </div>
 
       <div class="flex flex-col gap-2">
-        <label class="text-xs font-medium uppercase tracking-[0.18em] text-stone-400"> To </label>
+        <label
+          for="report-date-to"
+          class="text-xs font-medium uppercase tracking-[0.18em] text-stone-400"
+        >
+          To
+        </label>
         <input
+          id="report-date-to"
           :value="dateTo"
           type="date"
           class="min-h-11 rounded-2xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-stone-400"
@@ -145,7 +157,7 @@ onMounted(loadReport)
       </button>
     </section>
 
-    <section v-if="loading" class="space-y-4">
+    <section v-if="loading" class="space-y-4" role="status" aria-label="Loading expense report">
       <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <div
           v-for="index in 3"
