@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import type { RouteRecordRaw } from 'vue-router'
-import { ApiError } from '@/lib/api'
+import { ApiError, type PaginatedResponse } from '@/lib/api'
+import type { VendorPageFilters } from '@/lib/vendors/api'
 import type { Vendor, VendorFormValues } from '@/lib/vendors/schema'
 import VendorsPage from '@/pages/VendorsPage.vue'
 import { mountWithRouter } from './test-mount'
@@ -9,7 +10,7 @@ import { mountWithRouter } from './test-mount'
 const vendorsApi = vi.hoisted(() => ({
   archiveVendor: vi.fn<(id: string) => Promise<Vendor>>(),
   createVendor: vi.fn<(input: VendorFormValues) => Promise<Vendor>>(),
-  fetchVendors: vi.fn<(filters?: { search?: string }) => Promise<Vendor[]>>(),
+  fetchVendorsPage: vi.fn<(filters?: VendorPageFilters) => Promise<PaginatedResponse<Vendor>>>(),
   updateVendor: vi.fn<(id: string, input: VendorFormValues) => Promise<Vendor>>(),
 }))
 
@@ -40,6 +41,22 @@ function vendor(overrides: Partial<Vendor>): Vendor {
   return { ...atlas, ...overrides }
 }
 
+function vendorPage(
+  items: Vendor[],
+  pagination: Partial<PaginatedResponse<Vendor>['pagination']> = {},
+): PaginatedResponse<Vendor> {
+  return {
+    items,
+    pagination: {
+      page: 1,
+      pageSize: 10,
+      totalItems: items.length,
+      totalPages: items.length > 0 ? 1 : 0,
+      ...pagination,
+    },
+  }
+}
+
 function getButton(wrapper: VueWrapper, text: string) {
   const button = wrapper.findAll('button').find((candidate) => candidate.text() === text)
   if (!button) throw new Error(`${text} button not found`)
@@ -67,7 +84,7 @@ async function mountPage(initialRoute = '/vendors') {
 describe('vendor management', () => {
   beforeEach(() => {
     vi.resetAllMocks()
-    vendorsApi.fetchVendors.mockResolvedValue([])
+    vendorsApi.fetchVendorsPage.mockResolvedValue(vendorPage([]))
   })
 
   afterEach(() => {
@@ -75,10 +92,10 @@ describe('vendor management', () => {
   })
 
   it('shows loading and empty states', async () => {
-    let resolveVendors!: (vendors: Vendor[]) => void
+    let resolveVendors!: (page: PaginatedResponse<Vendor>) => void
 
-    vendorsApi.fetchVendors.mockReturnValue(
-      new Promise<Vendor[]>((resolve) => {
+    vendorsApi.fetchVendorsPage.mockReturnValue(
+      new Promise<PaginatedResponse<Vendor>>((resolve) => {
         resolveVendors = resolve
       }),
     )
@@ -87,14 +104,14 @@ describe('vendor management', () => {
 
     expect(wrapper.get('[role="status"]').attributes('aria-label')).toBe('Loading vendors')
 
-    resolveVendors([])
+    resolveVendors(vendorPage([]))
     await flushPromises()
 
     expect(wrapper.text()).toContain('No vendors yet')
   })
 
   it('shows API loading failures', async () => {
-    vendorsApi.fetchVendors.mockRejectedValue(new ApiError('service unavailable'))
+    vendorsApi.fetchVendorsPage.mockRejectedValue(new ApiError('service unavailable'))
 
     const { wrapper } = await mountPage()
 
@@ -105,7 +122,11 @@ describe('vendor management', () => {
   it('loads direct search queries and keeps submitted searches in the URL', async () => {
     const { router, wrapper } = await mountPage('/vendors?search=Atlas')
 
-    expect(vendorsApi.fetchVendors).toHaveBeenCalledWith({ search: 'Atlas' })
+    expect(vendorsApi.fetchVendorsPage).toHaveBeenCalledWith({
+      search: 'Atlas',
+      page: 1,
+      pageSize: 10,
+    })
     expect(wrapper.get('input[type="search"]').element).toHaveProperty('value', 'Atlas')
     expect(wrapper.text()).toContain('No matching vendors')
 
@@ -114,18 +135,71 @@ describe('vendor management', () => {
     await flushPromises()
 
     expect(router.currentRoute.value.query).toEqual({ search: 'office supplies' })
-    expect(vendorsApi.fetchVendors).toHaveBeenLastCalledWith({ search: 'office supplies' })
+    expect(vendorsApi.fetchVendorsPage).toHaveBeenLastCalledWith({
+      search: 'office supplies',
+      page: 1,
+      pageSize: 10,
+    })
 
     await getButton(wrapper, 'Clear').trigger('click')
     await flushPromises()
 
     expect(router.currentRoute.value.query).toEqual({})
-    expect(vendorsApi.fetchVendors).toHaveBeenLastCalledWith({ search: undefined })
+    expect(vendorsApi.fetchVendorsPage).toHaveBeenLastCalledWith({
+      search: undefined,
+      page: 1,
+      pageSize: 10,
+    })
+  })
+
+  it('loads direct page queries and navigates between pages', async () => {
+    const nova = vendor({ id: 'vendor-2', name: 'Nova Services' })
+    vendorsApi.fetchVendorsPage
+      .mockResolvedValueOnce(vendorPage([nova], { page: 2, totalItems: 11, totalPages: 2 }))
+      .mockResolvedValueOnce(vendorPage([atlas], { page: 1, totalItems: 11, totalPages: 2 }))
+    const { router, wrapper } = await mountPage('/vendors?page=2')
+
+    expect(vendorsApi.fetchVendorsPage).toHaveBeenCalledWith({
+      search: undefined,
+      page: 2,
+      pageSize: 10,
+    })
+    expect(wrapper.text()).toContain('Page 2 of 2 · 11 vendors')
+    expect(getButton(wrapper, 'Next').attributes()).toHaveProperty('disabled')
+
+    await getButton(wrapper, 'Previous').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({})
+    expect(vendorsApi.fetchVendorsPage).toHaveBeenLastCalledWith({
+      search: undefined,
+      page: 1,
+      pageSize: 10,
+    })
+    expect(wrapper.text()).toContain('Atlas Supplies')
+  })
+
+  it('redirects an out-of-range page to the last available page', async () => {
+    const nova = vendor({ id: 'vendor-2', name: 'Nova Services' })
+    vendorsApi.fetchVendorsPage
+      .mockResolvedValueOnce(vendorPage([], { page: 8, totalItems: 11, totalPages: 2 }))
+      .mockResolvedValueOnce(vendorPage([nova], { page: 2, totalItems: 11, totalPages: 2 }))
+    const { router, wrapper } = await mountPage('/vendors?page=8')
+
+    expect(router.currentRoute.value.query).toEqual({ page: '2' })
+    expect(vendorsApi.fetchVendorsPage).toHaveBeenLastCalledWith({
+      search: undefined,
+      page: 2,
+      pageSize: 10,
+    })
+    expect(wrapper.text()).toContain('Nova Services')
   })
 
   it('creates a vendor and clears an active search', async () => {
     const nova = vendor({ id: 'vendor-2', name: 'Nova Services' })
-    vendorsApi.fetchVendors.mockResolvedValueOnce([atlas]).mockResolvedValueOnce([nova, atlas])
+    vendorsApi.fetchVendorsPage
+      .mockResolvedValueOnce(vendorPage([atlas]))
+      .mockResolvedValueOnce(vendorPage([nova, atlas]))
     vendorsApi.createVendor.mockResolvedValue(nova)
     const { router, wrapper } = await mountPage('/vendors?search=Atlas')
 
@@ -148,7 +222,7 @@ describe('vendor management', () => {
 
   it('edits a vendor in place', async () => {
     const updatedAtlas = vendor({ name: 'Atlas Office Supplies' })
-    vendorsApi.fetchVendors.mockResolvedValue([atlas])
+    vendorsApi.fetchVendorsPage.mockResolvedValue(vendorPage([atlas]))
     vendorsApi.updateVendor.mockResolvedValue(updatedAtlas)
     const { wrapper } = await mountPage()
 
@@ -169,7 +243,9 @@ describe('vendor management', () => {
   })
 
   it('archives a confirmed vendor', async () => {
-    vendorsApi.fetchVendors.mockResolvedValue([atlas])
+    vendorsApi.fetchVendorsPage
+      .mockResolvedValueOnce(vendorPage([atlas]))
+      .mockResolvedValueOnce(vendorPage([]))
     vendorsApi.archiveVendor.mockResolvedValue(vendor({ archivedAt: '2026-08-04T10:00:00.000Z' }))
     const confirmMock = vi.fn<() => boolean>(() => true)
     vi.stubGlobal('confirm', confirmMock)

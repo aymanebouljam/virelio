@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { createVendor, fetchVendors, updateVendor, archiveVendor } from '@/lib/vendors/api'
+import { archiveVendor, createVendor, fetchVendorsPage, updateVendor } from '@/lib/vendors/api'
 
 import { ApiError } from '@/lib/api'
 import {
@@ -14,10 +14,17 @@ import { ZodError } from 'zod'
 import { mapZodErrors } from '@/lib/zod'
 
 const vendors = ref<Vendor[]>([])
+const PAGE_SIZE = 10
 const route = useRoute()
 const router = useRouter()
 const search = ref(readSearchQuery() ?? '')
 const hasSearch = computed(() => readSearchQuery() !== undefined)
+const pagination = ref({
+  page: 1,
+  pageSize: PAGE_SIZE,
+  totalItems: 0,
+  totalPages: 0,
+})
 const vendor = ref<VendorFormValues>({
   name: '',
   email: '',
@@ -50,6 +57,14 @@ function readSearchQuery() {
   return typeof value === 'string' && value.length > 0 ? value : undefined
 }
 
+function readPageQuery() {
+  const value = route.query.page
+  if (typeof value !== 'string') return 1
+
+  const page = Number(value)
+  return Number.isInteger(page) && page > 0 ? page : 1
+}
+
 async function applySearch() {
   const normalizedSearch = search.value.trim()
   const query = { ...route.query }
@@ -59,6 +74,7 @@ async function applySearch() {
   } else {
     delete query.search
   }
+  delete query.page
 
   await router.replace({ query })
 }
@@ -66,6 +82,19 @@ async function applySearch() {
 async function clearSearch() {
   search.value = ''
   await applySearch()
+}
+
+async function changePage(page: number) {
+  if (page < 1) return
+
+  const query = { ...route.query }
+  if (page === 1) {
+    delete query.page
+  } else {
+    query.page = String(page)
+  }
+
+  await router.replace({ query })
 }
 
 function resetForm() {
@@ -113,8 +142,20 @@ function openEditForm(vendorData: Vendor) {
 async function loadVendors() {
   try {
     error.value = ''
+    const requestedPage = readPageQuery()
+    const response = await fetchVendorsPage({
+      search: readSearchQuery(),
+      page: requestedPage,
+      pageSize: PAGE_SIZE,
+    })
+    const lastPage = Math.max(response.pagination.totalPages, 1)
+    if (requestedPage > lastPage) {
+      await changePage(lastPage)
+      return
+    }
+
     const validatedVendors = []
-    for (const vendor of await fetchVendors({ search: readSearchQuery() })) {
+    for (const vendor of response.items) {
       const result = vendorSchema.safeParse(vendor)
       if (!result.success) {
         continue
@@ -122,10 +163,30 @@ async function loadVendors() {
       validatedVendors.push(result.data as Vendor)
     }
     vendors.value = validatedVendors
+    pagination.value = response.pagination
   } catch (err) {
     error.value = err instanceof ApiError ? err.message : 'Something went wrong'
   } finally {
     loading.value = false
+  }
+}
+
+async function loadFirstPage(clearActiveSearch: boolean) {
+  const query = { ...route.query }
+  const shouldNavigate =
+    query.page !== undefined || (clearActiveSearch && query.search !== undefined)
+
+  delete query.page
+  if (clearActiveSearch) {
+    delete query.search
+    search.value = ''
+  }
+
+  if (shouldNavigate) {
+    await router.replace({ query })
+  } else {
+    loading.value = true
+    await loadVendors()
   }
 }
 
@@ -186,11 +247,7 @@ async function submitVendorForm() {
         actionError.value = 'Failed to fetch created vendor'
         return
       }
-      if (hasSearch.value) {
-        await clearSearch()
-      } else {
-        vendors.value = [result.data as Vendor, ...vendors.value]
-      }
+      await loadFirstPage(true)
     } else if (!isSameVendorForm(payload, vendor.value)) {
       const result = vendorSchema.safeParse(await updateVendor(editingVendorId.value, payload))
       if (!result.success) {
@@ -201,7 +258,7 @@ async function submitVendorForm() {
 
       const updatedVendor = result.data as Vendor
       if (hasSearch.value) {
-        await clearSearch()
+        await loadFirstPage(true)
       } else {
         vendors.value = vendors.value.map((vendor) =>
           vendor.id === updatedVendor.id ? updatedVendor : vendor,
@@ -221,22 +278,20 @@ async function archive({ id }: Vendor) {
   actionError.value = ''
   try {
     if (confirm('Are you sure you want to archive this vendor?')) {
-      const archivedVendor = vendorSchema.parse(await archiveVendor(id))
-      vendors.value = vendors.value.filter((vendor: Vendor) => vendor.id !== archivedVendor.id)
+      vendorSchema.parse(await archiveVendor(id))
+      loading.value = true
+      await loadVendors()
     }
   } catch (err) {
     actionError.value = err instanceof ApiError ? err.message : 'Archiving vendor failed'
   }
 }
 
-watch(
-  () => route.query.search,
-  () => {
-    search.value = readSearchQuery() ?? ''
-    loading.value = true
-    void loadVendors()
-  },
-)
+watch([() => route.query.search, () => route.query.page], () => {
+  search.value = readSearchQuery() ?? ''
+  loading.value = true
+  void loadVendors()
+})
 
 onMounted(loadVendors)
 </script>
@@ -545,6 +600,36 @@ onMounted(loadVendors)
             </div>
           </div>
         </article>
+
+        <nav
+          v-if="pagination.totalPages > 1"
+          aria-label="Vendor pagination"
+          class="flex flex-col gap-3 border-t border-stone-200 pt-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <p class="text-sm text-stone-500">
+            Page {{ pagination.page }} of {{ pagination.totalPages }} ·
+            {{ pagination.totalItems }} vendors
+          </p>
+
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              :disabled="pagination.page === 1"
+              class="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 disabled:cursor-not-allowed disabled:text-stone-300"
+              @click="changePage(pagination.page - 1)"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              :disabled="pagination.page === pagination.totalPages"
+              class="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 disabled:cursor-not-allowed disabled:text-stone-300"
+              @click="changePage(pagination.page + 1)"
+            >
+              Next
+            </button>
+          </div>
+        </nav>
       </div>
     </section>
   </section>

@@ -1,15 +1,30 @@
-import { apiConfig } from '../api'
+import { apiConfig, type PaginatedResponse } from '../api'
 import type { Vendor, VendorFormValues } from './schema'
 
-export type VendorFilters = {
+export type VendorPageFilters = {
   search?: string
+  page?: number
+  pageSize?: number
 }
 
-export async function fetchVendors(filters: VendorFilters = {}) {
+export async function fetchVendors() {
+  return (await apiConfig({ path: 'vendors' })) as Vendor[]
+}
+
+export async function fetchVendorsPage({
+  search,
+  page = 1,
+  pageSize = 10,
+}: VendorPageFilters = {}) {
   return (await apiConfig({
     path: 'vendors',
-    queryParams: filters.search ? { search: filters.search } : undefined,
-  })) as Vendor[]
+    action: 'page',
+    queryParams: {
+      ...(search && { search }),
+      page,
+      pageSize,
+    },
+  })) as PaginatedResponse<Vendor>
 }
 
 export async function fetchVendor(id: string) {
