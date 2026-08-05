@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import type { RouteRecordRaw } from 'vue-router'
-import { ApiError } from '@/lib/api'
+import { ApiError, type PaginatedResponse } from '@/lib/api'
 import type { ExpenseCategory } from '@/lib/expense-categories/schema'
+import type { ExpenseFilters } from '@/lib/expenses/api'
 import type { Expense, ExpensePayload } from '@/lib/expenses/schema'
 import type { Vendor } from '@/lib/vendors/schema'
 import ExpensesPage from '@/pages/ExpensesPage.vue'
@@ -11,16 +12,7 @@ import { mountWithRouter } from './test-mount'
 const expensesApi = vi.hoisted(() => ({
   archiveExpense: vi.fn<(id: string) => Promise<Expense>>(),
   createExpense: vi.fn<(input: ExpensePayload) => Promise<Expense>>(),
-  fetchExpenses:
-    vi.fn<
-      (filters?: {
-        search?: string
-        vendorId?: string
-        categoryId?: string
-        dateFrom?: string
-        dateTo?: string
-      }) => Promise<Expense[]>
-    >(),
+  fetchExpenses: vi.fn<(filters?: ExpenseFilters) => Promise<PaginatedResponse<Expense>>>(),
   updateExpense: vi.fn<(id: string, input: Partial<ExpensePayload>) => Promise<Expense>>(),
 }))
 
@@ -76,6 +68,35 @@ function expense(overrides: Partial<Expense>): Expense {
   return { ...flight, ...overrides }
 }
 
+function expensePage(
+  items: Expense[],
+  pagination: Partial<PaginatedResponse<Expense>['pagination']> = {},
+): PaginatedResponse<Expense> {
+  return {
+    items,
+    pagination: {
+      page: 1,
+      pageSize: 10,
+      totalItems: items.length,
+      totalPages: items.length > 0 ? 1 : 0,
+      ...pagination,
+    },
+  }
+}
+
+function expenseRequest(filters: ExpenseFilters = {}): ExpenseFilters {
+  return {
+    search: undefined,
+    vendorId: undefined,
+    categoryId: undefined,
+    dateFrom: undefined,
+    dateTo: undefined,
+    page: 1,
+    pageSize: 10,
+    ...filters,
+  }
+}
+
 function getButton(wrapper: VueWrapper, text: string) {
   const button = wrapper.findAll('button').find((candidate) => candidate.text() === text)
   if (!button) throw new Error(`${text} button not found`)
@@ -112,7 +133,7 @@ async function mountPage(initialRoute = '/expenses') {
 describe('expense listing and filters', () => {
   beforeEach(() => {
     vi.resetAllMocks()
-    expensesApi.fetchExpenses.mockResolvedValue([])
+    expensesApi.fetchExpenses.mockResolvedValue(expensePage([]))
     vendorsApi.fetchVendors.mockResolvedValue([atlas])
     categoriesApi.fetchExpenseCategories.mockResolvedValue([travel])
   })
@@ -122,9 +143,9 @@ describe('expense listing and filters', () => {
   })
 
   it('shows loading and empty states', async () => {
-    let resolveExpenses!: (expenses: Expense[]) => void
+    let resolveExpenses!: (page: PaginatedResponse<Expense>) => void
     expensesApi.fetchExpenses.mockReturnValue(
-      new Promise<Expense[]>((resolve) => {
+      new Promise<PaginatedResponse<Expense>>((resolve) => {
         resolveExpenses = resolve
       }),
     )
@@ -133,14 +154,14 @@ describe('expense listing and filters', () => {
 
     expect(wrapper.get('[role="status"]').attributes('aria-label')).toBe('Loading expenses')
 
-    resolveExpenses([])
+    resolveExpenses(expensePage([]))
     await flushPromises()
 
     expect(wrapper.text()).toContain('No expenses yet')
   })
 
   it('renders expenses with their vendor and category', async () => {
-    expensesApi.fetchExpenses.mockResolvedValue([flight])
+    expensesApi.fetchExpenses.mockResolvedValue(expensePage([flight]))
 
     const { wrapper } = await mountPage()
 
@@ -148,6 +169,24 @@ describe('expense listing and filters', () => {
     expect(wrapper.text()).toContain('Atlas Supplies')
     expect(wrapper.text()).toContain('Travel')
     expect(wrapper.text()).toContain('Quarterly visit')
+  })
+
+  it('loads the requested page and navigates to the previous page', async () => {
+    expensesApi.fetchExpenses
+      .mockResolvedValueOnce(expensePage([flight], { page: 2, totalItems: 11, totalPages: 2 }))
+      .mockResolvedValueOnce(expensePage([flight], { totalItems: 11, totalPages: 2 }))
+
+    const { router, wrapper } = await mountPage('/expenses?page=2')
+
+    expect(expensesApi.fetchExpenses).toHaveBeenCalledWith(expenseRequest({ page: 2 }))
+    expect(wrapper.text()).toContain('Page 2 of 2 · 11 expenses')
+    expect(getButton(wrapper, 'Next').attributes()).toHaveProperty('disabled')
+
+    await getButton(wrapper, 'Previous').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({})
+    expect(expensesApi.fetchExpenses).toHaveBeenLastCalledWith(expenseRequest())
   })
 
   it('shows API loading failures', async () => {
@@ -171,7 +210,7 @@ describe('expense listing and filters', () => {
 
     const { wrapper } = await mountPage(`/expenses?${query}`)
 
-    expect(expensesApi.fetchExpenses).toHaveBeenCalledWith(filters)
+    expect(expensesApi.fetchExpenses).toHaveBeenCalledWith(expenseRequest(filters))
     expect(getFilterField(wrapper, 'Search').element).toHaveProperty('value', 'flight')
     expect(getFilterField(wrapper, 'Vendor').element).toHaveProperty('value', atlas.id)
     expect(getFilterField(wrapper, 'Category').element).toHaveProperty('value', travel.id)
@@ -199,7 +238,7 @@ describe('expense listing and filters', () => {
       dateTo: '2026-08-31',
     }
     expect(router.currentRoute.value.query).toEqual(filters)
-    expect(expensesApi.fetchExpenses).toHaveBeenLastCalledWith(filters)
+    expect(expensesApi.fetchExpenses).toHaveBeenLastCalledWith(expenseRequest(filters))
   })
 
   it('synchronizes external route changes and clears active filters', async () => {
@@ -209,26 +248,14 @@ describe('expense listing and filters', () => {
     await flushPromises()
 
     expect(getFilterField(wrapper, 'Search').element).toHaveProperty('value', 'hotel')
-    expect(expensesApi.fetchExpenses).toHaveBeenLastCalledWith({
-      search: 'hotel',
-      vendorId: undefined,
-      categoryId: undefined,
-      dateFrom: undefined,
-      dateTo: undefined,
-    })
+    expect(expensesApi.fetchExpenses).toHaveBeenLastCalledWith(expenseRequest({ search: 'hotel' }))
 
     await getButton(wrapper, 'Clear').trigger('click')
     await flushPromises()
 
     expect(router.currentRoute.value.query).toEqual({})
     expect(getFilterField(wrapper, 'Search').element).toHaveProperty('value', '')
-    expect(expensesApi.fetchExpenses).toHaveBeenLastCalledWith({
-      search: undefined,
-      vendorId: undefined,
-      categoryId: undefined,
-      dateFrom: undefined,
-      dateTo: undefined,
-    })
+    expect(expensesApi.fetchExpenses).toHaveBeenLastCalledWith(expenseRequest())
   })
 
   it('shows inverted date-range errors from the API', async () => {
@@ -244,7 +271,7 @@ describe('expense listing and filters', () => {
     expect(wrapper.text()).toContain('From date must be before or equal to date to')
   })
 
-  it('creates an expense with loaded options and refreshes the filtered list', async () => {
+  it('creates an expense with loaded options and returns to the unfiltered first page', async () => {
     const hotel = expense({
       id: 'expense-2',
       description: 'Client hotel',
@@ -252,9 +279,11 @@ describe('expense listing and filters', () => {
       expenseDate: '2026-08-06T00:00:00.000Z',
       notes: null,
     })
-    expensesApi.fetchExpenses.mockResolvedValueOnce([flight]).mockResolvedValueOnce([hotel, flight])
+    expensesApi.fetchExpenses
+      .mockResolvedValueOnce(expensePage([flight]))
+      .mockResolvedValueOnce(expensePage([hotel, flight]))
     expensesApi.createExpense.mockResolvedValue(hotel)
-    const { wrapper } = await mountPage('/expenses?search=client')
+    const { router, wrapper } = await mountPage('/expenses?search=client')
 
     await getButton(wrapper, 'Add expense').trigger('click')
     expect(getExpenseField(wrapper, 'Vendor').text()).toContain('Atlas Supplies')
@@ -276,21 +305,18 @@ describe('expense listing and filters', () => {
       expenseDate: '2026-08-06',
       notes: undefined,
     })
-    expect(expensesApi.fetchExpenses).toHaveBeenLastCalledWith({
-      search: 'client',
-      vendorId: undefined,
-      categoryId: undefined,
-      dateFrom: undefined,
-      dateTo: undefined,
-    })
+    expect(router.currentRoute.value.query).toEqual({})
+    expect(expensesApi.fetchExpenses).toHaveBeenLastCalledWith(expenseRequest())
     expect(wrapper.text()).toContain('Client hotel')
     expect(wrapper.text()).toContain('Client-site flight')
     expect(wrapper.find('form[aria-label="Expense form"]').exists()).toBe(false)
   })
 
-  it('edits an expense in place', async () => {
+  it('reloads the current page after editing an expense', async () => {
     const updatedFlight = expense({ description: 'Rescheduled client-site flight' })
-    expensesApi.fetchExpenses.mockResolvedValue([flight])
+    expensesApi.fetchExpenses
+      .mockResolvedValueOnce(expensePage([flight]))
+      .mockResolvedValueOnce(expensePage([updatedFlight]))
     expensesApi.updateExpense.mockResolvedValue(updatedFlight)
     const { wrapper } = await mountPage()
 
@@ -312,7 +338,9 @@ describe('expense listing and filters', () => {
   })
 
   it('archives a confirmed expense', async () => {
-    expensesApi.fetchExpenses.mockResolvedValue([flight])
+    expensesApi.fetchExpenses
+      .mockResolvedValueOnce(expensePage([flight]))
+      .mockResolvedValueOnce(expensePage([]))
     expensesApi.archiveExpense.mockResolvedValue(
       expense({ archivedAt: '2026-08-05T10:00:00.000Z' }),
     )

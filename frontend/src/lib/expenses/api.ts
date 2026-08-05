@@ -1,4 +1,4 @@
-import { apiConfig } from '../api'
+import { apiConfig, type PaginatedResponse } from '../api'
 import type { Expense, ExpenseDetail, ExpensePayload } from './schema'
 
 export type ExpenseFilters = {
@@ -7,17 +7,19 @@ export type ExpenseFilters = {
   categoryId?: string
   dateFrom?: string
   dateTo?: string
+  page?: number
+  pageSize?: number
 }
 
-export async function fetchExpenses(filters: ExpenseFilters = {}) {
-  const queryParams = Object.fromEntries(
-    Object.entries(filters).filter((entry): entry is [string, string] => Boolean(entry[1])),
-  )
-
+export async function fetchExpenses({ page = 1, pageSize = 10, ...filters }: ExpenseFilters = {}) {
   return (await apiConfig({
     path: 'expenses',
-    queryParams,
-  })) as Expense[]
+    queryParams: {
+      ...Object.fromEntries(Object.entries(filters).filter(([, value]) => Boolean(value))),
+      page,
+      pageSize,
+    },
+  })) as PaginatedResponse<Expense>
 }
 
 export async function fetchArchivedExpenses() {

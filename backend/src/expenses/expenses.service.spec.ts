@@ -12,6 +12,7 @@ describe('ExpensesService', () => {
   const userId = 'user-1';
 
   const expenseFindManyMock = jest.fn();
+  const expenseCountMock = jest.fn();
   const expenseFindUniqueOrThrowMock = jest.fn();
   const expenseCreateMock = jest.fn();
   const expenseUpdateMock = jest.fn();
@@ -23,6 +24,7 @@ describe('ExpensesService', () => {
   const prisma = {
     expense: {
       findMany: expenseFindManyMock,
+      count: expenseCountMock,
       findUniqueOrThrow: expenseFindUniqueOrThrowMock,
       create: expenseCreateMock,
       update: expenseUpdateMock,
@@ -41,66 +43,97 @@ describe('ExpensesService', () => {
     service = new ExpensesService(prisma);
   });
 
-  it('findAll returns active expenses ordered by expenseDate desc', async () => {
+  it('findAll returns the first page of active expenses by default', async () => {
     const expenses = [
       { id: '1', description: 'Office supplies', archivedAt: null },
     ];
     expenseFindManyMock.mockResolvedValueOnce(expenses);
+    expenseCountMock.mockResolvedValueOnce(1);
 
     const result = await service.findAll(userId);
 
-    expect(result).toEqual(expenses);
+    expect(result).toEqual({
+      items: expenses,
+      pagination: {
+        page: 1,
+        pageSize: 10,
+        totalItems: 1,
+        totalPages: 1,
+      },
+    });
     expect(expenseFindManyMock).toHaveBeenCalledWith({
       where: { userId, archivedAt: null },
-      orderBy: { expenseDate: 'desc' },
+      orderBy: [{ expenseDate: 'desc' }, { id: 'desc' }],
+      skip: 0,
+      take: 10,
+    });
+    expect(expenseCountMock).toHaveBeenCalledWith({
+      where: { userId, archivedAt: null },
     });
   });
 
-  it('findAll applies search, relation, and inclusive date filters', async () => {
-    expenseFindManyMock.mockResolvedValueOnce([]);
+  it('findAll applies filters before paginating results', async () => {
+    const expenses = [
+      { id: 'expense-6', description: 'Office supplies', archivedAt: null },
+    ];
+    expenseFindManyMock.mockResolvedValueOnce(expenses);
+    expenseCountMock.mockResolvedValueOnce(12);
 
-    await service.findAll(userId, {
-      search: '  office  ',
-      vendorId: 'vendor-1',
-      categoryId: 'category-1',
-      dateFrom: '2026-01-01',
-      dateTo: '2026-01-31',
-    });
-
-    expect(expenseFindManyMock).toHaveBeenCalledWith({
-      where: {
-        userId,
-        archivedAt: null,
+    await expect(
+      service.findAll(userId, {
+        search: '  office  ',
         vendorId: 'vendor-1',
         categoryId: 'category-1',
-        expenseDate: {
-          gte: new Date('2026-01-01T00:00:00.000Z'),
-          lte: new Date('2026-01-31T23:59:59.999Z'),
-        },
-        OR: [
-          { description: { contains: 'office', mode: 'insensitive' } },
-          { notes: { contains: 'office', mode: 'insensitive' } },
-          {
-            vendor: { name: { contains: 'office', mode: 'insensitive' } },
-          },
-          {
-            category: { name: { contains: 'office', mode: 'insensitive' } },
-          },
-        ],
+        dateFrom: '2026-01-01',
+        dateTo: '2026-01-31',
+        page: 2,
+        pageSize: 5,
+      }),
+    ).resolves.toEqual({
+      items: expenses,
+      pagination: {
+        page: 2,
+        pageSize: 5,
+        totalItems: 12,
+        totalPages: 3,
       },
-      orderBy: { expenseDate: 'desc' },
     });
+
+    const where = {
+      userId,
+      archivedAt: null,
+      vendorId: 'vendor-1',
+      categoryId: 'category-1',
+      expenseDate: {
+        gte: new Date('2026-01-01T00:00:00.000Z'),
+        lte: new Date('2026-01-31T23:59:59.999Z'),
+      },
+      OR: [
+        { description: { contains: 'office', mode: 'insensitive' } },
+        { notes: { contains: 'office', mode: 'insensitive' } },
+        { vendor: { name: { contains: 'office', mode: 'insensitive' } } },
+        { category: { name: { contains: 'office', mode: 'insensitive' } } },
+      ],
+    };
+    expect(expenseFindManyMock).toHaveBeenCalledWith({
+      where,
+      orderBy: [{ expenseDate: 'desc' }, { id: 'desc' }],
+      skip: 5,
+      take: 5,
+    });
+    expect(expenseCountMock).toHaveBeenCalledWith({ where });
   });
 
-  it('findAll rejects an inverted date range', () => {
-    expect(() =>
+  it('findAll rejects an inverted date range', async () => {
+    await expect(
       service.findAll(userId, {
         dateFrom: '2026-02-01',
         dateTo: '2026-01-31',
       }),
-    ).toThrow(BadRequestException);
+    ).rejects.toBeInstanceOf(BadRequestException);
 
     expect(expenseFindManyMock).not.toHaveBeenCalled();
+    expect(expenseCountMock).not.toHaveBeenCalled();
   });
 
   it('findArchived returns archived expenses ordered by archivedAt desc', async () => {

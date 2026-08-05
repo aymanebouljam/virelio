@@ -15,31 +15,30 @@ import type { GetExpensesQueryDto } from './dto/get-expenses-query.dto';
 export class ExpensesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll(userId: string, query: GetExpensesQueryDto = {}): Promise<Expense[]> {
-    const search = query.search?.trim();
-    const expenseDate = this.buildExpenseDateFilter(query);
-    const where: Prisma.ExpenseWhereInput = {
-      userId,
-      archivedAt: null,
-      ...(query.vendorId && { vendorId: query.vendorId }),
-      ...(query.categoryId && { categoryId: query.categoryId }),
-      ...(expenseDate && { expenseDate }),
-      ...(search && {
-        OR: [
-          { description: { contains: search, mode: 'insensitive' } },
-          { notes: { contains: search, mode: 'insensitive' } },
-          { vendor: { name: { contains: search, mode: 'insensitive' } } },
-          { category: { name: { contains: search, mode: 'insensitive' } } },
-        ],
-      }),
-    };
+  async findAll(userId: string, query: GetExpensesQueryDto = {}) {
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 10;
+    const where = this.buildActiveExpenseFilter(userId, query);
 
-    return this.prisma.expense.findMany({
-      where,
-      orderBy: {
-        expenseDate: 'desc',
+    const [items, totalItems] = await Promise.all([
+      this.prisma.expense.findMany({
+        where,
+        orderBy: [{ expenseDate: 'desc' }, { id: 'desc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.expense.count({ where }),
+    ]);
+
+    return {
+      items,
+      pagination: {
+        page,
+        pageSize,
+        totalItems,
+        totalPages: Math.ceil(totalItems / pageSize),
       },
-    });
+    };
   }
 
   findArchived(userId: string): Promise<Expense[]> {
@@ -286,6 +285,30 @@ export class ExpensesService {
         message: 'Expense category not found',
       });
     }
+  }
+
+  private buildActiveExpenseFilter(
+    userId: string,
+    query: GetExpensesQueryDto,
+  ): Prisma.ExpenseWhereInput {
+    const search = query.search?.trim();
+    const expenseDate = this.buildExpenseDateFilter(query);
+
+    return {
+      userId,
+      archivedAt: null,
+      ...(query.vendorId && { vendorId: query.vendorId }),
+      ...(query.categoryId && { categoryId: query.categoryId }),
+      ...(expenseDate && { expenseDate }),
+      ...(search && {
+        OR: [
+          { description: { contains: search, mode: 'insensitive' } },
+          { notes: { contains: search, mode: 'insensitive' } },
+          { vendor: { name: { contains: search, mode: 'insensitive' } } },
+          { category: { name: { contains: search, mode: 'insensitive' } } },
+        ],
+      }),
+    };
   }
 
   private buildExpenseDateFilter(
