@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-05
+
+### Added
+
+- Case-insensitive vendor search across names and contact fields.
+- Expense search with vendor, category, and inclusive date-range filters.
+- URL-persisted filters for refreshable, bookmarkable list views.
+- Paginated active vendor and expense lists with total counts and previous or next navigation.
+- Frontend unit and component integration coverage for shared application logic and primary workflows.
+
+### Changed
+
+- Added stable ordering to paginated lists so records do not move unpredictably between pages.
+- Reloaded authoritative expense page data after create, edit, and archive operations.
+- Updated the development seed user with a password compatible with the authentication flow.
+
 ## [0.1.0] - 2026-08-03
 
 ### Added
