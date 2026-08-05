@@ -47,6 +47,16 @@ type ExpenseResponse = {
   }[];
 };
 
+type ExpensePageResponse = {
+  items: ExpenseResponse[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  };
+};
+
 type ErrorResponse = {
   message: string;
   errors?: {
@@ -111,7 +121,15 @@ describe('Expenses e2e', () => {
         .set(authHeaders)
         .expect(HttpStatus.OK);
 
-      expect(response.body).toEqual([]);
+      expect(response.body).toEqual({
+        items: [],
+        pagination: {
+          page: 1,
+          pageSize: 10,
+          totalItems: 0,
+          totalPages: 0,
+        },
+      });
     });
 
     it('returns active expenses only', async () => {
@@ -156,12 +174,18 @@ describe('Expenses e2e', () => {
         .set(authHeaders)
         .expect(HttpStatus.OK);
 
-      const expenses = listResponse.body as ExpenseResponse[];
+      const page = listResponse.body as ExpensePageResponse;
 
-      expect(expenses).toHaveLength(1);
-      expect(expenses[0]).toMatchObject({
+      expect(page.items).toHaveLength(1);
+      expect(page.items[0]).toMatchObject({
         description: 'Taxi',
         archivedAt: null,
+      });
+      expect(page.pagination).toEqual({
+        page: 1,
+        pageSize: 10,
+        totalItems: 1,
+        totalPages: 1,
       });
     });
 
@@ -204,9 +228,71 @@ describe('Expenses e2e', () => {
         .set(authHeaders)
         .expect(HttpStatus.OK);
 
-      const expenses = listResponse.body as ExpenseResponse[];
+      const page = listResponse.body as ExpensePageResponse;
 
-      expect(expenses.map(({ id }) => id)).toEqual([expenseB.id, expenseA.id]);
+      expect(page.items.map(({ id }) => id)).toEqual([
+        expenseB.id,
+        expenseA.id,
+      ]);
+    });
+
+    it('returns the requested page with pagination metadata', async () => {
+      const vendor = await createVendor();
+      const category = await createCategory();
+      const expenseIds: string[] = [];
+
+      for (const [description, expenseDate] of [
+        ['Office supplies', '2026-01-15T00:00:00.000Z'],
+        ['Taxi', '2026-01-16T00:00:00.000Z'],
+        ['Client dinner', '2026-01-17T00:00:00.000Z'],
+      ]) {
+        const response = await request(http)
+          .post('/expenses')
+          .set(authHeaders)
+          .send({
+            vendorId: vendor.id,
+            categoryId: category.id,
+            description,
+            amount: 100,
+            expenseDate,
+          })
+          .expect(HttpStatus.CREATED);
+        expenseIds.push((response.body as ExpenseResponse).id);
+      }
+
+      const response = await request(http)
+        .get('/expenses')
+        .query({ page: 2, pageSize: 1 })
+        .set(authHeaders)
+        .expect(HttpStatus.OK);
+      const page = response.body as ExpensePageResponse;
+
+      expect(page.items.map(({ id }) => id)).toEqual([expenseIds[1]]);
+      expect(page.pagination).toEqual({
+        page: 2,
+        pageSize: 1,
+        totalItems: 3,
+        totalPages: 3,
+      });
+    });
+
+    it.each([
+      ['page', '0'],
+      ['page', '1.5'],
+      ['pageSize', '0'],
+      ['pageSize', '101'],
+    ])('rejects invalid %s=%s', async (field, value) => {
+      const response = await request(http)
+        .get('/expenses')
+        .query({ [field]: value })
+        .set(authHeaders)
+        .expect(HttpStatus.BAD_REQUEST);
+      const error = response.body as ErrorResponse;
+
+      expect(error.message).toBe('Validation failed');
+      expect(error.errors).toEqual(
+        expect.arrayContaining([expect.objectContaining({ field })]),
+      );
     });
   });
 
@@ -414,7 +500,7 @@ describe('Expenses e2e', () => {
         .set(authHeaders)
         .expect(HttpStatus.OK);
 
-      const expenses = listResponse.body as ExpenseResponse[];
+      const expenses = (listResponse.body as ExpensePageResponse).items;
 
       expect(expenses).toHaveLength(1);
       expect(expenses[0]).toMatchObject({
