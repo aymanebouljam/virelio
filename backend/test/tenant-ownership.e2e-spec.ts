@@ -130,7 +130,15 @@ describe('Tenant ownership e2e', () => {
 
     expect(vendors.body).toEqual([]);
     expect(categories.body).toEqual([]);
-    expect(expenses.body).toEqual([]);
+    expect(expenses.body).toEqual({
+      items: [],
+      pagination: {
+        page: 1,
+        pageSize: 10,
+        totalItems: 0,
+        totalPages: 0,
+      },
+    });
   });
 
   it('returns 404 when another user reads, updates, or archives owned records', async () => {
