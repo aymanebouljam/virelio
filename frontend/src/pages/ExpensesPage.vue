@@ -19,6 +19,7 @@ import { type Vendor, vendorSchema } from '@/lib/vendors/schema'
 import { mapZodErrors } from '@/lib/zod'
 
 const expenses = ref<Expense[]>([])
+const PAGE_SIZE = 10
 const vendors = ref<Vendor[]>([])
 const categories = ref<ExpenseCategory[]>([])
 const route = useRoute()
@@ -32,6 +33,12 @@ const editingId = ref<string | null>(null)
 const submitting = ref(false)
 const submitError = ref('')
 const formErrors = ref<Record<string, string>>({})
+const pagination = ref({
+  page: 1,
+  pageSize: PAGE_SIZE,
+  totalItems: 0,
+  totalPages: 0,
+})
 
 const filters = reactive({
   search: readQueryValue('search'),
@@ -56,6 +63,14 @@ function readRouteFilters() {
     dateFrom: readQueryValue('dateFrom') || undefined,
     dateTo: readQueryValue('dateTo') || undefined,
   }
+}
+
+function readPageQuery() {
+  const value = route.query.page
+  if (typeof value !== 'string') return 1
+
+  const page = Number(value)
+  return Number.isInteger(page) && page > 0 ? page : 1
 }
 
 function syncFiltersFromRoute() {
@@ -85,6 +100,19 @@ async function clearFilters() {
     dateTo: '',
   })
   await applyFilters()
+}
+
+async function changePage(page: number) {
+  if (page < 1) return
+
+  const query = { ...route.query }
+  if (page === 1) {
+    delete query.page
+  } else {
+    query.page = String(page)
+  }
+
+  await router.replace({ query })
 }
 
 const today = new Date().toISOString().slice(0, 10)
@@ -202,26 +230,41 @@ function getListError(err: unknown) {
   return err instanceof ApiError ? (err.content?.dateRange ?? err.message) : 'Something went wrong'
 }
 
-async function fetchValidatedExpenses() {
-  const rawExpenses = await fetchExpenses(readRouteFilters())
+async function fetchValidatedExpensesPage() {
+  const requestedPage = readPageQuery()
+  const response = await fetchExpenses({
+    ...readRouteFilters(),
+    page: requestedPage,
+    pageSize: PAGE_SIZE,
+  })
+  const lastPage = Math.max(response.pagination.totalPages, 1)
+  if (requestedPage > lastPage) {
+    await changePage(lastPage)
+    return
+  }
 
-  return rawExpenses
+  const items = response.items
     .map((expense) => expenseSchema.safeParse(expense))
     .filter((result) => result.success)
     .map((result) => result.data)
+
+  return { items, pagination: response.pagination }
 }
 
 async function loadExpensesPage() {
   try {
     error.value = ''
 
-    const [validatedExpenses, rawVendors, rawCategories] = await Promise.all([
-      fetchValidatedExpenses(),
+    const [expensePage, rawVendors, rawCategories] = await Promise.all([
+      fetchValidatedExpensesPage(),
       fetchVendors(),
       fetchExpenseCategories(),
     ])
 
-    expenses.value = validatedExpenses
+    if (expensePage) {
+      expenses.value = expensePage.items
+      pagination.value = expensePage.pagination
+    }
 
     vendors.value = rawVendors
       .map((vendor) => vendorSchema.safeParse(vendor))
@@ -242,11 +285,24 @@ async function loadExpensesPage() {
 async function reloadExpenses() {
   try {
     error.value = ''
-    expenses.value = await fetchValidatedExpenses()
+    const expensePage = await fetchValidatedExpensesPage()
+    if (expensePage) {
+      expenses.value = expensePage.items
+      pagination.value = expensePage.pagination
+    }
   } catch (err) {
     error.value = getListError(err)
   } finally {
     loading.value = false
+  }
+}
+
+async function loadFirstUnfilteredPage() {
+  if (route.fullPath !== '/expenses') {
+    await router.replace({ path: '/expenses' })
+  } else {
+    loading.value = true
+    await reloadExpenses()
   }
 }
 
@@ -268,11 +324,7 @@ async function submitForm() {
         return
       }
 
-      if (hasFilters.value) {
-        await reloadExpenses()
-      } else {
-        expenses.value = [result.data, ...expenses.value]
-      }
+      await loadFirstUnfilteredPage()
     } else if (!isSameForm(form.value, baseline.value)) {
       const result = expenseSchema.safeParse(await updateExpense(editingId.value, payload))
 
@@ -282,13 +334,7 @@ async function submitForm() {
         return
       }
 
-      if (hasFilters.value) {
-        await reloadExpenses()
-      } else {
-        expenses.value = expenses.value.map((expense) =>
-          expense.id === result.data.id ? result.data : expense,
-        )
-      }
+      await reloadExpenses()
     }
 
     resetForm()
@@ -307,8 +353,8 @@ async function archive(expense: Expense) {
       return
     }
 
-    const archived = expenseSchema.parse(await archiveExpense(expense.id))
-    expenses.value = expenses.value.filter((item) => item.id !== archived.id)
+    expenseSchema.parse(await archiveExpense(expense.id))
+    await reloadExpenses()
   } catch (err) {
     actionError.value = err instanceof ApiError ? err.message : 'Archiving expense failed'
   }
@@ -671,6 +717,36 @@ onMounted(loadExpensesPage)
             </div>
           </div>
         </article>
+
+        <nav
+          v-if="pagination.totalPages > 1"
+          aria-label="Expense pagination"
+          class="flex flex-col gap-3 border-t border-stone-200 pt-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <p class="text-sm text-stone-500">
+            Page {{ pagination.page }} of {{ pagination.totalPages }} ·
+            {{ pagination.totalItems }} expenses
+          </p>
+
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              :disabled="pagination.page === 1"
+              class="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 disabled:cursor-not-allowed disabled:text-stone-300"
+              @click="changePage(pagination.page - 1)"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              :disabled="pagination.page === pagination.totalPages"
+              class="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 disabled:cursor-not-allowed disabled:text-stone-300"
+              @click="changePage(pagination.page + 1)"
+            >
+              Next
+            </button>
+          </div>
+        </nav>
       </div>
     </section>
   </section>
