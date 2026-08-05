@@ -18,7 +18,7 @@ import { UpdateVendorDto } from './dto/update-vendor.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { JwtUser } from '../auth/auth.types';
-import { GetVendorsQueryDto } from './dto/get-vendors-query.dto';
+import { GetVendorsPageQueryDto } from './dto/get-vendors-query.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('vendors')
@@ -26,8 +26,16 @@ export class VendorsController {
   constructor(private readonly vendorsService: VendorsService) {}
 
   @Get()
-  findAll(@CurrentUser() user: JwtUser, @Query() query: GetVendorsQueryDto) {
-    return this.vendorsService.findAll(user.sub, query);
+  findAll(@CurrentUser() user: JwtUser) {
+    return this.vendorsService.findAll(user.sub);
+  }
+
+  @Get('page')
+  findPage(
+    @CurrentUser() user: JwtUser,
+    @Query() query: GetVendorsPageQueryDto,
+  ) {
+    return this.vendorsService.findPage(user.sub, query);
   }
 
   @Get('archived')

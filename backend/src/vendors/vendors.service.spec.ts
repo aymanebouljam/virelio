@@ -12,6 +12,7 @@ describe('VendorsService', () => {
   const userId = 'user-1';
 
   const findManyMock = jest.fn();
+  const countMock = jest.fn();
   const findFirstOrThrowMock = jest.fn();
   const findUniqueOrThrowMock = jest.fn();
   const createMock = jest.fn();
@@ -21,6 +22,7 @@ describe('VendorsService', () => {
   const prisma = {
     vendor: {
       findMany: findManyMock,
+      count: countMock,
       findFirstOrThrow: findFirstOrThrowMock,
       findUniqueOrThrow: findUniqueOrThrowMock,
       create: createMock,
@@ -48,37 +50,64 @@ describe('VendorsService', () => {
     });
   });
 
-  it('findAll searches active vendor contact fields case-insensitively', async () => {
-    const vendors = [{ id: '1', name: 'Atlas', archivedAt: null }];
+  it('findPage returns active vendors with pagination metadata', async () => {
+    const vendors = [{ id: 'vendor-2', name: 'Nova', archivedAt: null }];
     findManyMock.mockResolvedValue(vendors);
+    countMock.mockResolvedValue(21);
 
     await expect(
-      service.findAll(userId, { search: '  atlas  ' }),
-    ).resolves.toEqual(vendors);
-
-    expect(findManyMock).toHaveBeenCalledWith({
-      where: {
-        archivedAt: null,
-        userId,
-        OR: [
-          { name: { contains: 'atlas', mode: 'insensitive' } },
-          { email: { contains: 'atlas', mode: 'insensitive' } },
-          { phone: { contains: 'atlas', mode: 'insensitive' } },
-          { website: { contains: 'atlas', mode: 'insensitive' } },
-        ],
+      service.findPage(userId, { search: '  nova  ', page: 2, pageSize: 10 }),
+    ).resolves.toEqual({
+      items: vendors,
+      pagination: {
+        page: 2,
+        pageSize: 10,
+        totalItems: 21,
+        totalPages: 3,
       },
-      orderBy: { createdAt: 'desc' },
     });
+
+    const where = {
+      archivedAt: null,
+      userId,
+      OR: [
+        { name: { contains: 'nova', mode: 'insensitive' } },
+        { email: { contains: 'nova', mode: 'insensitive' } },
+        { phone: { contains: 'nova', mode: 'insensitive' } },
+        { website: { contains: 'nova', mode: 'insensitive' } },
+      ],
+    };
+    expect(findManyMock).toHaveBeenCalledWith({
+      where,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      skip: 10,
+      take: 10,
+    });
+    expect(countMock).toHaveBeenCalledWith({ where });
   });
 
-  it('findAll ignores a blank search value', async () => {
+  it('findPage uses the first page and ten items by default', async () => {
     findManyMock.mockResolvedValue([]);
+    countMock.mockResolvedValue(0);
 
-    await service.findAll(userId, { search: '   ' });
+    await expect(service.findPage(userId)).resolves.toEqual({
+      items: [],
+      pagination: {
+        page: 1,
+        pageSize: 10,
+        totalItems: 0,
+        totalPages: 0,
+      },
+    });
 
     expect(findManyMock).toHaveBeenCalledWith({
       where: { archivedAt: null, userId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      skip: 0,
+      take: 10,
+    });
+    expect(countMock).toHaveBeenCalledWith({
+      where: { archivedAt: null, userId },
     });
   });
 
