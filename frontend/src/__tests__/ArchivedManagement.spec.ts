@@ -3,6 +3,7 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import type { Component } from 'vue'
 import { ApiError } from '@/lib/api'
 import type { ExpenseCategory } from '@/lib/expense-categories/schema'
+import { formatDateTime } from '@/lib/helpers'
 import type { Vendor } from '@/lib/vendors/schema'
 import ArchivedExpenseCategoriesPage from '@/pages/ArchivedExpenseCategoriesPage.vue'
 import ArchivedVendorsPage from '@/pages/ArchivedVendorsPage.vue'
@@ -22,6 +23,8 @@ const categoriesApi = vi.hoisted(() => ({
 vi.mock('@/lib/vendors/api', () => vendorsApi)
 vi.mock('@/lib/expense-categories/api', () => categoriesApi)
 
+const archivedAt = '2026-08-04T10:00:00.000Z'
+
 const atlas: Vendor = {
   id: 'vendor-1',
   name: 'Atlas Supplies',
@@ -31,7 +34,7 @@ const atlas: Vendor = {
   notes: 'Office supplier',
   createdAt: '2026-08-04T09:00:00.000Z',
   updatedAt: '2026-08-04T10:00:00.000Z',
-  archivedAt: '2026-08-04T10:00:00.000Z',
+  archivedAt,
 }
 
 const travel: ExpenseCategory = {
@@ -40,7 +43,7 @@ const travel: ExpenseCategory = {
   color: '#2563eb',
   createdAt: '2026-08-04T09:00:00.000Z',
   updatedAt: '2026-08-04T10:00:00.000Z',
-  archivedAt: '2026-08-04T10:00:00.000Z',
+  archivedAt,
 }
 
 function getButton(wrapper: VueWrapper, text: string) {
@@ -91,6 +94,16 @@ describe('archived vendor management', () => {
 
     expect(wrapper.text()).toContain('Could not load archived vendors')
     expect(wrapper.text()).toContain('Service unavailable')
+  })
+
+  it('shows when a vendor was archived', async () => {
+    vendorsApi.fetchArchivedVendors.mockResolvedValue([atlas])
+
+    const wrapper = await mountPage(ArchivedVendorsPage)
+    const archiveTime = wrapper.get('time')
+
+    expect(archiveTime.attributes('datetime')).toBe(archivedAt)
+    expect(archiveTime.text()).toBe(formatDateTime(archivedAt))
   })
 
   it('restores a confirmed vendor', async () => {
@@ -175,6 +188,16 @@ describe('archived category management', () => {
 
     expect(wrapper.text()).toContain('Could not load archived categories')
     expect(wrapper.text()).toContain('Service unavailable')
+  })
+
+  it('shows when a category was archived', async () => {
+    categoriesApi.fetchArchivedExpenseCategories.mockResolvedValue([travel])
+
+    const wrapper = await mountPage(ArchivedExpenseCategoriesPage)
+    const archiveTime = wrapper.get('time')
+
+    expect(archiveTime.attributes('datetime')).toBe(archivedAt)
+    expect(archiveTime.text()).toBe(formatDateTime(archivedAt))
   })
 
   it('restores a confirmed category', async () => {

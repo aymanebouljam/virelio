@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { ApiError } from '@/lib/api'
+import { formatDateTime } from '@/lib/helpers'
 import {
   fetchArchivedExpenseCategories,
   restoreExpenseCategory,
@@ -141,6 +142,12 @@ onMounted(loadArchivedCategories)
                 <h3 class="text-base font-semibold tracking-tight text-stone-900">
                   {{ category.name }}
                 </h3>
+                <p v-if="category.archivedAt" class="mt-1 text-xs text-stone-500">
+                  Archived
+                  <time :datetime="category.archivedAt">
+                    {{ formatDateTime(category.archivedAt) }}
+                  </time>
+                </p>
               </div>
             </div>
 

@@ -5,7 +5,7 @@ import { fetchExpenseCategories } from '@/lib/expense-categories/api'
 import { expenseCategorySchema, type ExpenseCategory } from '@/lib/expense-categories/schema'
 import { fetchArchivedExpenses, removeExpense, restoreExpense } from '@/lib/expenses/api'
 import { expenseSchema, type Expense } from '@/lib/expenses/schema'
-import { formatAmount, formatDate } from '@/lib/helpers'
+import { formatAmount, formatDate, formatDateTime } from '@/lib/helpers'
 import { fetchVendors } from '@/lib/vendors/api'
 import { type Vendor, vendorSchema } from '@/lib/vendors/schema'
 
@@ -168,6 +168,12 @@ onMounted(loadArchivedExpensesPage)
               </div>
               <p v-if="expense.notes" class="mt-2 text-sm text-stone-500">
                 {{ expense.notes }}
+              </p>
+              <p v-if="expense.archivedAt" class="mt-2 text-xs text-stone-500">
+                Archived
+                <time :datetime="expense.archivedAt">
+                  {{ formatDateTime(expense.archivedAt) }}
+                </time>
               </p>
             </div>
 

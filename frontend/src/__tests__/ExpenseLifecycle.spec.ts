@@ -4,6 +4,7 @@ import type { RouteRecordRaw } from 'vue-router'
 import { ApiError } from '@/lib/api'
 import type { ExpenseCategory } from '@/lib/expense-categories/schema'
 import type { Expense, ExpenseDetail } from '@/lib/expenses/schema'
+import { formatDateTime } from '@/lib/helpers'
 import type { ProofDocument } from '@/lib/proofs/api'
 import type { Vendor } from '@/lib/vendors/schema'
 import ArchivedExpensesPage from '@/pages/ArchivedExpensesPage.vue'
@@ -80,9 +81,11 @@ const flight: Expense = {
   archivedAt: null,
 }
 
+const archivedAt = '2026-08-05T10:00:00.000Z'
+
 const archivedFlight: Expense = {
   ...flight,
-  archivedAt: '2026-08-05T10:00:00.000Z',
+  archivedAt,
 }
 
 const flightDetails: ExpenseDetail = {
@@ -292,6 +295,16 @@ describe('archived expense management', () => {
     expect(wrapper.text()).toContain('Client-site flight')
     expect(wrapper.text()).toContain('Atlas Supplies')
     expect(wrapper.text()).toContain('Travel')
+  })
+
+  it('shows when an expense was archived', async () => {
+    expensesApi.fetchArchivedExpenses.mockResolvedValue([archivedFlight])
+
+    const wrapper = await mountArchivedExpenses()
+    const archiveTime = wrapper.get('time')
+
+    expect(archiveTime.attributes('datetime')).toBe(archivedAt)
+    expect(archiveTime.text()).toBe(formatDateTime(archivedAt))
   })
 
   it('restores a confirmed expense', async () => {

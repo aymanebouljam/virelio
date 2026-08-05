@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { fetchArchivedVendors, removeVendor, restoreVendor } from '@/lib/vendors/api'
 import { ApiError } from '@/lib/api'
+import { formatDateTime } from '@/lib/helpers'
 import { vendorSchema, type Vendor } from '@/lib/vendors/schema'
 
 const vendors = ref<Vendor[]>([])
@@ -152,6 +153,11 @@ onMounted(loadArchivedVendors)
 
               <p v-if="vendor.notes" class="mt-3 text-sm leading-6 text-stone-600">
                 {{ vendor.notes }}
+              </p>
+
+              <p v-if="vendor.archivedAt" class="mt-3 text-xs text-stone-500">
+                Archived
+                <time :datetime="vendor.archivedAt">{{ formatDateTime(vendor.archivedAt) }}</time>
               </p>
             </div>
 
