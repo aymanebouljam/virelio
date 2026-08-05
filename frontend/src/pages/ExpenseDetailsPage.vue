@@ -145,7 +145,7 @@ onMounted(loadExpense)
       </div>
     </header>
 
-    <section v-if="loading" class="space-y-3">
+    <section v-if="loading" class="space-y-3" role="status" aria-label="Loading expense details">
       <div class="h-8 w-56 animate-pulse rounded bg-stone-200"></div>
       <div class="grid gap-4 lg:grid-cols-2">
         <div class="h-48 animate-pulse rounded-3xl bg-stone-100"></div>
