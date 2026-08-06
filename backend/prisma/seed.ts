@@ -1,9 +1,13 @@
 import { PrismaPg } from '@prisma/adapter-pg';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { PrismaClient } from '../generated/prisma/client';
+import { getExpenseProofDir } from '../src/proofs/proofs-paths';
 import 'dotenv/config';
 import { vendors } from './seed-data/vendors';
 import { categories } from './seed-data/categories';
 import { expenses } from './seed-data/expenses';
+import { proofs } from './seed-data/proofs';
 import { createSeedUser } from './seed-data/user';
 
 const adapter = new PrismaPg({
@@ -92,6 +96,55 @@ async function main() {
         data: {
           userId: user.id,
           ...expense,
+        },
+      });
+    }
+  }
+
+  for (const proof of proofs) {
+    const expense = await prisma.expense.findFirst({
+      where: {
+        userId: user.id,
+        description: proof.expenseDescription,
+        expenseDate: proof.expenseDate,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!expense) {
+      throw new Error(
+        `Missing expense for proof seed: ${proof.expenseDescription}`,
+      );
+    }
+
+    const expenseId = expense.id;
+    const proofDirectory = getExpenseProofDir(expenseId);
+    const storagePath = `uploads/proofs/${expenseId}/${proof.originalName}`;
+    const sizeBytes = Buffer.byteLength(proof.content);
+
+    await mkdir(proofDirectory, { recursive: true });
+    await writeFile(join(proofDirectory, proof.originalName), proof.content);
+
+    const existingProof = await prisma.proofDocument.findFirst({
+      where: {
+        expenseId,
+        originalName: proof.originalName,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!existingProof) {
+      await prisma.proofDocument.create({
+        data: {
+          expenseId,
+          originalName: proof.originalName,
+          mimeType: 'text/plain',
+          sizeBytes,
+          storagePath,
         },
       });
     }
