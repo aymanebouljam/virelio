@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Expanded local development seed data with paginated vendor and expense lists, multi-month reporting data, archived records, and downloadable proof fixtures.
+- End-to-end coverage verifying repeated seed runs preserve database records and proof files.
+
+### Changed
+
+- Made development seeding repeatable without modifying the existing seed user or rewriting existing proof files.
+
 ## [0.4.0] - 2026-08-06
 
 ### Added
