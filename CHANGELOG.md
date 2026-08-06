@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Visible archive timestamps for vendors, expense categories, and expenses.
+- Account creation and last-update timestamps in profile settings.
+- A skip-to-content link and app-wide keyboard focus indicators.
+
+### Changed
+
+- Improved authentication and profile form accessibility with linked validation errors, invalid-state metadata, announced failures, and autocomplete hints.
+- Identified the primary navigation and main-content landmarks for assistive technology.
+
 ## [0.3.0] - 2026-08-05
 
 ### Added
