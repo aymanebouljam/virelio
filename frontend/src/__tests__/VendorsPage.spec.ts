@@ -75,6 +75,14 @@ function getVendorForm(wrapper: VueWrapper) {
   return wrapper.get('form[aria-label="Vendor form"]')
 }
 
+function expectInvalidField(wrapper: VueWrapper, selector: string, errorId: string) {
+  expect(wrapper.get(selector).attributes()).toMatchObject({
+    'aria-describedby': errorId,
+    'aria-invalid': 'true',
+  })
+  expect(wrapper.get(`#${errorId}`).text()).not.toBe('')
+}
+
 async function mountPage(initialRoute = '/vendors') {
   const result = await mountWithRouter(VendorsPage, routes, initialRoute)
   await flushPromises()
@@ -115,8 +123,8 @@ describe('vendor management', () => {
 
     const { wrapper } = await mountPage()
 
-    expect(wrapper.text()).toContain('Could not load vendors')
-    expect(wrapper.text()).toContain('Service unavailable')
+    expect(wrapper.get('[role="alert"]').text()).toContain('Could not load vendors')
+    expect(wrapper.get('[role="alert"]').text()).toContain('Service unavailable')
   })
 
   it('loads direct search queries and keeps submitted searches in the URL', async () => {
@@ -220,6 +228,16 @@ describe('vendor management', () => {
     expect(wrapper.find('form[aria-label="Vendor form"]').exists()).toBe(false)
   })
 
+  it('uses suitable input types for vendor contact details', async () => {
+    const { wrapper } = await mountPage()
+
+    await getButton(wrapper, 'Add vendor').trigger('click')
+
+    expect(wrapper.get('#vendor-email').attributes('type')).toBe('email')
+    expect(wrapper.get('#vendor-phone').attributes('type')).toBe('tel')
+    expect(wrapper.get('#vendor-website').attributes('type')).toBe('url')
+  })
+
   it('edits a vendor in place', async () => {
     const updatedAtlas = vendor({ name: 'Atlas Office Supplies' })
     vendorsApi.fetchVendorsPage.mockResolvedValue(vendorPage([atlas]))
@@ -270,12 +288,13 @@ describe('vendor management', () => {
     await getVendorForm(wrapper).trigger('submit')
 
     expect(wrapper.text()).toContain('Name is required')
+    expectInvalidField(wrapper, '#vendor-name', 'vendor-name-error')
     expect(vendorsApi.createVendor).not.toHaveBeenCalled()
 
     await getFormField(wrapper, 'Name').setValue('Atlas Supplies')
     await getVendorForm(wrapper).trigger('submit')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Vendor already exists')
+    expect(wrapper.get('[role="alert"]').text()).toBe('Vendor already exists')
   })
 })

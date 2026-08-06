@@ -398,6 +398,7 @@ onMounted(loadExpensesPage)
 
       <div
         v-if="actionError"
+        role="alert"
         class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
       >
         {{ actionError }}
@@ -502,7 +503,10 @@ onMounted(loadExpensesPage)
           <label class="block">
             <span class="mb-2 block text-sm font-medium text-stone-700">Vendor</span>
             <select
+              id="expense-vendor"
               v-model="form.vendorId"
+              :aria-describedby="formErrors.vendorId ? 'expense-vendor-error' : undefined"
+              :aria-invalid="Boolean(formErrors.vendorId)"
               :class="[
                 'w-full rounded-2xl border bg-white px-4 py-3 text-sm text-stone-900 outline-none transition',
                 formErrors.vendorId
@@ -515,7 +519,11 @@ onMounted(loadExpensesPage)
                 {{ vendor.name }}
               </option>
             </select>
-            <p v-if="formErrors.vendorId" class="ml-3 mt-2 text-sm text-red-600">
+            <p
+              v-if="formErrors.vendorId"
+              id="expense-vendor-error"
+              class="ml-3 mt-2 text-sm text-red-600"
+            >
               {{ formErrors.vendorId }}
             </p>
           </label>
@@ -523,7 +531,10 @@ onMounted(loadExpensesPage)
           <label class="block">
             <span class="mb-2 block text-sm font-medium text-stone-700">Category</span>
             <select
+              id="expense-category"
               v-model="form.categoryId"
+              :aria-describedby="formErrors.categoryId ? 'expense-category-error' : undefined"
+              :aria-invalid="Boolean(formErrors.categoryId)"
               class="w-full rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-stone-900"
             >
               <option value="">No category</option>
@@ -531,7 +542,11 @@ onMounted(loadExpensesPage)
                 {{ category.name }}
               </option>
             </select>
-            <p v-if="formErrors.categoryId" class="ml-3 mt-2 text-sm text-red-600">
+            <p
+              v-if="formErrors.categoryId"
+              id="expense-category-error"
+              class="ml-3 mt-2 text-sm text-red-600"
+            >
               {{ formErrors.categoryId }}
             </p>
           </label>
@@ -539,9 +554,12 @@ onMounted(loadExpensesPage)
           <label class="block sm:col-span-2">
             <span class="mb-2 block text-sm font-medium text-stone-700">Description</span>
             <input
+              id="expense-description"
               v-model="form.description"
               type="text"
               maxlength="240"
+              :aria-describedby="formErrors.description ? 'expense-description-error' : undefined"
+              :aria-invalid="Boolean(formErrors.description)"
               :class="[
                 'w-full rounded-2xl border bg-white px-4 py-3 text-sm text-stone-900 outline-none transition',
                 formErrors.description
@@ -549,7 +567,11 @@ onMounted(loadExpensesPage)
                   : 'border-stone-300 focus:border-stone-900',
               ]"
             />
-            <p v-if="formErrors.description" class="ml-3 mt-2 text-sm text-red-600">
+            <p
+              v-if="formErrors.description"
+              id="expense-description-error"
+              class="ml-3 mt-2 text-sm text-red-600"
+            >
               {{ formErrors.description }}
             </p>
           </label>
@@ -557,10 +579,13 @@ onMounted(loadExpensesPage)
           <label class="block">
             <span class="mb-2 block text-sm font-medium text-stone-700">Amount</span>
             <input
+              id="expense-amount"
               v-model.number="form.amount"
               type="number"
               min="0.01"
               step="0.01"
+              :aria-describedby="formErrors.amount ? 'expense-amount-error' : undefined"
+              :aria-invalid="Boolean(formErrors.amount)"
               :class="[
                 'w-full rounded-2xl border bg-white px-4 py-3 text-sm text-stone-900 outline-none transition',
                 formErrors.amount
@@ -568,7 +593,11 @@ onMounted(loadExpensesPage)
                   : 'border-stone-300 focus:border-stone-900',
               ]"
             />
-            <p v-if="formErrors.amount" class="ml-3 mt-2 text-sm text-red-600">
+            <p
+              v-if="formErrors.amount"
+              id="expense-amount-error"
+              class="ml-3 mt-2 text-sm text-red-600"
+            >
               {{ formErrors.amount }}
             </p>
           </label>
@@ -576,8 +605,11 @@ onMounted(loadExpensesPage)
           <label class="block">
             <span class="mb-2 block text-sm font-medium text-stone-700">Expense date</span>
             <input
+              id="expense-date"
               v-model="form.expenseDate"
               type="date"
+              :aria-describedby="formErrors.expenseDate ? 'expense-date-error' : undefined"
+              :aria-invalid="Boolean(formErrors.expenseDate)"
               :class="[
                 'w-full rounded-2xl border bg-white px-4 py-3 text-sm text-stone-900 outline-none transition',
                 formErrors.expenseDate
@@ -585,7 +617,11 @@ onMounted(loadExpensesPage)
                   : 'border-stone-300 focus:border-stone-900',
               ]"
             />
-            <p v-if="formErrors.expenseDate" class="ml-3 mt-2 text-sm text-red-600">
+            <p
+              v-if="formErrors.expenseDate"
+              id="expense-date-error"
+              class="ml-3 mt-2 text-sm text-red-600"
+            >
               {{ formErrors.expenseDate }}
             </p>
           </label>
@@ -593,9 +629,12 @@ onMounted(loadExpensesPage)
           <label class="block sm:col-span-2">
             <span class="mb-2 block text-sm font-medium text-stone-700">Notes</span>
             <textarea
+              id="expense-notes"
               v-model="form.notes"
               rows="4"
               maxlength="1000"
+              :aria-describedby="formErrors.notes ? 'expense-notes-error' : undefined"
+              :aria-invalid="Boolean(formErrors.notes)"
               :class="[
                 'w-full rounded-2xl border bg-white px-4 py-3 text-sm text-stone-900 outline-none transition',
                 formErrors.notes
@@ -603,7 +642,11 @@ onMounted(loadExpensesPage)
                   : 'border-stone-300 focus:border-stone-900',
               ]"
             />
-            <p v-if="formErrors.notes" class="ml-3 mt-2 text-sm text-red-600">
+            <p
+              v-if="formErrors.notes"
+              id="expense-notes-error"
+              class="ml-3 mt-2 text-sm text-red-600"
+            >
               {{ formErrors.notes }}
             </p>
           </label>
@@ -611,6 +654,7 @@ onMounted(loadExpensesPage)
 
         <div
           v-if="submitError"
+          role="alert"
           class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
         >
           {{ submitError }}
@@ -647,6 +691,7 @@ onMounted(loadExpensesPage)
 
       <div
         v-else-if="error"
+        role="alert"
         class="rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-700"
       >
         <p class="font-medium">Could not load expenses</p>
