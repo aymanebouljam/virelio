@@ -81,9 +81,14 @@ async function submit() {
             id="register-full-name"
             v-model="form.fullName"
             type="text"
+            autocomplete="name"
+            :aria-describedby="formErrors.fullName ? 'register-full-name-error' : undefined"
+            :aria-invalid="Boolean(formErrors.fullName)"
             class="min-h-11 w-full rounded-2xl border border-stone-200 px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-stone-400"
           />
-          <p v-if="formErrors.fullName" class="text-sm text-red-600">{{ formErrors.fullName }}</p>
+          <p v-if="formErrors.fullName" id="register-full-name-error" class="text-sm text-red-600">
+            {{ formErrors.fullName }}
+          </p>
         </div>
 
         <div class="space-y-2">
@@ -92,9 +97,14 @@ async function submit() {
             id="register-email"
             v-model="form.email"
             type="email"
+            autocomplete="email"
+            :aria-describedby="formErrors.email ? 'register-email-error' : undefined"
+            :aria-invalid="Boolean(formErrors.email)"
             class="min-h-11 w-full rounded-2xl border border-stone-200 px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-stone-400"
           />
-          <p v-if="formErrors.email" class="text-sm text-red-600">{{ formErrors.email }}</p>
+          <p v-if="formErrors.email" id="register-email-error" class="text-sm text-red-600">
+            {{ formErrors.email }}
+          </p>
         </div>
 
         <div class="space-y-2">
@@ -105,9 +115,14 @@ async function submit() {
             id="register-password"
             v-model="form.password"
             type="password"
+            autocomplete="new-password"
+            :aria-describedby="formErrors.password ? 'register-password-error' : undefined"
+            :aria-invalid="Boolean(formErrors.password)"
             class="min-h-11 w-full rounded-2xl border border-stone-200 px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-stone-400"
           />
-          <p v-if="formErrors.password" class="text-sm text-red-600">{{ formErrors.password }}</p>
+          <p v-if="formErrors.password" id="register-password-error" class="text-sm text-red-600">
+            {{ formErrors.password }}
+          </p>
         </div>
 
         <div class="space-y-2">
@@ -118,15 +133,25 @@ async function submit() {
             id="register-password-confirmation"
             v-model="form.passwordConfirmation"
             type="password"
+            autocomplete="new-password"
+            :aria-describedby="
+              formErrors.passwordConfirmation ? 'register-password-confirmation-error' : undefined
+            "
+            :aria-invalid="Boolean(formErrors.passwordConfirmation)"
             class="min-h-11 w-full rounded-2xl border border-stone-200 px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-stone-400"
           />
-          <p v-if="formErrors.passwordConfirmation" class="text-sm text-red-600">
+          <p
+            v-if="formErrors.passwordConfirmation"
+            id="register-password-confirmation-error"
+            class="text-sm text-red-600"
+          >
             {{ formErrors.passwordConfirmation }}
           </p>
         </div>
 
         <div
           v-if="submitError"
+          role="alert"
           class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
         >
           {{ submitError }}

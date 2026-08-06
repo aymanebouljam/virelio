@@ -40,6 +40,14 @@ function getForm(wrapper: VueWrapper, label: string) {
   return wrapper.get(`form[aria-label="${label}"]`)
 }
 
+function expectInvalidField(wrapper: VueWrapper, selector: string, errorId: string) {
+  expect(wrapper.get(selector).attributes()).toMatchObject({
+    'aria-describedby': errorId,
+    'aria-invalid': 'true',
+  })
+  expect(wrapper.get(`#${errorId}`).text()).not.toBe('')
+}
+
 async function mountPage(component: Component, initialRoute: string) {
   const result = await mountWithRouter(component, routes, initialRoute)
   await flushPromises()
@@ -68,6 +76,13 @@ afterEach(() => {
 })
 
 describe('login workflow', () => {
+  it('provides sign-in autocomplete hints', async () => {
+    const { wrapper } = await mountPage(LoginPage, '/login')
+
+    expect(wrapper.get('#login-email').attributes('autocomplete')).toBe('email')
+    expect(wrapper.get('#login-password').attributes('autocomplete')).toBe('current-password')
+  })
+
   it('stores the session and opens the dashboard after login', async () => {
     authApi.login.mockResolvedValue(session)
     const { router, wrapper } = await mountPage(LoginPage, '/login')
@@ -109,6 +124,8 @@ describe('login workflow', () => {
 
     expect(wrapper.text()).toContain('Email must be a valid email address')
     expect(wrapper.text()).toContain('Password must be at least 8 characters')
+    expectInvalidField(wrapper, '#login-email', 'login-email-error')
+    expectInvalidField(wrapper, '#login-password', 'login-password-error')
     expect(authApi.login).not.toHaveBeenCalled()
   })
 
@@ -120,13 +137,24 @@ describe('login workflow', () => {
     await getForm(wrapper, 'Login form').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Invalid credentials')
+    expect(wrapper.get('[role="alert"]').text()).toBe('Invalid credentials')
     expect(getAccessToken()).toBeNull()
     expect(isAuthenticated.value).toBe(false)
   })
 })
 
 describe('registration workflow', () => {
+  it('provides account-registration autocomplete hints', async () => {
+    const { wrapper } = await mountPage(RegisterPage, '/register')
+
+    expect(wrapper.get('#register-full-name').attributes('autocomplete')).toBe('name')
+    expect(wrapper.get('#register-email').attributes('autocomplete')).toBe('email')
+    expect(wrapper.get('#register-password').attributes('autocomplete')).toBe('new-password')
+    expect(wrapper.get('#register-password-confirmation').attributes('autocomplete')).toBe(
+      'new-password',
+    )
+  })
+
   it('registers an account and opens the login page', async () => {
     authApi.register.mockResolvedValue(user)
     const { router, wrapper } = await mountPage(RegisterPage, '/register')
@@ -156,6 +184,13 @@ describe('registration workflow', () => {
     expect(wrapper.text()).toContain('Full name is required')
     expect(wrapper.text()).toContain('Email must be a valid email address')
     expect(wrapper.text()).toContain('Passwords do not match')
+    expectInvalidField(wrapper, '#register-full-name', 'register-full-name-error')
+    expectInvalidField(wrapper, '#register-email', 'register-email-error')
+    expectInvalidField(
+      wrapper,
+      '#register-password-confirmation',
+      'register-password-confirmation-error',
+    )
     expect(authApi.register).not.toHaveBeenCalled()
   })
 
@@ -169,6 +204,7 @@ describe('registration workflow', () => {
     await getForm(wrapper, 'Registration form').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Email is already registered')
+    expectInvalidField(wrapper, '#register-email', 'register-email-error')
+    expect(wrapper.get('#register-email-error').text()).toBe('Email is already registered')
   })
 })

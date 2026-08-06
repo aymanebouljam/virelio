@@ -82,9 +82,14 @@ async function submit() {
             id="login-email"
             v-model="form.email"
             type="email"
+            autocomplete="email"
+            :aria-describedby="formErrors.email ? 'login-email-error' : undefined"
+            :aria-invalid="Boolean(formErrors.email)"
             class="min-h-11 w-full rounded-2xl border border-stone-200 px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-stone-400"
           />
-          <p v-if="formErrors.email" class="text-sm text-red-600">{{ formErrors.email }}</p>
+          <p v-if="formErrors.email" id="login-email-error" class="text-sm text-red-600">
+            {{ formErrors.email }}
+          </p>
         </div>
 
         <div class="space-y-2">
@@ -93,13 +98,19 @@ async function submit() {
             id="login-password"
             v-model="form.password"
             type="password"
+            autocomplete="current-password"
+            :aria-describedby="formErrors.password ? 'login-password-error' : undefined"
+            :aria-invalid="Boolean(formErrors.password)"
             class="min-h-11 w-full rounded-2xl border border-stone-200 px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-stone-400"
           />
-          <p v-if="formErrors.password" class="text-sm text-red-600">{{ formErrors.password }}</p>
+          <p v-if="formErrors.password" id="login-password-error" class="text-sm text-red-600">
+            {{ formErrors.password }}
+          </p>
         </div>
 
         <div
           v-if="submitError"
+          role="alert"
           class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
         >
           {{ submitError }}

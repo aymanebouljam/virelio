@@ -11,6 +11,13 @@ async function logout() {
 
 <template>
   <div class="min-h-screen bg-stone-100 text-stone-900">
+    <a
+      href="#main-content"
+      class="sr-only fixed left-4 top-4 z-50 rounded-xl bg-white px-4 py-3 font-medium text-stone-900 shadow-lg focus:not-sr-only"
+    >
+      Skip to main content
+    </a>
+
     <div class="mx-auto flex min-h-screen max-w-7xl flex-col lg:flex-row">
       <aside
         class="w-full border-b border-stone-200 bg-white px-6 py-6 lg:w-72 lg:border-b-0 lg:border-r lg:px-7 lg:py-8"
@@ -25,7 +32,7 @@ async function logout() {
           </p>
         </div>
 
-        <nav class="mt-8 flex gap-2 lg:flex-col">
+        <nav aria-label="Primary navigation" class="mt-8 flex gap-2 lg:flex-col">
           <RouterLink
             to="/"
             class="rounded-2xl px-4 py-3 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
@@ -131,7 +138,11 @@ async function logout() {
         </nav>
       </aside>
 
-      <main class="flex-1 px-5 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-10">
+      <main
+        id="main-content"
+        tabindex="-1"
+        class="flex-1 px-5 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-10"
+      >
         <RouterView />
       </main>
     </div>

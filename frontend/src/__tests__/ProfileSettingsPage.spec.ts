@@ -27,6 +27,14 @@ function getForm(wrapper: VueWrapper) {
   return wrapper.get('form[aria-label="Profile settings form"]')
 }
 
+function expectInvalidField(wrapper: VueWrapper, selector: string, errorId: string) {
+  expect(wrapper.get(selector).attributes()).toMatchObject({
+    'aria-describedby': errorId,
+    'aria-invalid': 'true',
+  })
+  expect(wrapper.get(`#${errorId}`).text()).not.toBe('')
+}
+
 beforeEach(() => {
   vi.resetAllMocks()
   currentUser.value = user
@@ -42,6 +50,8 @@ describe('profile settings workflow', () => {
 
     expect(wrapper.get('#profile-full-name').element).toHaveProperty('value', 'Local Owner')
     expect(wrapper.get('#profile-email').element).toHaveProperty('value', 'owner@example.test')
+    expect(wrapper.get('#profile-full-name').attributes('autocomplete')).toBe('name')
+    expect(wrapper.get('#profile-email').attributes('autocomplete')).toBe('email')
     expect(wrapper.get('button[type="submit"]').attributes()).toHaveProperty('disabled')
     expect(wrapper.get(`time[datetime="${createdAt}"]`).text()).toBe(formatDateTime(createdAt))
     expect(wrapper.get(`time[datetime="${updatedAt}"]`).text()).toBe(formatDateTime(updatedAt))
@@ -84,6 +94,8 @@ describe('profile settings workflow', () => {
 
     expect(wrapper.text()).toContain('Full name is required')
     expect(wrapper.text()).toContain('Email must be a valid email address')
+    expectInvalidField(wrapper, '#profile-full-name', 'profile-full-name-error')
+    expectInvalidField(wrapper, '#profile-email', 'profile-email-error')
     expect(authApi.updateProfile).not.toHaveBeenCalled()
   })
 
@@ -97,7 +109,19 @@ describe('profile settings workflow', () => {
     await getForm(wrapper).trigger('submit')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Email is already in use')
+    expectInvalidField(wrapper, '#profile-email', 'profile-email-error')
+    expect(wrapper.get('#profile-email-error').text()).toBe('Email is already in use')
     expect(currentUser.value).toEqual(user)
+  })
+
+  it('announces general update failures', async () => {
+    authApi.updateProfile.mockRejectedValue(new ApiError('service unavailable'))
+    const wrapper = mount(ProfileSettingsPage)
+
+    await wrapper.get('#profile-full-name').setValue('Updated Owner')
+    await getForm(wrapper).trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.get('[role="alert"]').text()).toBe('Service unavailable')
   })
 })

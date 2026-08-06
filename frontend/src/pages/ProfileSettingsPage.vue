@@ -83,10 +83,15 @@ async function submit() {
           id="profile-full-name"
           v-model="form.fullName"
           type="text"
+          autocomplete="name"
           maxlength="120"
+          :aria-describedby="formErrors.fullName ? 'profile-full-name-error' : undefined"
+          :aria-invalid="Boolean(formErrors.fullName)"
           class="min-h-11 w-full rounded-2xl border border-stone-200 px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-stone-400"
         />
-        <p v-if="formErrors.fullName" class="text-sm text-red-600">{{ formErrors.fullName }}</p>
+        <p v-if="formErrors.fullName" id="profile-full-name-error" class="text-sm text-red-600">
+          {{ formErrors.fullName }}
+        </p>
       </div>
 
       <div class="space-y-2">
@@ -95,10 +100,15 @@ async function submit() {
           id="profile-email"
           v-model="form.email"
           type="email"
+          autocomplete="email"
           maxlength="254"
+          :aria-describedby="formErrors.email ? 'profile-email-error' : undefined"
+          :aria-invalid="Boolean(formErrors.email)"
           class="min-h-11 w-full rounded-2xl border border-stone-200 px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-stone-400"
         />
-        <p v-if="formErrors.email" class="text-sm text-red-600">{{ formErrors.email }}</p>
+        <p v-if="formErrors.email" id="profile-email-error" class="text-sm text-red-600">
+          {{ formErrors.email }}
+        </p>
       </div>
 
       <dl
@@ -125,6 +135,7 @@ async function submit() {
 
       <p
         v-if="submitError"
+        role="alert"
         class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
       >
         {{ submitError }}
