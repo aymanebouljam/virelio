@@ -17,8 +17,13 @@ const adapter = new PrismaPg({
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  const user = await prisma.user.create({
-    data: await createSeedUser(),
+  const seedUser = await createSeedUser();
+  const user = await prisma.user.upsert({
+    where: {
+      email: seedUser.email,
+    },
+    update: seedUser,
+    create: seedUser,
   });
   await prisma.vendor.createMany({
     data: vendors.map((vendor) => ({
@@ -37,6 +42,9 @@ async function main() {
   });
 
   const storedVendors = await prisma.vendor.findMany({
+    where: {
+      userId: user.id,
+    },
     select: {
       id: true,
       name: true,
@@ -44,6 +52,9 @@ async function main() {
   });
 
   const storedCategories = await prisma.expenseCategory.findMany({
+    where: {
+      userId: user.id,
+    },
     select: {
       id: true,
       name: true,
@@ -80,6 +91,7 @@ async function main() {
   for (const expense of expenseRows) {
     const existingExpense = await prisma.expense.findFirst({
       where: {
+        userId: user.id,
         vendorId: expense.vendorId,
         categoryId: expense.categoryId,
         description: expense.description,
