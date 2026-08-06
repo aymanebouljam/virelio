@@ -92,8 +92,8 @@ describe('archived vendor management', () => {
 
     const wrapper = await mountPage(ArchivedVendorsPage)
 
-    expect(wrapper.text()).toContain('Could not load archived vendors')
-    expect(wrapper.text()).toContain('Service unavailable')
+    expect(wrapper.get('[role="alert"]').text()).toContain('Could not load archived vendors')
+    expect(wrapper.get('[role="alert"]').text()).toContain('Service unavailable')
   })
 
   it('shows when a vendor was archived', async () => {
@@ -104,6 +104,15 @@ describe('archived vendor management', () => {
 
     expect(archiveTime.attributes('datetime')).toBe(archivedAt)
     expect(archiveTime.text()).toBe(formatDateTime(archivedAt))
+  })
+
+  it('identifies which vendor archive actions affect', async () => {
+    vendorsApi.fetchArchivedVendors.mockResolvedValue([atlas])
+
+    const wrapper = await mountPage(ArchivedVendorsPage)
+
+    expect(getButton(wrapper, 'Restore').attributes('aria-label')).toBe('Restore Atlas Supplies')
+    expect(getButton(wrapper, 'Remove').attributes('aria-label')).toBe('Remove Atlas Supplies')
   })
 
   it('restores a confirmed vendor', async () => {
@@ -153,7 +162,7 @@ describe('archived vendor management', () => {
     await getButton(wrapper, 'Remove').trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Vendor has linked expenses')
+    expect(wrapper.get('[role="alert"]').text()).toBe('Vendor has linked expenses')
     expect(wrapper.text()).toContain('Atlas Supplies')
   })
 })
@@ -186,8 +195,8 @@ describe('archived category management', () => {
 
     const wrapper = await mountPage(ArchivedExpenseCategoriesPage)
 
-    expect(wrapper.text()).toContain('Could not load archived categories')
-    expect(wrapper.text()).toContain('Service unavailable')
+    expect(wrapper.get('[role="alert"]').text()).toContain('Could not load archived categories')
+    expect(wrapper.get('[role="alert"]').text()).toContain('Service unavailable')
   })
 
   it('shows when a category was archived', async () => {
@@ -198,6 +207,15 @@ describe('archived category management', () => {
 
     expect(archiveTime.attributes('datetime')).toBe(archivedAt)
     expect(archiveTime.text()).toBe(formatDateTime(archivedAt))
+  })
+
+  it('identifies which category archive actions affect', async () => {
+    categoriesApi.fetchArchivedExpenseCategories.mockResolvedValue([travel])
+
+    const wrapper = await mountPage(ArchivedExpenseCategoriesPage)
+
+    expect(getButton(wrapper, 'Restore').attributes('aria-label')).toBe('Restore Travel')
+    expect(getButton(wrapper, 'Remove').attributes('aria-label')).toBe('Remove Travel')
   })
 
   it('restores a confirmed category', async () => {
@@ -249,7 +267,7 @@ describe('archived category management', () => {
     await getButton(wrapper, 'Remove').trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Category has linked expenses')
+    expect(wrapper.get('[role="alert"]').text()).toBe('Category has linked expenses')
     expect(wrapper.text()).toContain('Travel')
   })
 })
