@@ -8,7 +8,7 @@ import { vendors } from './seed-data/vendors';
 import { categories } from './seed-data/categories';
 import { expenses } from './seed-data/expenses';
 import { proofs } from './seed-data/proofs';
-import { createSeedUser } from './seed-data/user';
+import { createSeedUser, seedUserEmail } from './seed-data/user';
 
 const adapter = new PrismaPg({
   connectionString: process.env['DATABASE_URL'],
@@ -17,14 +17,16 @@ const adapter = new PrismaPg({
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  const seedUser = await createSeedUser();
-  const user = await prisma.user.upsert({
-    where: {
-      email: seedUser.email,
-    },
-    update: seedUser,
-    create: seedUser,
+  const existingUser = await prisma.user.findUnique({
+    where: { email: seedUserEmail },
   });
+
+  const user =
+    existingUser ??
+    (await prisma.user.create({
+      data: await createSeedUser(),
+    }));
+
   await prisma.vendor.createMany({
     data: vendors.map((vendor) => ({
       ...vendor,
@@ -130,14 +132,7 @@ async function main() {
         `Missing expense for proof seed: ${proof.expenseDescription}`,
       );
     }
-
     const expenseId = expense.id;
-    const proofDirectory = getExpenseProofDir(expenseId);
-    const storagePath = `uploads/proofs/${expenseId}/${proof.originalName}`;
-    const sizeBytes = Buffer.byteLength(proof.content);
-
-    await mkdir(proofDirectory, { recursive: true });
-    await writeFile(join(proofDirectory, proof.originalName), proof.content);
 
     const existingProof = await prisma.proofDocument.findFirst({
       where: {
@@ -149,17 +144,24 @@ async function main() {
       },
     });
 
-    if (!existingProof) {
-      await prisma.proofDocument.create({
-        data: {
-          expenseId,
-          originalName: proof.originalName,
-          mimeType: 'text/plain',
-          sizeBytes,
-          storagePath,
-        },
-      });
-    }
+    if (existingProof) continue;
+
+    const proofDirectory = getExpenseProofDir(expenseId);
+    const storagePath = `uploads/proofs/${expenseId}/${proof.originalName}`;
+    const sizeBytes = Buffer.byteLength(proof.content);
+
+    await mkdir(proofDirectory, { recursive: true });
+    await writeFile(join(proofDirectory, proof.originalName), proof.content);
+
+    await prisma.proofDocument.create({
+      data: {
+        expenseId,
+        originalName: proof.originalName,
+        mimeType: 'text/plain',
+        sizeBytes,
+        storagePath,
+      },
+    });
   }
 }
 

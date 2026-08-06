@@ -6,9 +6,11 @@ type SeedUser = {
   fullName: string;
 };
 
+export const seedUserEmail = 'local@example.com';
+
 export async function createSeedUser(): Promise<SeedUser> {
   return {
-    email: 'local@example.com',
+    email: seedUserEmail,
     passwordHash: await bcrypt.hash('password', 10),
     fullName: 'Local Owner',
   };
