@@ -54,26 +54,22 @@ async function main() {
   );
 
   const expenseRows = expenses.map((expense) => {
-    const vendorId = vendorIdByName.get(expense.vendorName);
-    const categoryId = categoryIdByName.get(expense.categoryName);
+    const { vendorName, categoryName, ...data } = expense;
+    const vendorId = vendorIdByName.get(vendorName);
+    const categoryId = categoryIdByName.get(categoryName);
 
     if (!vendorId) {
-      throw new Error(`Missing vendor for expense seed: ${expense.vendorName}`);
+      throw new Error(`Missing vendor for expense seed: ${vendorName}`);
     }
 
     if (!categoryId) {
-      throw new Error(
-        `Missing category for expense seed: ${expense.categoryName}`,
-      );
+      throw new Error(`Missing category for expense seed: ${categoryName}`);
     }
 
     return {
       vendorId,
       categoryId,
-      description: expense.description,
-      amount: expense.amount,
-      expenseDate: expense.expenseDate,
-      notes: expense.notes,
+      ...data,
     };
   });
 
