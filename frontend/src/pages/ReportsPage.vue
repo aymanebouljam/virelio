@@ -12,6 +12,7 @@ const router = useRouter()
 const report = ref<ExpenseReport | null>(null)
 const loading = ref(true)
 const error = ref('')
+const dateRangeError = ref('')
 
 const dateFrom = computed(() => {
   const value = route.query.dateFrom
@@ -29,6 +30,7 @@ const hasCategoryTotals = computed(() => (report.value?.categoryTotals.length ??
 async function loadReport() {
   try {
     error.value = ''
+    dateRangeError.value = ''
 
     const result = expenseReportSchema.safeParse(
       await fetchExpenseReport({
@@ -46,7 +48,8 @@ async function loadReport() {
   } catch (err) {
     if (err instanceof ApiError) {
       if (err.content && typeof err.content.dateRange === 'string') {
-        error.value = err.content.dateRange
+        dateRangeError.value = err.content.dateRange
+        error.value = dateRangeError.value
       } else {
         error.value = err.message
       }
@@ -102,9 +105,11 @@ onMounted(loadReport)
       </div>
     </header>
 
-    <section
+    <fieldset
       class="flex flex-col gap-3 rounded-3xl border border-stone-200 bg-white p-4 shadow-sm sm:flex-row sm:flex-wrap sm:items-end"
     >
+      <legend class="sr-only">Report date range</legend>
+
       <div class="flex flex-col gap-2">
         <label
           for="report-date-from"
@@ -116,6 +121,8 @@ onMounted(loadReport)
           id="report-date-from"
           :value="dateFrom"
           type="date"
+          :aria-describedby="dateRangeError ? 'report-date-range-error' : undefined"
+          :aria-invalid="Boolean(dateRangeError)"
           class="min-h-11 rounded-2xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-stone-400"
           @change="
             updateDateRange({
@@ -137,6 +144,8 @@ onMounted(loadReport)
           id="report-date-to"
           :value="dateTo"
           type="date"
+          :aria-describedby="dateRangeError ? 'report-date-range-error' : undefined"
+          :aria-invalid="Boolean(dateRangeError)"
           class="min-h-11 rounded-2xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-stone-400"
           @change="
             updateDateRange({
@@ -155,7 +164,7 @@ onMounted(loadReport)
       >
         Clear
       </button>
-    </section>
+    </fieldset>
 
     <section v-if="loading" class="space-y-4" role="status" aria-label="Loading expense report">
       <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -170,10 +179,13 @@ onMounted(loadReport)
 
     <section
       v-else-if="error"
+      role="alert"
       class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
     >
       <p class="font-medium">Could not load expense report</p>
-      <p class="mt-1">{{ error }}</p>
+      <p :id="dateRangeError ? 'report-date-range-error' : undefined" class="mt-1">
+        {{ error }}
+      </p>
     </section>
 
     <template v-else-if="report">

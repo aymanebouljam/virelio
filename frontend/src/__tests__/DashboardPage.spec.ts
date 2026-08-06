@@ -129,8 +129,8 @@ describe('dashboard workflows', () => {
 
     const { wrapper } = await mountPage()
 
-    expect(wrapper.text()).toContain('Could not load dashboard')
-    expect(wrapper.text()).toContain('Service unavailable')
+    expect(wrapper.get('[role="alert"]').text()).toContain('Could not load dashboard')
+    expect(wrapper.get('[role="alert"]').text()).toContain('Service unavailable')
   })
 
   it('hydrates a direct date range from the URL', async () => {
@@ -139,6 +139,7 @@ describe('dashboard workflows', () => {
     const { wrapper } = await mountPage('/?dateFrom=2026-08-01&dateTo=2026-08-31')
 
     expect(dashboardApi.fetchDashboardSummary).toHaveBeenCalledWith(filters)
+    expect(wrapper.get('fieldset legend').text()).toBe('Dashboard date range')
     expect(wrapper.get('#dashboard-date-from').element).toHaveProperty('value', filters.dateFrom)
     expect(wrapper.get('#dashboard-date-to').element).toHaveProperty('value', filters.dateTo)
   })
@@ -180,7 +181,17 @@ describe('dashboard workflows', () => {
 
     const { wrapper } = await mountPage('/?dateFrom=2026-08-31&dateTo=2026-08-01')
 
-    expect(wrapper.text()).toContain('Could not load dashboard')
-    expect(wrapper.text()).toContain('From date must be before or equal to date to')
+    expect(wrapper.get('[role="alert"]').text()).toContain('Could not load dashboard')
+    expect(wrapper.get('#dashboard-date-range-error').text()).toBe(
+      'From date must be before or equal to date to',
+    )
+    expect(wrapper.get('#dashboard-date-from').attributes()).toMatchObject({
+      'aria-describedby': 'dashboard-date-range-error',
+      'aria-invalid': 'true',
+    })
+    expect(wrapper.get('#dashboard-date-to').attributes()).toMatchObject({
+      'aria-describedby': 'dashboard-date-range-error',
+      'aria-invalid': 'true',
+    })
   })
 })
