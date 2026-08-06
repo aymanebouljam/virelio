@@ -96,6 +96,7 @@ onMounted(loadArchivedCategories)
 
       <div
         v-if="actionError"
+        role="alert"
         class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
       >
         {{ actionError }}
@@ -113,6 +114,7 @@ onMounted(loadArchivedCategories)
 
       <div
         v-else-if="error"
+        role="alert"
         class="rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-700"
       >
         <p class="font-medium">Could not load archived categories</p>
@@ -154,6 +156,7 @@ onMounted(loadArchivedCategories)
             <div class="flex shrink-0 items-center gap-3">
               <button
                 type="button"
+                :aria-label="`Restore ${category.name}`"
                 :disabled="restoringId === category.id"
                 class="inline-flex items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-60"
                 @click="restore(category)"
@@ -163,6 +166,7 @@ onMounted(loadArchivedCategories)
 
               <button
                 type="button"
+                :aria-label="`Remove ${category.name}`"
                 :disabled="removingId === category.id"
                 class="inline-flex items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-60"
                 @click="remove(category)"
