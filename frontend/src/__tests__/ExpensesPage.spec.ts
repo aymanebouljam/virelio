@@ -124,6 +124,14 @@ function getExpenseField(wrapper: VueWrapper, label: string) {
   return field.get('input, select, textarea')
 }
 
+function expectInvalidField(wrapper: VueWrapper, selector: string, errorId: string) {
+  expect(wrapper.get(selector).attributes()).toMatchObject({
+    'aria-describedby': errorId,
+    'aria-invalid': 'true',
+  })
+  expect(wrapper.get(`#${errorId}`).text()).not.toBe('')
+}
+
 async function mountPage(initialRoute = '/expenses') {
   const result = await mountWithRouter(ExpensesPage, routes, initialRoute)
   await flushPromises()
@@ -194,8 +202,8 @@ describe('expense listing and filters', () => {
 
     const { wrapper } = await mountPage()
 
-    expect(wrapper.text()).toContain('Could not load expenses')
-    expect(wrapper.text()).toContain('Service unavailable')
+    expect(wrapper.get('[role="alert"]').text()).toContain('Could not load expenses')
+    expect(wrapper.get('[role="alert"]').text()).toContain('Service unavailable')
   })
 
   it('hydrates filters from a direct URL', async () => {
@@ -371,6 +379,9 @@ describe('expense listing and filters', () => {
     expect(wrapper.text()).toContain('Vendor is required')
     expect(wrapper.text()).toContain('Description is required')
     expect(wrapper.text()).toContain('Amount must be greater than 0')
+    expectInvalidField(wrapper, '#expense-vendor', 'expense-vendor-error')
+    expectInvalidField(wrapper, '#expense-description', 'expense-description-error')
+    expectInvalidField(wrapper, '#expense-amount', 'expense-amount-error')
     expect(expensesApi.createExpense).not.toHaveBeenCalled()
 
     await getExpenseField(wrapper, 'Vendor').setValue(atlas.id)
@@ -379,6 +390,7 @@ describe('expense listing and filters', () => {
     await getExpenseForm(wrapper).trigger('submit')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Description is already in use')
+    expectInvalidField(wrapper, '#expense-description', 'expense-description-error')
+    expect(wrapper.get('#expense-description-error').text()).toBe('Description is already in use')
   })
 })
