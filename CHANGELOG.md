@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-06
+
 ### Added
 
 - Visible archive timestamps for vendors, expense categories, and expenses.
@@ -16,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Improved authentication and profile form accessibility with linked validation errors, invalid-state metadata, announced failures, and autocomplete hints.
+- Improved vendor, expense-category, and expense form accessibility with linked validation errors, invalid-state metadata, semantic input types, and announced failures.
+- Grouped dashboard and report date ranges and linked invalid-range feedback to both affected controls.
+- Made proof uploads keyboard accessible and linked upload errors to the file control.
+- Added contextual accessible names to archived-record and proof-removal actions.
 - Identified the primary navigation and main-content landmarks for assistive technology.
 
 ## [0.3.0] - 2026-08-05
