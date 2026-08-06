@@ -324,6 +324,7 @@ onMounted(loadVendors)
       </div>
       <div
         v-if="actionError"
+        role="alert"
         class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
       >
         {{ actionError }}
@@ -384,9 +385,12 @@ onMounted(loadVendors)
           <label class="block">
             <span class="mb-2 block text-sm font-medium text-stone-700">Name</span>
             <input
+              id="vendor-name"
               v-model="form.name"
               type="text"
               maxlength="120"
+              :aria-describedby="formErrors.name ? 'vendor-name-error' : undefined"
+              :aria-invalid="Boolean(formErrors.name)"
               :class="[
                 'w-full rounded-2xl border bg-white px-4 py-3 text-sm text-stone-900 outline-none transition',
                 formErrors.name
@@ -395,7 +399,7 @@ onMounted(loadVendors)
               ]"
             />
 
-            <p v-if="formErrors.name" class="ml-3 mt-2 text-sm text-red-600">
+            <p v-if="formErrors.name" id="vendor-name-error" class="ml-3 mt-2 text-sm text-red-600">
               {{ formErrors.name }}
             </p>
           </label>
@@ -403,9 +407,12 @@ onMounted(loadVendors)
           <label class="block">
             <span class="mb-2 block text-sm font-medium text-stone-700">Email</span>
             <input
+              id="vendor-email"
               v-model="form.email"
-              type="text"
+              type="email"
               maxlength="120"
+              :aria-describedby="formErrors.email ? 'vendor-email-error' : undefined"
+              :aria-invalid="Boolean(formErrors.email)"
               :class="[
                 'w-full rounded-2xl border bg-white px-4 py-3 text-sm text-stone-900 outline-none transition',
                 formErrors.email
@@ -414,7 +421,11 @@ onMounted(loadVendors)
               ]"
             />
 
-            <p v-if="formErrors.email" class="ml-3 mt-2 text-sm text-red-600">
+            <p
+              v-if="formErrors.email"
+              id="vendor-email-error"
+              class="ml-3 mt-2 text-sm text-red-600"
+            >
               {{ formErrors.email }}
             </p>
           </label>
@@ -422,9 +433,12 @@ onMounted(loadVendors)
           <label class="block">
             <span class="mb-2 block text-sm font-medium text-stone-700">Phone</span>
             <input
+              id="vendor-phone"
               v-model="form.phone"
-              type="text"
+              type="tel"
               maxlength="40"
+              :aria-describedby="formErrors.phone ? 'vendor-phone-error' : undefined"
+              :aria-invalid="Boolean(formErrors.phone)"
               :class="[
                 'w-full rounded-2xl border bg-white px-4 py-3 text-sm text-stone-900 outline-none transition',
                 formErrors.phone
@@ -433,7 +447,11 @@ onMounted(loadVendors)
               ]"
             />
 
-            <p v-if="formErrors.phone" class="ml-3 mt-2 text-sm text-red-600">
+            <p
+              v-if="formErrors.phone"
+              id="vendor-phone-error"
+              class="ml-3 mt-2 text-sm text-red-600"
+            >
               {{ formErrors.phone }}
             </p>
           </label>
@@ -441,9 +459,12 @@ onMounted(loadVendors)
           <label class="block">
             <span class="mb-2 block text-sm font-medium text-stone-700">Website</span>
             <input
+              id="vendor-website"
               v-model="form.website"
-              type="text"
+              type="url"
               maxlength="120"
+              :aria-describedby="formErrors.website ? 'vendor-website-error' : undefined"
+              :aria-invalid="Boolean(formErrors.website)"
               :class="[
                 'w-full rounded-2xl border bg-white px-4 py-3 text-sm text-stone-900 outline-none transition',
                 formErrors.website
@@ -452,7 +473,11 @@ onMounted(loadVendors)
               ]"
             />
 
-            <p v-if="formErrors.website" class="ml-3 mt-2 text-sm text-red-600">
+            <p
+              v-if="formErrors.website"
+              id="vendor-website-error"
+              class="ml-3 mt-2 text-sm text-red-600"
+            >
               {{ formErrors.website }}
             </p>
           </label>
@@ -461,9 +486,12 @@ onMounted(loadVendors)
         <label class="block">
           <span class="mb-2 block text-sm font-medium text-stone-700">Notes</span>
           <textarea
+            id="vendor-notes"
             v-model="form.notes"
             rows="4"
             maxlength="1000"
+            :aria-describedby="formErrors.notes ? 'vendor-notes-error' : undefined"
+            :aria-invalid="Boolean(formErrors.notes)"
             :class="[
               'w-full rounded-2xl border bg-white px-4 py-3 text-sm text-stone-900 outline-none transition',
               formErrors.notes
@@ -472,13 +500,14 @@ onMounted(loadVendors)
             ]"
           />
 
-          <p v-if="formErrors.notes" class="ml-3 mt-2 text-sm text-red-600">
+          <p v-if="formErrors.notes" id="vendor-notes-error" class="ml-3 mt-2 text-sm text-red-600">
             {{ formErrors.notes }}
           </p>
         </label>
 
         <div
           v-if="submitError"
+          role="alert"
           class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
         >
           {{ submitError }}
@@ -516,6 +545,7 @@ onMounted(loadVendors)
 
       <div
         v-else-if="error"
+        role="alert"
         class="rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-700"
       >
         <p class="font-medium">Could not load vendors</p>
