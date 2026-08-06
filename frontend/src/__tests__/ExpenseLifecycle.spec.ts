@@ -166,8 +166,8 @@ describe('expense details and proofs', () => {
 
     const { wrapper } = await mountDetails()
 
-    expect(wrapper.text()).toContain('Could not load expense')
-    expect(wrapper.text()).toContain('Expense not found')
+    expect(wrapper.get('[role="alert"]').text()).toContain('Could not load expense')
+    expect(wrapper.get('[role="alert"]').text()).toContain('Expense not found')
   })
 
   it('renders empty category and proof states', async () => {
@@ -198,6 +198,15 @@ describe('expense details and proofs', () => {
     expect(wrapper.text()).not.toContain('No proof documents attached.')
   })
 
+  it('keeps the proof upload control available to keyboard users', async () => {
+    const { wrapper } = await mountDetails()
+    const input = wrapper.get('#expense-proof-upload')
+
+    expect(wrapper.get('label[for="expense-proof-upload"]').text()).toBe('Upload proof')
+    expect(input.classes()).toContain('sr-only')
+    expect(input.classes()).not.toContain('hidden')
+  })
+
   it('downloads a proof through the authenticated API', async () => {
     const proofBlob = new Blob(['receipt contents'], { type: 'application/pdf' })
     proofsApi.downloadExpenseProof.mockResolvedValue(proofBlob)
@@ -222,7 +231,7 @@ describe('expense details and proofs', () => {
     await getButton(wrapper, 'receipt.pdf').trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Proof file not found')
+    expect(wrapper.get('[role="alert"]').text()).toBe('Proof file not found')
     expect(wrapper.text()).toContain('receipt.pdf')
   })
 
@@ -231,8 +240,11 @@ describe('expense details and proofs', () => {
     const confirmMock = vi.fn<() => boolean>(() => true)
     vi.stubGlobal('confirm', confirmMock)
     const { wrapper } = await mountDetails()
+    const removeButton = getButton(wrapper, 'Remove')
 
-    await getButton(wrapper, 'Remove').trigger('click')
+    expect(removeButton.attributes('aria-label')).toBe('Remove receipt.pdf')
+
+    await removeButton.trigger('click')
     await flushPromises()
 
     expect(confirmMock).toHaveBeenCalledExactlyOnceWith(
@@ -252,7 +264,11 @@ describe('expense details and proofs', () => {
     await selectProofFile(wrapper, file)
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Unsupported proof type')
+    expect(wrapper.get('[role="alert"]').text()).toBe('Unsupported proof type')
+    expect(wrapper.get('#expense-proof-upload').attributes()).toMatchObject({
+      'aria-describedby': 'expense-proof-upload-error',
+      'aria-invalid': 'true',
+    })
     expect(wrapper.text()).toContain('No proof documents attached.')
   })
 })
@@ -283,8 +299,8 @@ describe('archived expense management', () => {
 
     const wrapper = await mountArchivedExpenses()
 
-    expect(wrapper.text()).toContain('Could not load archived expenses')
-    expect(wrapper.text()).toContain('Service unavailable')
+    expect(wrapper.get('[role="alert"]').text()).toContain('Could not load archived expenses')
+    expect(wrapper.get('[role="alert"]').text()).toContain('Service unavailable')
   })
 
   it('renders archived expenses with their relations', async () => {
@@ -305,6 +321,17 @@ describe('archived expense management', () => {
 
     expect(archiveTime.attributes('datetime')).toBe(archivedAt)
     expect(archiveTime.text()).toBe(formatDateTime(archivedAt))
+  })
+
+  it('identifies which expense archive actions affect', async () => {
+    expensesApi.fetchArchivedExpenses.mockResolvedValue([archivedFlight])
+
+    const wrapper = await mountArchivedExpenses()
+
+    expect(getButton(wrapper, 'Restore').attributes('aria-label')).toBe(
+      'Restore Client-site flight',
+    )
+    expect(getButton(wrapper, 'Remove').attributes('aria-label')).toBe('Remove Client-site flight')
   })
 
   it('restores a confirmed expense', async () => {
@@ -354,7 +381,7 @@ describe('archived expense management', () => {
     await getButton(wrapper, 'Remove').trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Expense could not be removed')
+    expect(wrapper.get('[role="alert"]').text()).toBe('Expense could not be removed')
     expect(wrapper.text()).toContain('Client-site flight')
   })
 })

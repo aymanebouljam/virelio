@@ -155,6 +155,7 @@ onMounted(loadExpense)
 
     <section
       v-else-if="error"
+      role="alert"
       class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
     >
       <p class="font-medium">Could not load expense</p>
@@ -273,11 +274,15 @@ onMounted(loadExpense)
 
             <div class="mt-4 flex flex-col gap-3">
               <label
-                class="inline-flex w-fit cursor-pointer items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900"
+                for="expense-proof-upload"
+                class="inline-flex w-fit cursor-pointer items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 focus-within:outline-3 focus-within:outline-offset-3 focus-within:outline-sky-600"
               >
                 <input
+                  id="expense-proof-upload"
                   type="file"
-                  class="hidden"
+                  class="sr-only"
+                  :aria-describedby="uploadError ? 'expense-proof-upload-error' : undefined"
+                  :aria-invalid="Boolean(uploadError)"
                   :disabled="uploading || removingProofId !== null || downloadingProofId !== null"
                   @change="onProofSelected"
                 />
@@ -286,6 +291,8 @@ onMounted(loadExpense)
 
               <div
                 v-if="uploadError"
+                id="expense-proof-upload-error"
+                role="alert"
                 class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
               >
                 {{ uploadError }}
@@ -294,6 +301,7 @@ onMounted(loadExpense)
 
             <div
               v-if="proofActionError"
+              role="alert"
               class="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
             >
               {{ proofActionError }}
@@ -327,6 +335,7 @@ onMounted(loadExpense)
                 <div class="mt-3">
                   <button
                     type="button"
+                    :aria-label="`Remove ${proof.originalName}`"
                     class="inline-flex items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-60"
                     :disabled="removingProofId === proof.id || downloadingProofId !== null"
                     @click="removeProof(proof.id)"
