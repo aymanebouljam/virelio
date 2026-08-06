@@ -201,6 +201,7 @@ onMounted(loadCategories)
 
       <div
         v-if="actionError"
+        role="alert"
         class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
       >
         {{ actionError }}
@@ -217,9 +218,12 @@ onMounted(loadCategories)
           <label class="block">
             <span class="mb-2 block text-sm font-medium text-stone-700">Name</span>
             <input
+              id="category-name"
               v-model="form.name"
               type="text"
               maxlength="120"
+              :aria-describedby="formErrors.name ? 'category-name-error' : undefined"
+              :aria-invalid="Boolean(formErrors.name)"
               :class="[
                 'w-full rounded-2xl border bg-white px-4 py-3 text-sm text-stone-900 outline-none transition',
                 formErrors.name
@@ -227,7 +231,11 @@ onMounted(loadCategories)
                   : 'border-stone-300 focus:border-stone-900',
               ]"
             />
-            <p v-if="formErrors.name" class="ml-3 mt-2 text-sm text-red-600">
+            <p
+              v-if="formErrors.name"
+              id="category-name-error"
+              class="ml-3 mt-2 text-sm text-red-600"
+            >
               {{ formErrors.name }}
             </p>
           </label>
@@ -235,11 +243,18 @@ onMounted(loadCategories)
           <label class="block">
             <span class="mb-2 block text-sm font-medium text-stone-700">Color</span>
             <input
+              id="category-color"
               v-model="form.color"
               type="color"
+              :aria-describedby="formErrors.color ? 'category-color-error' : undefined"
+              :aria-invalid="Boolean(formErrors.color)"
               class="h-12.5 w-20 rounded-2xl border border-stone-300 bg-white p-2"
             />
-            <p v-if="formErrors.color" class="ml-3 mt-2 text-sm text-red-600">
+            <p
+              v-if="formErrors.color"
+              id="category-color-error"
+              class="ml-3 mt-2 text-sm text-red-600"
+            >
               {{ formErrors.color }}
             </p>
           </label>
@@ -247,6 +262,7 @@ onMounted(loadCategories)
 
         <div
           v-if="submitError"
+          role="alert"
           class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
         >
           {{ submitError }}
@@ -283,6 +299,7 @@ onMounted(loadCategories)
 
       <div
         v-else-if="error"
+        role="alert"
         class="rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-700"
       >
         <p class="font-medium">Could not load categories</p>

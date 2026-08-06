@@ -45,6 +45,14 @@ function getCategoryForm(wrapper: VueWrapper) {
   return wrapper.get('form[aria-label="Category form"]')
 }
 
+function expectInvalidField(wrapper: VueWrapper, selector: string, errorId: string) {
+  expect(wrapper.get(selector).attributes()).toMatchObject({
+    'aria-describedby': errorId,
+    'aria-invalid': 'true',
+  })
+  expect(wrapper.get(`#${errorId}`).text()).not.toBe('')
+}
+
 async function mountPage() {
   const wrapper = mount(ExpenseCategoriesPage)
   await flushPromises()
@@ -84,8 +92,8 @@ describe('expense category management', () => {
 
     const wrapper = await mountPage()
 
-    expect(wrapper.text()).toContain('Could not load categories')
-    expect(wrapper.text()).toContain('Service unavailable')
+    expect(wrapper.get('[role="alert"]').text()).toContain('Could not load categories')
+    expect(wrapper.get('[role="alert"]').text()).toContain('Service unavailable')
   })
 
   it('creates a category', async () => {
@@ -154,12 +162,13 @@ describe('expense category management', () => {
     await getCategoryForm(wrapper).trigger('submit')
 
     expect(wrapper.text()).toContain('Name is required')
+    expectInvalidField(wrapper, '#category-name', 'category-name-error')
     expect(categoriesApi.createExpenseCategory).not.toHaveBeenCalled()
 
     await getFormField(wrapper, 'Name').setValue('Travel')
     await getCategoryForm(wrapper).trigger('submit')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Category already exists')
+    expect(wrapper.get('[role="alert"]').text()).toBe('Category already exists')
   })
 })
