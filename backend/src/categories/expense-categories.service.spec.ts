@@ -12,6 +12,7 @@ describe('ExpenseCategoriesService', () => {
   const userId = 'user-1';
 
   const findManyMock = jest.fn();
+  const countMock = jest.fn();
   const findUniqueOrThrowMock = jest.fn();
   const createMock = jest.fn();
   const updateMock = jest.fn();
@@ -20,6 +21,7 @@ describe('ExpenseCategoriesService', () => {
   const prisma = {
     expenseCategory: {
       findMany: findManyMock,
+      count: countMock,
       findUniqueOrThrow: findUniqueOrThrowMock,
       create: createMock,
       update: updateMock,
@@ -43,6 +45,55 @@ describe('ExpenseCategoriesService', () => {
     expect(findManyMock).toHaveBeenCalledWith({
       where: { userId, archivedAt: null },
       orderBy: { createdAt: 'desc' },
+    });
+  });
+
+  it('findPage returns active expense categories with pagination metadata', async () => {
+    const categories = [{ id: 'category-7', name: 'Travel', userId }];
+    findManyMock.mockResolvedValue(categories);
+    countMock.mockResolvedValue(13);
+
+    await expect(
+      service.findPage(userId, { page: 2, pageSize: 6 }),
+    ).resolves.toEqual({
+      items: categories,
+      pagination: {
+        page: 2,
+        pageSize: 6,
+        totalItems: 13,
+        totalPages: 3,
+      },
+    });
+
+    const where = { userId, archivedAt: null };
+    expect(findManyMock).toHaveBeenCalledWith({
+      where,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      skip: 6,
+      take: 6,
+    });
+    expect(countMock).toHaveBeenCalledWith({ where });
+  });
+
+  it('findPage defaults to six categories on the first page', async () => {
+    findManyMock.mockResolvedValue([]);
+    countMock.mockResolvedValue(0);
+
+    await expect(service.findPage(userId)).resolves.toEqual({
+      items: [],
+      pagination: {
+        page: 1,
+        pageSize: 6,
+        totalItems: 0,
+        totalPages: 0,
+      },
+    });
+
+    expect(findManyMock).toHaveBeenCalledWith({
+      where: { userId, archivedAt: null },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      skip: 0,
+      take: 6,
     });
   });
 
