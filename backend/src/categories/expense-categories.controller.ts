@@ -9,9 +9,11 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { CreateExpenseCategoryDto } from './dto/create-expense-category.dto';
+import { GetExpenseCategoriesPageQueryDto } from './dto/get-expense-categories-page-query.dto';
 import { UpdateExpenseCategoryDto } from './dto/update-expense-category.dto';
 import { ExpenseCategoriesService } from './expense-categories.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -28,6 +30,14 @@ export class ExpenseCategoriesController {
   @Get()
   findAll(@CurrentUser() user: JwtUser) {
     return this.expenseCategoriesService.findAll(user.sub);
+  }
+
+  @Get('page')
+  findPage(
+    @CurrentUser() user: JwtUser,
+    @Query() query: GetExpenseCategoriesPageQueryDto,
+  ) {
+    return this.expenseCategoriesService.findPage(user.sub, query);
   }
 
   @Get('archived')

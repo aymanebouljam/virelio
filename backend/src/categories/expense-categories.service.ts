@@ -10,6 +10,7 @@ import {
   throwPrismaNotFound,
 } from '../common/prisma/prisma-error.util';
 import type { CreateExpenseCategoryDto } from './dto/create-expense-category.dto';
+import type { GetExpenseCategoriesPageQueryDto } from './dto/get-expense-categories-page-query.dto';
 import type { UpdateExpenseCategoryDto } from './dto/update-expense-category.dto';
 
 @Injectable()
@@ -26,6 +27,32 @@ export class ExpenseCategoriesService {
         createdAt: 'desc',
       },
     });
+  }
+
+  async findPage(userId: string, query: GetExpenseCategoriesPageQueryDto = {}) {
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 6;
+    const where = { userId, archivedAt: null };
+
+    const [items, totalItems] = await Promise.all([
+      this.prisma.expenseCategory.findMany({
+        where,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.expenseCategory.count({ where }),
+    ]);
+
+    return {
+      items,
+      pagination: {
+        page,
+        pageSize,
+        totalItems,
+        totalPages: Math.ceil(totalItems / pageSize),
+      },
+    };
   }
 
   findArchived(userId: string): Promise<ExpenseCategory[]> {

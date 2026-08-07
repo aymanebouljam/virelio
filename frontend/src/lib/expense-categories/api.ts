@@ -1,8 +1,24 @@
-import { apiConfig } from '../api'
+import { apiConfig, type PaginatedResponse } from '../api'
 import type { ExpenseCategory, ExpenseCategoryFormValues } from './schema'
+
+export type ExpenseCategoryPageParams = {
+  page?: number
+  pageSize?: number
+}
 
 export async function fetchExpenseCategories() {
   return (await apiConfig({ path: 'expense-categories' })) as ExpenseCategory[]
+}
+
+export async function fetchExpenseCategoriesPage({
+  page = 1,
+  pageSize = 6,
+}: ExpenseCategoryPageParams = {}) {
+  return (await apiConfig({
+    path: 'expense-categories',
+    action: 'page',
+    queryParams: { page, pageSize },
+  })) as PaginatedResponse<ExpenseCategory>
 }
 
 export async function fetchArchivedExpenseCategories() {

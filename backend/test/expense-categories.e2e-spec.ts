@@ -15,6 +15,16 @@ type ExpenseCategoryResponse = {
   archivedAt: string | null;
 };
 
+type ExpenseCategoryPageResponse = {
+  items: ExpenseCategoryResponse[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  };
+};
+
 type ErrorResponse = {
   message: string;
   errors?: {
@@ -143,6 +153,103 @@ describe('ExpenseCategories e2e', () => {
         categoryB.id,
         categoryA.id,
       ]);
+    });
+  });
+
+  describe('GET /expense-categories/page', () => {
+    it('returns empty first-page metadata by default', async () => {
+      const response = await request(http)
+        .get('/expense-categories/page')
+        .set(authHeaders)
+        .expect(HttpStatus.OK);
+
+      expect(response.body).toEqual({
+        items: [],
+        pagination: {
+          page: 1,
+          pageSize: 6,
+          totalItems: 0,
+          totalPages: 0,
+        },
+      });
+    });
+
+    it('paginates active categories for the authenticated user', async () => {
+      const { userId: otherUserId } = await createAuth(http, {
+        email: 'other@local.dev',
+      });
+      await prisma.expenseCategory.createMany({
+        data: [
+          {
+            userId,
+            name: 'Category 1',
+            createdAt: new Date('2026-01-01T00:00:00.000Z'),
+          },
+          {
+            userId,
+            name: 'Category 2',
+            createdAt: new Date('2026-01-02T00:00:00.000Z'),
+          },
+          {
+            userId,
+            name: 'Category 3',
+            createdAt: new Date('2026-01-03T00:00:00.000Z'),
+          },
+          {
+            userId,
+            name: 'Category 4',
+            createdAt: new Date('2026-01-04T00:00:00.000Z'),
+          },
+          {
+            userId,
+            name: 'Archived category',
+            createdAt: new Date('2026-01-05T00:00:00.000Z'),
+            archivedAt: new Date('2026-01-06T00:00:00.000Z'),
+          },
+          {
+            userId: otherUserId,
+            name: 'Another user category',
+            createdAt: new Date('2026-01-07T00:00:00.000Z'),
+          },
+        ],
+      });
+
+      const response = await request(http)
+        .get('/expense-categories/page')
+        .query({ page: 2, pageSize: 2 })
+        .set(authHeaders)
+        .expect(HttpStatus.OK);
+      const page = response.body as ExpenseCategoryPageResponse;
+
+      expect(page.items.map(({ name }) => name)).toEqual([
+        'Category 2',
+        'Category 1',
+      ]);
+      expect(page.pagination).toEqual({
+        page: 2,
+        pageSize: 2,
+        totalItems: 4,
+        totalPages: 2,
+      });
+    });
+
+    it.each([
+      ['page', '0'],
+      ['page', '1.5'],
+      ['pageSize', '0'],
+      ['pageSize', '101'],
+    ])('rejects invalid %s=%s', async (field, value) => {
+      const response = await request(http)
+        .get('/expense-categories/page')
+        .query({ [field]: value })
+        .set(authHeaders)
+        .expect(HttpStatus.BAD_REQUEST);
+      const error = response.body as ErrorResponse;
+
+      expect(error.message).toBe('Validation failed');
+      expect(error.errors).toEqual(
+        expect.arrayContaining([expect.objectContaining({ field })]),
+      );
     });
   });
 

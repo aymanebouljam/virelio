@@ -73,14 +73,14 @@ const report: ExpenseReport = {
     ],
     pagination: {
       page: 1,
-      pageSize: 6,
+      pageSize: 4,
       totalItems: 3,
       totalPages: 1,
     },
   },
 }
 
-const firstPageQuery = { page: 1, pageSize: 6 }
+const firstPageQuery = { page: 1, pageSize: 4 }
 
 function emptyReport(): ExpenseReport {
   return {
@@ -91,7 +91,7 @@ function emptyReport(): ExpenseReport {
       items: [],
       pagination: {
         page: 1,
-        pageSize: 6,
+        pageSize: 4,
         totalItems: 0,
         totalPages: 0,
       },
@@ -99,7 +99,7 @@ function emptyReport(): ExpenseReport {
   }
 }
 
-function paginatedReport(page: number, totalItems = 25, totalPages = 5): ExpenseReport {
+function paginatedReport(page: number, totalItems = 25, totalPages = 7): ExpenseReport {
   return {
     ...report,
     expenseCount: totalItems,
@@ -107,7 +107,7 @@ function paginatedReport(page: number, totalItems = 25, totalPages = 5): Expense
       items: report.expenses.items,
       pagination: {
         page,
-        pageSize: 6,
+        pageSize: 4,
         totalItems,
         totalPages,
       },
@@ -259,10 +259,10 @@ describe('report workflows', () => {
       dateFrom: undefined,
       dateTo: undefined,
       page: 2,
-      pageSize: 6,
+      pageSize: 4,
     })
     expect(wrapper.get('nav[aria-label="Report expense pagination"]').text()).toContain(
-      'Page 2 of 5 · 25 expenses',
+      'Page 2 of 7 · 25 expenses',
     )
 
     const nextButton = wrapper.findAll('button').find((button) => button.text() === 'Next')
@@ -276,14 +276,14 @@ describe('report workflows', () => {
       dateFrom: undefined,
       dateTo: undefined,
       page: 3,
-      pageSize: 6,
+      pageSize: 4,
     })
   })
 
   it('redirects an out-of-range page to the final report page', async () => {
     reportsApi.fetchExpenseReport
-      .mockResolvedValueOnce(paginatedReport(5, 12, 2))
-      .mockResolvedValueOnce(paginatedReport(2, 12, 2))
+      .mockResolvedValueOnce(paginatedReport(5, 8, 2))
+      .mockResolvedValueOnce(paginatedReport(2, 8, 2))
 
     const { router } = await mountPage('/reports?page=5')
     await flushPromises()
@@ -293,7 +293,7 @@ describe('report workflows', () => {
       dateFrom: undefined,
       dateTo: undefined,
       page: 2,
-      pageSize: 6,
+      pageSize: 4,
     })
   })
 
