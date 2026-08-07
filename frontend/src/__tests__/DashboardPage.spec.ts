@@ -124,6 +124,29 @@ describe('dashboard workflows', () => {
     expect(wrapper.text()).toContain('No category activity yet')
   })
 
+  it('renders the combined remaining category activity as Other', async () => {
+    dashboardApi.fetchDashboardSummary.mockResolvedValue({
+      ...emptySummary(),
+      categoryBreakdown: [
+        {
+          categoryId: null,
+          categoryName: 'Other',
+          totalAmount: '300.00',
+          expenseCount: 2,
+        },
+      ],
+    })
+
+    const { wrapper } = await mountPage()
+    const categorySection = wrapper
+      .findAll('section')
+      .find((section) => section.text().includes('Category breakdown'))
+
+    expect(categorySection?.text()).toContain('Other')
+    expect(categorySection?.text()).toContain('2 expenses')
+    expect(categorySection?.text()).toContain('$300.00')
+  })
+
   it('shows API loading failures', async () => {
     dashboardApi.fetchDashboardSummary.mockRejectedValue(new ApiError('service unavailable'))
 
