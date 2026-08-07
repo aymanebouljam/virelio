@@ -11,10 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Expanded local development seed data with paginated vendor and expense lists, multi-month reporting data, archived records, and downloadable proof fixtures.
 - End-to-end coverage verifying repeated seed runs preserve database records and proof files.
+- URL-backed pagination for active expense-category management with six categories per page.
+- URL-backed pagination for detailed report expense rows with four expenses per page.
 
 ### Changed
 
 - Made development seeding repeatable without modifying the existing seed user or rewriting existing proof files.
+- Standardized active vendor and expense lists at six rows and dashboard recent activity at six entries.
+- Limited dashboard and report category summaries to five leading categories plus an aggregated `Other` row.
 
 ## [0.4.0] - 2026-08-06
 
