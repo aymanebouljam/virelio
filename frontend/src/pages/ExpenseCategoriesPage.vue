@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ZodError } from 'zod'
 import { ApiError } from '@/lib/api'
 import { mapZodErrors } from '@/lib/zod'
 import {
   archiveExpenseCategory,
   createExpenseCategory,
-  fetchExpenseCategories,
+  fetchExpenseCategoriesPage,
   updateExpenseCategory,
 } from '@/lib/expense-categories/api'
 import {
@@ -17,6 +18,15 @@ import {
 } from '@/lib/expense-categories/schema'
 
 const categories = ref<ExpenseCategory[]>([])
+const PAGE_SIZE = 6
+const route = useRoute()
+const router = useRouter()
+const pagination = ref({
+  page: 1,
+  pageSize: PAGE_SIZE,
+  totalItems: 0,
+  totalPages: 0,
+})
 const loading = ref(true)
 const error = ref('')
 const actionError = ref('')
@@ -35,6 +45,27 @@ const form = ref<ExpenseCategoryFormValues>({
   name: '',
   color: '#64748b',
 })
+
+function readPageQuery() {
+  const value = route.query.page
+  if (typeof value !== 'string') return 1
+
+  const page = Number(value)
+  return Number.isInteger(page) && page > 0 ? page : 1
+}
+
+async function changePage(page: number) {
+  if (page < 1) return
+
+  const query = { ...route.query }
+  if (page === 1) {
+    delete query.page
+  } else {
+    query.page = String(page)
+  }
+
+  await router.replace({ query })
+}
 
 function resetForm() {
   baseline.value = { name: '', color: '#64748b' }
@@ -93,12 +124,23 @@ function normalizeError(err: unknown) {
   submitError.value = 'Something went wrong'
 }
 
-async function loadCategories() {
+async function loadCategoriesPage() {
   try {
     error.value = ''
+    const requestedPage = readPageQuery()
+    const response = await fetchExpenseCategoriesPage({
+      page: requestedPage,
+      pageSize: PAGE_SIZE,
+    })
+    const lastPage = Math.max(response.pagination.totalPages, 1)
+    if (requestedPage > lastPage) {
+      await changePage(lastPage)
+      return
+    }
+
     const validated: ExpenseCategory[] = []
 
-    for (const category of await fetchExpenseCategories()) {
+    for (const category of response.items) {
       const result = expenseCategorySchema.safeParse(category)
       if (result.success) {
         validated.push(result.data)
@@ -106,11 +148,22 @@ async function loadCategories() {
     }
 
     categories.value = validated
+    pagination.value = response.pagination
   } catch (err) {
     error.value = err instanceof ApiError ? err.message : 'Something went wrong'
   } finally {
     loading.value = false
   }
+}
+
+async function loadFirstPage() {
+  if (route.query.page !== undefined) {
+    await changePage(1)
+    return
+  }
+
+  loading.value = true
+  await loadCategoriesPage()
 }
 
 async function submitForm() {
@@ -130,7 +183,7 @@ async function submitForm() {
         actionError.value = 'Failed to fetch created category'
         return
       }
-      categories.value = [result.data, ...categories.value]
+      await loadFirstPage()
     } else if (!isSameForm(payload, baseline.value)) {
       const result = expenseCategorySchema.safeParse(
         await updateExpenseCategory(editingId.value, payload),
@@ -163,14 +216,23 @@ async function archive(category: ExpenseCategory) {
       return
     }
 
-    const archived = expenseCategorySchema.parse(await archiveExpenseCategory(category.id))
-    categories.value = categories.value.filter((item) => item.id !== archived.id)
+    expenseCategorySchema.parse(await archiveExpenseCategory(category.id))
+    loading.value = true
+    await loadCategoriesPage()
   } catch (err) {
     actionError.value = err instanceof ApiError ? err.message : 'Archiving category failed'
   }
 }
 
-onMounted(loadCategories)
+watch(
+  () => readPageQuery(),
+  () => {
+    loading.value = true
+    void loadCategoriesPage()
+  },
+)
+
+onMounted(loadCategoriesPage)
 </script>
 
 <template>
@@ -352,6 +414,36 @@ onMounted(loadCategories)
           </div>
         </article>
       </div>
+
+      <nav
+        v-if="!loading && !error && pagination.totalPages > 1"
+        aria-label="Expense category pagination"
+        class="mt-6 flex flex-col gap-3 border-t border-stone-200 pt-4 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <p class="text-sm text-stone-500">
+          Page {{ pagination.page }} of {{ pagination.totalPages }} ·
+          {{ pagination.totalItems }} categories
+        </p>
+
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            :disabled="pagination.page === 1"
+            class="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 disabled:cursor-not-allowed disabled:text-stone-300"
+            @click="changePage(pagination.page - 1)"
+          >
+            Previous
+          </button>
+          <button
+            type="button"
+            :disabled="pagination.page === pagination.totalPages"
+            class="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 disabled:cursor-not-allowed disabled:text-stone-300"
+            @click="changePage(pagination.page + 1)"
+          >
+            Next
+          </button>
+        </div>
+      </nav>
     </section>
   </section>
 </template>
