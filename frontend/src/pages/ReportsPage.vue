@@ -8,6 +8,7 @@ import { formatAmount, formatDate } from '@/lib/helpers'
 
 const route = useRoute()
 const router = useRouter()
+const PAGE_SIZE = 10
 
 const report = ref<ExpenseReport | null>(null)
 const loading = ref(true)
@@ -24,23 +25,53 @@ const dateTo = computed(() => {
   return typeof value === 'string' ? value : undefined
 })
 
-const hasExpenses = computed(() => (report.value?.expenses.length ?? 0) > 0)
+const hasExpenses = computed(() => (report.value?.expenses.items.length ?? 0) > 0)
 const hasCategoryTotals = computed(() => (report.value?.categoryTotals.length ?? 0) > 0)
+
+function readPageQuery() {
+  const value = route.query.page
+  if (typeof value !== 'string') return 1
+
+  const page = Number(value)
+  return Number.isInteger(page) && page > 0 ? page : 1
+}
+
+async function changePage(page: number) {
+  if (page < 1) return
+
+  const query = { ...route.query }
+  if (page === 1) {
+    delete query.page
+  } else {
+    query.page = String(page)
+  }
+
+  await router.replace({ query })
+}
 
 async function loadReport() {
   try {
     error.value = ''
     dateRangeError.value = ''
 
+    const requestedPage = readPageQuery()
     const result = expenseReportSchema.safeParse(
       await fetchExpenseReport({
         dateFrom: dateFrom.value,
         dateTo: dateTo.value,
+        page: requestedPage,
+        pageSize: PAGE_SIZE,
       }),
     )
 
     if (!result.success) {
       error.value = 'Failed to validate expense report'
+      return
+    }
+
+    const lastPage = Math.max(result.data.expenses.pagination.totalPages, 1)
+    if (requestedPage > lastPage) {
+      await changePage(lastPage)
       return
     }
 
@@ -63,6 +94,7 @@ async function loadReport() {
 
 async function updateDateRange(next: { dateFrom?: string; dateTo?: string }) {
   const query = { ...route.query }
+  delete query.page
 
   if (next.dateFrom) {
     query.dateFrom = next.dateFrom
@@ -80,7 +112,7 @@ async function updateDateRange(next: { dateFrom?: string; dateTo?: string }) {
 }
 
 watch(
-  () => [dateFrom.value, dateTo.value],
+  () => [dateFrom.value, dateTo.value, readPageQuery()],
   () => {
     loading.value = true
     void loadReport()
@@ -275,7 +307,7 @@ onMounted(loadReport)
 
           <div v-else class="mt-6 space-y-3">
             <RouterLink
-              v-for="expense in report.expenses"
+              v-for="expense in report.expenses.items"
               :key="expense.id"
               :to="`/expenses/${expense.id}`"
               class="flex items-start justify-between gap-4 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 transition hover:border-stone-300 hover:bg-stone-100"
@@ -299,6 +331,39 @@ onMounted(loadReport)
               </span>
             </RouterLink>
           </div>
+
+          <nav
+            v-if="report.expenses.pagination.totalPages > 1"
+            aria-label="Report expense pagination"
+            class="mt-6 flex flex-col gap-3 border-t border-stone-200 pt-4 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <p class="text-sm text-stone-500">
+              Page {{ report.expenses.pagination.page }} of
+              {{ report.expenses.pagination.totalPages }} ·
+              {{ report.expenses.pagination.totalItems }} expenses
+            </p>
+
+            <div class="flex gap-2">
+              <button
+                type="button"
+                :disabled="report.expenses.pagination.page === 1"
+                class="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 disabled:cursor-not-allowed disabled:text-stone-300"
+                @click="changePage(report.expenses.pagination.page - 1)"
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                :disabled="
+                  report.expenses.pagination.page === report.expenses.pagination.totalPages
+                "
+                class="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 disabled:cursor-not-allowed disabled:text-stone-300"
+                @click="changePage(report.expenses.pagination.page + 1)"
+              >
+                Next
+              </button>
+            </div>
+          </nav>
         </section>
       </div>
     </template>

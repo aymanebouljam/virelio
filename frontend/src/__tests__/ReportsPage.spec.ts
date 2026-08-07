@@ -8,7 +8,14 @@ import { mountWithRouter } from './test-mount'
 
 const reportsApi = vi.hoisted(() => ({
   fetchExpenseReport:
-    vi.fn<(filters?: { dateFrom?: string; dateTo?: string }) => Promise<ExpenseReport>>(),
+    vi.fn<
+      (filters?: {
+        dateFrom?: string
+        dateTo?: string
+        page?: number
+        pageSize?: number
+      }) => Promise<ExpenseReport>
+    >(),
 }))
 
 vi.mock('@/lib/reports/api', () => reportsApi)
@@ -39,38 +46,72 @@ const report: ExpenseReport = {
       expenseCount: 1,
     },
   ],
-  expenses: [
-    {
-      id: 'expense-1',
-      description: 'Client-site flight',
-      amount: '300.00',
-      expenseDate: '2026-08-05T00:00:00.000Z',
-      vendorId: 'vendor-1',
-      vendorName: 'Atlas Supplies',
-      categoryId: 'category-1',
-      categoryName: 'Travel',
-      notes: 'Quarterly visit',
+  expenses: {
+    items: [
+      {
+        id: 'expense-1',
+        description: 'Client-site flight',
+        amount: '300.00',
+        expenseDate: '2026-08-05T00:00:00.000Z',
+        vendorId: 'vendor-1',
+        vendorName: 'Atlas Supplies',
+        categoryId: 'category-1',
+        categoryName: 'Travel',
+        notes: 'Quarterly visit',
+      },
+      {
+        id: 'expense-2',
+        description: 'Office supplies',
+        amount: '125.50',
+        expenseDate: '2026-08-04T00:00:00.000Z',
+        vendorId: 'vendor-2',
+        vendorName: 'Nova Services',
+        categoryId: null,
+        categoryName: 'Uncategorized',
+        notes: null,
+      },
+    ],
+    pagination: {
+      page: 1,
+      pageSize: 10,
+      totalItems: 3,
+      totalPages: 1,
     },
-    {
-      id: 'expense-2',
-      description: 'Office supplies',
-      amount: '125.50',
-      expenseDate: '2026-08-04T00:00:00.000Z',
-      vendorId: 'vendor-2',
-      vendorName: 'Nova Services',
-      categoryId: null,
-      categoryName: 'Uncategorized',
-      notes: null,
-    },
-  ],
+  },
 }
+
+const firstPageQuery = { page: 1, pageSize: 10 }
 
 function emptyReport(): ExpenseReport {
   return {
     totalAmount: '0.00',
     expenseCount: 0,
     categoryTotals: [],
-    expenses: [],
+    expenses: {
+      items: [],
+      pagination: {
+        page: 1,
+        pageSize: 10,
+        totalItems: 0,
+        totalPages: 0,
+      },
+    },
+  }
+}
+
+function paginatedReport(page: number, totalItems = 25, totalPages = 3): ExpenseReport {
+  return {
+    ...report,
+    expenseCount: totalItems,
+    expenses: {
+      items: report.expenses.items,
+      pagination: {
+        page,
+        pageSize: 10,
+        totalItems,
+        totalPages,
+      },
+    },
   }
 }
 
@@ -143,7 +184,7 @@ describe('report workflows', () => {
 
     const { wrapper } = await mountPage('/reports?dateFrom=2026-08-01&dateTo=2026-08-31')
 
-    expect(reportsApi.fetchExpenseReport).toHaveBeenCalledWith(filters)
+    expect(reportsApi.fetchExpenseReport).toHaveBeenCalledWith({ ...filters, ...firstPageQuery })
     expect(wrapper.get('fieldset legend').text()).toBe('Report date range')
     expect(wrapper.get('#report-date-from').element).toHaveProperty('value', filters.dateFrom)
     expect(wrapper.get('#report-date-to').element).toHaveProperty('value', filters.dateTo)
@@ -159,7 +200,10 @@ describe('report workflows', () => {
 
     const filters = { dateFrom: '2026-08-01', dateTo: '2026-08-31' }
     expect(router.currentRoute.value.query).toEqual(filters)
-    expect(reportsApi.fetchExpenseReport).toHaveBeenLastCalledWith(filters)
+    expect(reportsApi.fetchExpenseReport).toHaveBeenLastCalledWith({
+      ...filters,
+      ...firstPageQuery,
+    })
   })
 
   it('clears the active date range', async () => {
@@ -174,6 +218,54 @@ describe('report workflows', () => {
     expect(reportsApi.fetchExpenseReport).toHaveBeenLastCalledWith({
       dateFrom: undefined,
       dateTo: undefined,
+      ...firstPageQuery,
+    })
+  })
+
+  it('loads report pages from the URL and navigates between them', async () => {
+    reportsApi.fetchExpenseReport.mockResolvedValue(paginatedReport(2))
+
+    const { router, wrapper } = await mountPage('/reports?page=2')
+
+    expect(reportsApi.fetchExpenseReport).toHaveBeenCalledWith({
+      dateFrom: undefined,
+      dateTo: undefined,
+      page: 2,
+      pageSize: 10,
+    })
+    expect(wrapper.get('nav[aria-label="Report expense pagination"]').text()).toContain(
+      'Page 2 of 3 · 25 expenses',
+    )
+
+    const nextButton = wrapper.findAll('button').find((button) => button.text() === 'Next')
+    if (!nextButton) throw new Error('Next page button not found')
+
+    await nextButton.trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ page: '3' })
+    expect(reportsApi.fetchExpenseReport).toHaveBeenLastCalledWith({
+      dateFrom: undefined,
+      dateTo: undefined,
+      page: 3,
+      pageSize: 10,
+    })
+  })
+
+  it('redirects an out-of-range page to the final report page', async () => {
+    reportsApi.fetchExpenseReport
+      .mockResolvedValueOnce(paginatedReport(5, 12, 2))
+      .mockResolvedValueOnce(paginatedReport(2, 12, 2))
+
+    const { router } = await mountPage('/reports?page=5')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ page: '2' })
+    expect(reportsApi.fetchExpenseReport).toHaveBeenLastCalledWith({
+      dateFrom: undefined,
+      dateTo: undefined,
+      page: 2,
+      pageSize: 10,
     })
   })
 
