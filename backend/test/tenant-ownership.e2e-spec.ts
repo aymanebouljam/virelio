@@ -329,7 +329,15 @@ describe('Tenant ownership e2e', () => {
       totalAmount: '0.00',
       expenseCount: 0,
       categoryTotals: [],
-      expenses: [],
+      expenses: {
+        items: [],
+        pagination: {
+          page: 1,
+          pageSize: 10,
+          totalItems: 0,
+          totalPages: 0,
+        },
+      },
     });
   });
 });
