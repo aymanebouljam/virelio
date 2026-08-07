@@ -8,6 +8,11 @@ import { rm } from 'node:fs/promises';
 import { getUploadsRoot } from '../src/proofs/proofs-paths';
 import { createAuth } from './test-auth';
 
+type ErrorResponse = {
+  message: string;
+  errors: Array<{ field: string }>;
+};
+
 describe('Reports e2e', () => {
   let app: INestApplication;
   let http: Server;
@@ -84,7 +89,15 @@ describe('Reports e2e', () => {
         totalAmount: '0.00',
         expenseCount: 0,
         categoryTotals: [],
-        expenses: [],
+        expenses: {
+          items: [],
+          pagination: {
+            page: 1,
+            pageSize: 10,
+            totalItems: 0,
+            totalPages: 0,
+          },
+        },
       });
     });
 
@@ -153,8 +166,14 @@ describe('Reports e2e', () => {
         },
       ]);
 
-      expect(report.expenses).toHaveLength(2);
-      expect(report.expenses[0]).toMatchObject({
+      expect(report.expenses.pagination).toEqual({
+        page: 1,
+        pageSize: 10,
+        totalItems: 2,
+        totalPages: 1,
+      });
+      expect(report.expenses.items).toHaveLength(2);
+      expect(report.expenses.items[0]).toMatchObject({
         description: 'Airport transfer',
         amount: '220.00',
         vendorId: vendorTwo.id,
@@ -163,7 +182,7 @@ describe('Reports e2e', () => {
         categoryName: 'Travel',
         notes: 'Client pickup',
       });
-      expect(report.expenses[1]).toMatchObject({
+      expect(report.expenses.items[1]).toMatchObject({
         description: 'Printer paper',
         amount: '80.50',
         vendorId: vendorOne.id,
@@ -229,10 +248,60 @@ describe('Reports e2e', () => {
         },
       ]);
 
-      expect(report.expenses).toHaveLength(1);
-      expect(report.expenses[0]).toMatchObject({
+      expect(report.expenses.items).toHaveLength(1);
+      expect(report.expenses.items[0]).toMatchObject({
         description: 'Airport transfer',
         amount: '220.00',
+      });
+    });
+
+    it('paginates expense rows without changing full report totals', async () => {
+      const vendor = await createVendor({
+        name: 'Atlas Office Supplies',
+        email: 'contact@atlasoffice.com',
+        phone: '+212600000001',
+        website: 'https://atlasoffice.com',
+        notes: 'Office supplies vendor',
+      });
+
+      for (let index = 1; index <= 3; index += 1) {
+        await createExpense({
+          vendorId: vendor.id,
+          description: `Expense ${index}`,
+          amount: index * 100,
+          expenseDate: `2026-06-${(20 + index).toString()}`,
+        });
+      }
+
+      const response = await request(http)
+        .get('/reports/expenses')
+        .set(authHeaders)
+        .query({ page: 2, pageSize: 2 })
+        .expect(HttpStatus.OK);
+      const report = response.body as ExpenseReport;
+
+      expect(report).toMatchObject({
+        totalAmount: '600.00',
+        expenseCount: 3,
+        categoryTotals: [
+          {
+            categoryId: null,
+            categoryName: 'Uncategorized',
+            totalAmount: '600.00',
+            expenseCount: 3,
+          },
+        ],
+      });
+      expect(report.expenses.pagination).toEqual({
+        page: 2,
+        pageSize: 2,
+        totalItems: 3,
+        totalPages: 2,
+      });
+      expect(report.expenses.items).toHaveLength(1);
+      expect(report.expenses.items[0]).toMatchObject({
+        description: 'Expense 1',
+        amount: '100.00',
       });
     });
 
@@ -257,6 +326,25 @@ describe('Reports e2e', () => {
           },
         ],
       });
+    });
+
+    it.each([
+      ['page', '0'],
+      ['page', '1.5'],
+      ['pageSize', '0'],
+      ['pageSize', '101'],
+    ])('returns 400 for invalid %s = %s', async (field, value) => {
+      const response = await request(http)
+        .get('/reports/expenses')
+        .set(authHeaders)
+        .query({ [field]: value })
+        .expect(HttpStatus.BAD_REQUEST);
+      const error = response.body as ErrorResponse;
+
+      expect(error.message).toBe('Validation failed');
+      expect(error.errors).toEqual(
+        expect.arrayContaining([expect.objectContaining({ field })]),
+      );
     });
   });
 });
