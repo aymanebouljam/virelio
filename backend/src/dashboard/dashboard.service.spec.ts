@@ -30,6 +30,27 @@ describe('DashboardService', () => {
     service = new DashboardService(prisma);
   });
 
+  function expense(categoryNumber: number, amount: number) {
+    return {
+      id: `expense-${categoryNumber}`,
+      description: `Expense ${categoryNumber}`,
+      amount: {
+        toNumber: () => amount,
+      },
+      expenseDate: new Date(
+        `2026-06-${categoryNumber.toString().padStart(2, '0')}T00:00:00.000Z`,
+      ),
+      vendor: {
+        id: 'vendor-1',
+        name: 'Vendor',
+      },
+      category: {
+        id: `category-${categoryNumber}`,
+        name: `Category ${categoryNumber}`,
+      },
+    };
+  }
+
   it('returns dashboard summary aggregates', async () => {
     vendorCountMock.mockResolvedValueOnce(4);
     expenseCountMock.mockResolvedValueOnce(2);
@@ -238,6 +259,63 @@ describe('DashboardService', () => {
       recentActivity: [],
       categoryBreakdown: [],
     });
+  });
+
+  it('groups category totals outside the five highest-spend categories as Other', async () => {
+    vendorCountMock.mockResolvedValueOnce(1);
+    expenseCountMock.mockResolvedValueOnce(0);
+    proofCountMock.mockResolvedValueOnce(0);
+    expenseFindManyMock.mockResolvedValueOnce([
+      expense(1, 700),
+      expense(2, 600),
+      expense(3, 500),
+      expense(4, 400),
+      expense(5, 300),
+      expense(6, 200),
+      expense(7, 100),
+    ]);
+    proofFindManyMock.mockResolvedValueOnce([]);
+
+    const summary = await service.getSummary(userId);
+
+    expect(summary.categoryBreakdown).toEqual([
+      {
+        categoryId: 'category-1',
+        categoryName: 'Category 1',
+        totalAmount: '700.00',
+        expenseCount: 1,
+      },
+      {
+        categoryId: 'category-2',
+        categoryName: 'Category 2',
+        totalAmount: '600.00',
+        expenseCount: 1,
+      },
+      {
+        categoryId: 'category-3',
+        categoryName: 'Category 3',
+        totalAmount: '500.00',
+        expenseCount: 1,
+      },
+      {
+        categoryId: 'category-4',
+        categoryName: 'Category 4',
+        totalAmount: '400.00',
+        expenseCount: 1,
+      },
+      {
+        categoryId: 'category-5',
+        categoryName: 'Category 5',
+        totalAmount: '300.00',
+        expenseCount: 1,
+      },
+      {
+        categoryId: null,
+        categoryName: 'Other',
+        totalAmount: '300.00',
+        expenseCount: 2,
+      },
+    ]);
   });
 
   it('filters dashboard summary by expense date range', async () => {
