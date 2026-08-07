@@ -115,6 +115,15 @@ function paginatedReport(page: number, totalItems = 25, totalPages = 5): Expense
   }
 }
 
+function categoryTotal(number: number): ExpenseReport['categoryTotals'][number] {
+  return {
+    categoryId: `category-${number}`,
+    categoryName: `Category ${number}`,
+    totalAmount: `${800 - number * 100}.00`,
+    expenseCount: 1,
+  }
+}
+
 function getMetric(wrapper: VueWrapper, label: string) {
   const metric = wrapper.findAll('article').find((candidate) => candidate.text().includes(label))
   if (!metric) throw new Error(`${label} metric not found`)
@@ -168,6 +177,25 @@ describe('report workflows', () => {
     expect(getMetric(wrapper, 'Total amount').text()).toContain('$0.00')
     expect(wrapper.text()).toContain('No category totals')
     expect(wrapper.text()).toContain('No matching expenses')
+  })
+
+  it('shows five category totals plus Other while preserving the category count', async () => {
+    reportsApi.fetchExpenseReport.mockResolvedValue({
+      ...report,
+      categoryTotals: Array.from({ length: 7 }, (_, index) => categoryTotal(index + 1)),
+    })
+
+    const { wrapper } = await mountPage()
+    const categorySection = wrapper
+      .findAll('section')
+      .find((section) => section.find('h3').text() === 'Category totals')
+    if (!categorySection) throw new Error('Category totals section not found')
+
+    expect(getMetric(wrapper, 'Categories').text()).toContain('7')
+    expect(categorySection.text()).toContain('Category 5')
+    expect(categorySection.text()).toContain('Other')
+    expect(categorySection.text()).not.toContain('Category 6')
+    expect(categorySection.text()).not.toContain('Category 7')
   })
 
   it('shows API loading failures', async () => {
