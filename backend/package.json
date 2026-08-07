@@ -22,11 +22,11 @@
     "pretest:e2e": "pnpm prisma:generate",
     "pretypecheck": "pnpm prisma:generate",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
+    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --verbose=false",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "DOTENV_CONFIG_PATH=.env.test node -r dotenv/config --experimental-vm-modules ./node_modules/jest/bin/jest.js --config ./test/jest-e2e.json --runInBand"
+    "test:e2e": "DOTENV_CONFIG_PATH=.env.test node -r dotenv/config --experimental-vm-modules ./node_modules/jest/bin/jest.js --config ./test/jest-e2e.json --runInBand --verbose=false"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.28",
