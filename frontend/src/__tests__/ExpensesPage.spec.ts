@@ -76,7 +76,7 @@ function expensePage(
     items,
     pagination: {
       page: 1,
-      pageSize: 10,
+      pageSize: 6,
       totalItems: items.length,
       totalPages: items.length > 0 ? 1 : 0,
       ...pagination,
@@ -92,7 +92,7 @@ function expenseRequest(filters: ExpenseFilters = {}): ExpenseFilters {
     dateFrom: undefined,
     dateTo: undefined,
     page: 1,
-    pageSize: 10,
+    pageSize: 6,
     ...filters,
   }
 }

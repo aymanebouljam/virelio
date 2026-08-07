@@ -49,7 +49,7 @@ function vendorPage(
     items,
     pagination: {
       page: 1,
-      pageSize: 10,
+      pageSize: 6,
       totalItems: items.length,
       totalPages: items.length > 0 ? 1 : 0,
       ...pagination,
@@ -133,7 +133,7 @@ describe('vendor management', () => {
     expect(vendorsApi.fetchVendorsPage).toHaveBeenCalledWith({
       search: 'Atlas',
       page: 1,
-      pageSize: 10,
+      pageSize: 6,
     })
     expect(wrapper.get('input[type="search"]').element).toHaveProperty('value', 'Atlas')
     expect(wrapper.text()).toContain('No matching vendors')
@@ -146,7 +146,7 @@ describe('vendor management', () => {
     expect(vendorsApi.fetchVendorsPage).toHaveBeenLastCalledWith({
       search: 'office supplies',
       page: 1,
-      pageSize: 10,
+      pageSize: 6,
     })
 
     await getButton(wrapper, 'Clear').trigger('click')
@@ -156,7 +156,7 @@ describe('vendor management', () => {
     expect(vendorsApi.fetchVendorsPage).toHaveBeenLastCalledWith({
       search: undefined,
       page: 1,
-      pageSize: 10,
+      pageSize: 6,
     })
   })
 
@@ -170,7 +170,7 @@ describe('vendor management', () => {
     expect(vendorsApi.fetchVendorsPage).toHaveBeenCalledWith({
       search: undefined,
       page: 2,
-      pageSize: 10,
+      pageSize: 6,
     })
     expect(wrapper.text()).toContain('Page 2 of 2 · 11 vendors')
     expect(getButton(wrapper, 'Next').attributes()).toHaveProperty('disabled')
@@ -182,7 +182,7 @@ describe('vendor management', () => {
     expect(vendorsApi.fetchVendorsPage).toHaveBeenLastCalledWith({
       search: undefined,
       page: 1,
-      pageSize: 10,
+      pageSize: 6,
     })
     expect(wrapper.text()).toContain('Atlas Supplies')
   })
@@ -198,7 +198,7 @@ describe('vendor management', () => {
     expect(vendorsApi.fetchVendorsPage).toHaveBeenLastCalledWith({
       search: undefined,
       page: 2,
-      pageSize: 10,
+      pageSize: 6,
     })
     expect(wrapper.text()).toContain('Nova Services')
   })
