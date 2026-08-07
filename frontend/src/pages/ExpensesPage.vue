@@ -19,7 +19,7 @@ import { type Vendor, vendorSchema } from '@/lib/vendors/schema'
 import { mapZodErrors } from '@/lib/zod'
 
 const expenses = ref<Expense[]>([])
-const PAGE_SIZE = 10
+const PAGE_SIZE = 6
 const vendors = ref<Vendor[]>([])
 const categories = ref<ExpenseCategory[]>([])
 const route = useRoute()

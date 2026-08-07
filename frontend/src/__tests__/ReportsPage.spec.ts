@@ -73,14 +73,14 @@ const report: ExpenseReport = {
     ],
     pagination: {
       page: 1,
-      pageSize: 10,
+      pageSize: 6,
       totalItems: 3,
       totalPages: 1,
     },
   },
 }
 
-const firstPageQuery = { page: 1, pageSize: 10 }
+const firstPageQuery = { page: 1, pageSize: 6 }
 
 function emptyReport(): ExpenseReport {
   return {
@@ -91,7 +91,7 @@ function emptyReport(): ExpenseReport {
       items: [],
       pagination: {
         page: 1,
-        pageSize: 10,
+        pageSize: 6,
         totalItems: 0,
         totalPages: 0,
       },
@@ -99,7 +99,7 @@ function emptyReport(): ExpenseReport {
   }
 }
 
-function paginatedReport(page: number, totalItems = 25, totalPages = 3): ExpenseReport {
+function paginatedReport(page: number, totalItems = 25, totalPages = 5): ExpenseReport {
   return {
     ...report,
     expenseCount: totalItems,
@@ -107,11 +107,20 @@ function paginatedReport(page: number, totalItems = 25, totalPages = 3): Expense
       items: report.expenses.items,
       pagination: {
         page,
-        pageSize: 10,
+        pageSize: 6,
         totalItems,
         totalPages,
       },
     },
+  }
+}
+
+function categoryTotal(number: number): ExpenseReport['categoryTotals'][number] {
+  return {
+    categoryId: `category-${number}`,
+    categoryName: `Category ${number}`,
+    totalAmount: `${800 - number * 100}.00`,
+    expenseCount: 1,
   }
 }
 
@@ -168,6 +177,25 @@ describe('report workflows', () => {
     expect(getMetric(wrapper, 'Total amount').text()).toContain('$0.00')
     expect(wrapper.text()).toContain('No category totals')
     expect(wrapper.text()).toContain('No matching expenses')
+  })
+
+  it('shows five category totals plus Other while preserving the category count', async () => {
+    reportsApi.fetchExpenseReport.mockResolvedValue({
+      ...report,
+      categoryTotals: Array.from({ length: 7 }, (_, index) => categoryTotal(index + 1)),
+    })
+
+    const { wrapper } = await mountPage()
+    const categorySection = wrapper
+      .findAll('section')
+      .find((section) => section.find('h3').text() === 'Category totals')
+    if (!categorySection) throw new Error('Category totals section not found')
+
+    expect(getMetric(wrapper, 'Categories').text()).toContain('7')
+    expect(categorySection.text()).toContain('Category 5')
+    expect(categorySection.text()).toContain('Other')
+    expect(categorySection.text()).not.toContain('Category 6')
+    expect(categorySection.text()).not.toContain('Category 7')
   })
 
   it('shows API loading failures', async () => {
@@ -231,10 +259,10 @@ describe('report workflows', () => {
       dateFrom: undefined,
       dateTo: undefined,
       page: 2,
-      pageSize: 10,
+      pageSize: 6,
     })
     expect(wrapper.get('nav[aria-label="Report expense pagination"]').text()).toContain(
-      'Page 2 of 3 · 25 expenses',
+      'Page 2 of 5 · 25 expenses',
     )
 
     const nextButton = wrapper.findAll('button').find((button) => button.text() === 'Next')
@@ -248,7 +276,7 @@ describe('report workflows', () => {
       dateFrom: undefined,
       dateTo: undefined,
       page: 3,
-      pageSize: 10,
+      pageSize: 6,
     })
   })
 
@@ -265,7 +293,7 @@ describe('report workflows', () => {
       dateFrom: undefined,
       dateTo: undefined,
       page: 2,
-      pageSize: 10,
+      pageSize: 6,
     })
   })
 

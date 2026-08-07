@@ -3,12 +3,13 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ApiError } from '@/lib/api'
 import { fetchExpenseReport } from '@/lib/reports/api'
+import { summarizeCategoryTotals } from '@/lib/reports/category-totals'
 import { expenseReportSchema, type ExpenseReport } from '@/lib/reports/schema'
 import { formatAmount, formatDate } from '@/lib/helpers'
 
 const route = useRoute()
 const router = useRouter()
-const PAGE_SIZE = 10
+const PAGE_SIZE = 6
 
 const report = ref<ExpenseReport | null>(null)
 const loading = ref(true)
@@ -27,6 +28,9 @@ const dateTo = computed(() => {
 
 const hasExpenses = computed(() => (report.value?.expenses.items.length ?? 0) > 0)
 const hasCategoryTotals = computed(() => (report.value?.categoryTotals.length ?? 0) > 0)
+const visibleCategoryTotals = computed(() =>
+  summarizeCategoryTotals(report.value?.categoryTotals ?? []),
+)
 
 function readPageQuery() {
   const value = route.query.page
@@ -267,7 +271,7 @@ onMounted(loadReport)
 
           <div v-else class="mt-6 space-y-3">
             <div
-              v-for="category in report.categoryTotals"
+              v-for="category in visibleCategoryTotals"
               :key="category.categoryId ?? category.categoryName"
               class="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4"
             >
