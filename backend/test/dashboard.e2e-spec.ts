@@ -214,6 +214,57 @@ describe('Dashboard e2e', () => {
       ]);
     });
 
+    it('returns the five highest-spend categories and groups the rest as Other', async () => {
+      const vendor = await createVendor({
+        name: 'Atlas Office Supplies',
+        email: 'contact@atlasoffice.com',
+        phone: '+212600000001',
+        website: 'https://atlasoffice.com',
+        notes: 'Office supplies vendor',
+      });
+      const categories: Array<{ id: string }> = [];
+
+      for (let index = 0; index < 7; index += 1) {
+        const category = await createCategory({
+          name: `Category ${index + 1}`,
+          color: '#0f766e',
+        });
+        categories.push(category);
+
+        await createExpense({
+          vendorId: vendor.id,
+          categoryId: category.id,
+          description: `Expense ${index + 1}`,
+          amount: 700 - index * 100,
+          expenseDate: `2026-06-${(index + 1).toString().padStart(2, '0')}`,
+        });
+      }
+
+      const response = await request(http)
+        .get('/dashboard/summary')
+        .set(authHeaders)
+        .expect(HttpStatus.OK);
+      const summary = response.body as DashboardSummary;
+      const leadingCategories = categories
+        .slice(0, 5)
+        .map((category, index) => ({
+          categoryId: category.id,
+          categoryName: `Category ${index + 1}`,
+          totalAmount: `${700 - index * 100}.00`,
+          expenseCount: 1,
+        }));
+
+      expect(summary.categoryBreakdown).toEqual([
+        ...leadingCategories,
+        {
+          categoryId: null,
+          categoryName: 'Other',
+          totalAmount: '300.00',
+          expenseCount: 2,
+        },
+      ]);
+    });
+
     it('returns recent proof uploads for active expenses only', async () => {
       const vendor = await createVendor({
         name: 'Atlas Office Supplies',
