@@ -3,6 +3,8 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { GetDashboardSummaryQueryDto } from './dto/get-dashboard-summary-query.dto';
 import { Prisma } from '../../generated/prisma/client';
 
+const CATEGORY_BREAKDOWN_LIMIT = 5;
+
 export type DashboardSummary = {
   totalSpend: string;
   activeVendors: number;
@@ -183,14 +185,39 @@ export class DashboardService {
       });
     }
 
-    const categoryBreakdown = [...categoryBreakdownMap.values()]
-      .sort((left, right) => right.totalAmount - left.totalAmount)
-      .map((entry) => ({
-        categoryId: entry.categoryId,
-        categoryName: entry.categoryName,
-        totalAmount: entry.totalAmount.toFixed(2),
-        expenseCount: entry.expenseCount,
-      }));
+    const categoriesBySpend = [...categoryBreakdownMap.values()].sort(
+      (left, right) => right.totalAmount - left.totalAmount,
+    );
+    const visibleCategories = categoriesBySpend.slice(
+      0,
+      CATEGORY_BREAKDOWN_LIMIT,
+    );
+    const remainingCategories = categoriesBySpend.slice(
+      CATEGORY_BREAKDOWN_LIMIT,
+    );
+
+    if (remainingCategories.length > 0) {
+      const otherTotals = remainingCategories.reduce(
+        (totals, category) => ({
+          totalAmount: totals.totalAmount + category.totalAmount,
+          expenseCount: totals.expenseCount + category.expenseCount,
+        }),
+        { totalAmount: 0, expenseCount: 0 },
+      );
+
+      visibleCategories.push({
+        categoryId: null,
+        categoryName: 'Other',
+        ...otherTotals,
+      });
+    }
+
+    const categoryBreakdown = visibleCategories.map((entry) => ({
+      categoryId: entry.categoryId,
+      categoryName: entry.categoryName,
+      totalAmount: entry.totalAmount.toFixed(2),
+      expenseCount: entry.expenseCount,
+    }));
 
     const recentActivity = [
       ...recentExpenses.map((expense) => ({
