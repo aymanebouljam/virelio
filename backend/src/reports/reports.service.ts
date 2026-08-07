@@ -12,17 +12,25 @@ export type ExpenseReport = {
     totalAmount: string;
     expenseCount: number;
   }>;
-  expenses: Array<{
-    id: string;
-    description: string;
-    amount: string;
-    expenseDate: string;
-    vendorId: string;
-    vendorName: string;
-    categoryId: string | null;
-    categoryName: string;
-    notes: string | null;
-  }>;
+  expenses: {
+    items: Array<{
+      id: string;
+      description: string;
+      amount: string;
+      expenseDate: string;
+      vendorId: string;
+      vendorName: string;
+      categoryId: string | null;
+      categoryName: string;
+      notes: string | null;
+    }>;
+    pagination: {
+      page: number;
+      pageSize: number;
+      totalItems: number;
+      totalPages: number;
+    };
+  };
 };
 
 @Injectable()
@@ -33,92 +41,105 @@ export class ReportsService {
     userId: string,
     query: GetExpenseReportQueryDto = {},
   ): Promise<ExpenseReport> {
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 10;
     const expenseDateFilter = this.buildExpenseDateFilter(query);
+    const where = {
+      userId,
+      archivedAt: null,
+      ...expenseDateFilter,
+    };
 
-    const expenses = await this.prisma.expense.findMany({
-      where: {
-        userId,
-        archivedAt: null,
-        ...expenseDateFilter,
-      },
-      include: {
-        vendor: {
-          select: {
-            id: true,
-            name: true,
+    const [totals, categoryGroups, expenses] = await Promise.all([
+      this.prisma.expense.aggregate({
+        where,
+        _sum: { amount: true },
+        _count: { _all: true },
+      }),
+      this.prisma.expense.groupBy({
+        by: ['categoryId'],
+        where,
+        _sum: { amount: true },
+        _count: { _all: true },
+      }),
+      this.prisma.expense.findMany({
+        where,
+        include: {
+          vendor: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
           },
         },
-        category: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-      orderBy: {
-        expenseDate: 'desc',
-      },
-    });
-
-    const totalAmount = expenses
-      .reduce((sum, expense) => sum + expense.amount.toNumber(), 0)
-      .toFixed(2);
-
-    const categoryTotalsMap = new Map<
-      string,
-      {
-        categoryId: string | null;
-        categoryName: string;
-        totalAmount: number;
-        expenseCount: number;
-      }
-    >();
-
-    for (const expense of expenses) {
-      const categoryId = expense.category?.id ?? null;
-      const categoryName = expense.category?.name ?? 'Uncategorized';
-      const key = categoryId ?? 'uncategorized';
-      const amount = expense.amount.toNumber();
-
-      const existing = categoryTotalsMap.get(key);
-      if (existing) {
-        existing.totalAmount += amount;
-        existing.expenseCount += 1;
-        continue;
-      }
-
-      categoryTotalsMap.set(key, {
-        categoryId,
-        categoryName,
-        totalAmount: amount,
-        expenseCount: 1,
-      });
-    }
-
-    const categoryTotals = [...categoryTotalsMap.values()]
-      .sort((left, right) => right.totalAmount - left.totalAmount)
+        orderBy: [{ expenseDate: 'desc' }, { id: 'desc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
+    const categoryIds = categoryGroups.flatMap((group) =>
+      group.categoryId ? [group.categoryId] : [],
+    );
+    const categories =
+      categoryIds.length > 0
+        ? await this.prisma.expenseCategory.findMany({
+            where: { userId, id: { in: categoryIds } },
+            select: { id: true, name: true },
+          })
+        : [];
+    const categoryNameById = new Map(
+      categories.map((category) => [category.id, category.name]),
+    );
+    const categoryTotals = categoryGroups
       .map((entry) => ({
         categoryId: entry.categoryId,
-        categoryName: entry.categoryName,
+        categoryName: this.resolveCategoryName(
+          entry.categoryId,
+          categoryNameById,
+        ),
+        totalAmount: entry._sum.amount?.toNumber() ?? 0,
+        expenseCount: entry._count._all,
+      }))
+      .sort(
+        (left, right) =>
+          right.totalAmount - left.totalAmount ||
+          left.categoryName.localeCompare(right.categoryName),
+      )
+      .map((entry) => ({
+        ...entry,
         totalAmount: entry.totalAmount.toFixed(2),
-        expenseCount: entry.expenseCount,
       }));
+    const expenseCount = totals._count._all;
 
     return {
-      totalAmount,
-      expenseCount: expenses.length,
+      totalAmount: (totals._sum.amount?.toNumber() ?? 0).toFixed(2),
+      expenseCount,
       categoryTotals,
-      expenses: expenses.map((expense) => ({
-        id: expense.id,
-        description: expense.description,
-        amount: expense.amount.toNumber().toFixed(2),
-        expenseDate: expense.expenseDate.toISOString(),
-        vendorId: expense.vendor.id,
-        vendorName: expense.vendor.name,
-        categoryId: expense.category?.id ?? null,
-        categoryName: expense.category?.name ?? 'Uncategorized',
-        notes: expense.notes ?? null,
-      })),
+      expenses: {
+        items: expenses.map((expense) => ({
+          id: expense.id,
+          description: expense.description,
+          amount: expense.amount.toNumber().toFixed(2),
+          expenseDate: expense.expenseDate.toISOString(),
+          vendorId: expense.vendor.id,
+          vendorName: expense.vendor.name,
+          categoryId: expense.category?.id ?? null,
+          categoryName: expense.category?.name ?? 'Uncategorized',
+          notes: expense.notes ?? null,
+        })),
+        pagination: {
+          page,
+          pageSize,
+          totalItems: expenseCount,
+          totalPages: Math.ceil(expenseCount / pageSize),
+        },
+      },
     };
   }
 
@@ -182,5 +203,21 @@ export class ReportsService {
     }
 
     return { expenseDate };
+  }
+
+  private resolveCategoryName(
+    categoryId: string | null,
+    categoryNameById: Map<string, string>,
+  ): string {
+    if (categoryId === null) {
+      return 'Uncategorized';
+    }
+
+    const categoryName = categoryNameById.get(categoryId);
+    if (!categoryName) {
+      throw new Error(`Missing category for report group: ${categoryId}`);
+    }
+
+    return categoryName;
   }
 }
