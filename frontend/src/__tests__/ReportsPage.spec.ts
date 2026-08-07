@@ -73,14 +73,14 @@ const report: ExpenseReport = {
     ],
     pagination: {
       page: 1,
-      pageSize: 10,
+      pageSize: 6,
       totalItems: 3,
       totalPages: 1,
     },
   },
 }
 
-const firstPageQuery = { page: 1, pageSize: 10 }
+const firstPageQuery = { page: 1, pageSize: 6 }
 
 function emptyReport(): ExpenseReport {
   return {
@@ -91,7 +91,7 @@ function emptyReport(): ExpenseReport {
       items: [],
       pagination: {
         page: 1,
-        pageSize: 10,
+        pageSize: 6,
         totalItems: 0,
         totalPages: 0,
       },
@@ -99,7 +99,7 @@ function emptyReport(): ExpenseReport {
   }
 }
 
-function paginatedReport(page: number, totalItems = 25, totalPages = 3): ExpenseReport {
+function paginatedReport(page: number, totalItems = 25, totalPages = 5): ExpenseReport {
   return {
     ...report,
     expenseCount: totalItems,
@@ -107,7 +107,7 @@ function paginatedReport(page: number, totalItems = 25, totalPages = 3): Expense
       items: report.expenses.items,
       pagination: {
         page,
-        pageSize: 10,
+        pageSize: 6,
         totalItems,
         totalPages,
       },
@@ -231,10 +231,10 @@ describe('report workflows', () => {
       dateFrom: undefined,
       dateTo: undefined,
       page: 2,
-      pageSize: 10,
+      pageSize: 6,
     })
     expect(wrapper.get('nav[aria-label="Report expense pagination"]').text()).toContain(
-      'Page 2 of 3 · 25 expenses',
+      'Page 2 of 5 · 25 expenses',
     )
 
     const nextButton = wrapper.findAll('button').find((button) => button.text() === 'Next')
@@ -248,7 +248,7 @@ describe('report workflows', () => {
       dateFrom: undefined,
       dateTo: undefined,
       page: 3,
-      pageSize: 10,
+      pageSize: 6,
     })
   })
 
@@ -265,7 +265,7 @@ describe('report workflows', () => {
       dateFrom: undefined,
       dateTo: undefined,
       page: 2,
-      pageSize: 10,
+      pageSize: 6,
     })
   })
 

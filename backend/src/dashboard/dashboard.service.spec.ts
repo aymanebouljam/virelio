@@ -51,6 +51,23 @@ describe('DashboardService', () => {
     };
   }
 
+  function proof(number: number) {
+    return {
+      id: `proof-${number}`,
+      originalName: `receipt-${number}.jpg`,
+      mimeType: 'image/jpeg',
+      sizeBytes: 1024,
+      storagePath: `uploads/proofs/expense-${number}/receipt-${number}.jpg`,
+      createdAt: new Date(
+        `2026-06-${(number + 5).toString().padStart(2, '0')}T00:00:00.000Z`,
+      ),
+      expense: {
+        id: `expense-${number}`,
+        description: `Expense ${number}`,
+      },
+    };
+  }
+
   it('returns dashboard summary aggregates', async () => {
     vendorCountMock.mockResolvedValueOnce(4);
     expenseCountMock.mockResolvedValueOnce(2);
@@ -259,6 +276,30 @@ describe('DashboardService', () => {
       recentActivity: [],
       categoryBreakdown: [],
     });
+  });
+
+  it('returns the six most recent activity entries', async () => {
+    vendorCountMock.mockResolvedValueOnce(1);
+    expenseCountMock.mockResolvedValueOnce(0);
+    proofCountMock.mockResolvedValueOnce(5);
+    expenseFindManyMock.mockResolvedValueOnce(
+      Array.from({ length: 5 }, (_, index) => expense(index + 1, 100)),
+    );
+    proofFindManyMock.mockResolvedValueOnce(
+      Array.from({ length: 5 }, (_, index) => proof(index + 1)),
+    );
+
+    const summary = await service.getSummary(userId);
+
+    expect(summary.recentActivity).toHaveLength(6);
+    expect(summary.recentActivity.map((activity) => activity.id)).toEqual([
+      'proof-5',
+      'proof-4',
+      'proof-3',
+      'proof-2',
+      'proof-1',
+      'expense-5',
+    ]);
   });
 
   it('groups category totals outside the five highest-spend categories as Other', async () => {

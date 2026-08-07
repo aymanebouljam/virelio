@@ -4,6 +4,7 @@ import { GetDashboardSummaryQueryDto } from './dto/get-dashboard-summary-query.d
 import { Prisma } from '../../generated/prisma/client';
 
 const CATEGORY_BREAKDOWN_LIMIT = 5;
+const RECENT_ACTIVITY_LIMIT = 6;
 
 export type DashboardSummary = {
   totalSpend: string;
@@ -242,7 +243,7 @@ export class DashboardService {
           new Date(right.occurredAt).getTime() -
           new Date(left.occurredAt).getTime(),
       )
-      .slice(0, 8);
+      .slice(0, RECENT_ACTIVITY_LIMIT);
 
     return {
       totalSpend,
