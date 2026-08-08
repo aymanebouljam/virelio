@@ -2,6 +2,23 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { GetExpenseReportQueryDto } from './dto/get-expense-report-query.dto';
+import { GetReportInsightsQueryDto } from './dto/get-report-insights-query.dto';
+
+type ReportDateQuery = {
+  dateFrom?: string;
+  dateTo?: string;
+};
+
+type ExpenseDateRange = {
+  gte?: Date;
+  lte?: Date;
+};
+
+type MonthlyTotalRow = {
+  month: string;
+  totalAmount: Prisma.Decimal;
+  expenseCount: number;
+};
 
 export type ExpenseReport = {
   totalAmount: string;
@@ -33,6 +50,20 @@ export type ExpenseReport = {
   };
 };
 
+export type ReportInsights = {
+  monthlyTotals: Array<{
+    month: string;
+    totalAmount: string;
+    expenseCount: number;
+  }>;
+  vendorTotals: Array<{
+    vendorId: string;
+    vendorName: string;
+    totalAmount: string;
+    expenseCount: number;
+  }>;
+};
+
 @Injectable()
 export class ReportsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -43,11 +74,11 @@ export class ReportsService {
   ): Promise<ExpenseReport> {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 10;
-    const expenseDateFilter = this.buildExpenseDateFilter(query);
+    const expenseDateRange = this.buildExpenseDateRange(query);
     const where = {
       userId,
       archivedAt: null,
-      ...expenseDateFilter,
+      ...(expenseDateRange && { expenseDate: expenseDateRange }),
     };
 
     const [totals, categoryGroups, expenses] = await Promise.all([
@@ -143,16 +174,98 @@ export class ReportsService {
     };
   }
 
-  private buildExpenseDateFilter(
-    query: GetExpenseReportQueryDto,
-  ): Prisma.ExpenseWhereInput {
+  async getReportInsights(
+    userId: string,
+    query: GetReportInsightsQueryDto = {},
+  ): Promise<ReportInsights> {
+    const expenseDateRange = this.buildExpenseDateRange(query);
+    const where = {
+      userId,
+      archivedAt: null,
+      ...(expenseDateRange && { expenseDate: expenseDateRange }),
+    };
+    const monthlyConditions = [
+      Prisma.sql`"userId" = ${userId}`,
+      Prisma.sql`"archivedAt" IS NULL`,
+    ];
+
+    if (expenseDateRange?.gte) {
+      monthlyConditions.push(
+        Prisma.sql`"expenseDate" >= ${expenseDateRange.gte}`,
+      );
+    }
+
+    if (expenseDateRange?.lte) {
+      monthlyConditions.push(
+        Prisma.sql`"expenseDate" <= ${expenseDateRange.lte}`,
+      );
+    }
+
+    const [monthlyTotals, vendorGroups] = await Promise.all([
+      this.prisma.$queryRaw<MonthlyTotalRow[]>(Prisma.sql`
+        SELECT
+          to_char(date_trunc('month', "expenseDate"), 'YYYY-MM') AS month,
+          SUM(amount) AS "totalAmount",
+          COUNT(*)::integer AS "expenseCount"
+        FROM "Expense"
+        WHERE ${Prisma.join(monthlyConditions, ' AND ')}
+        GROUP BY date_trunc('month', "expenseDate")
+        ORDER BY date_trunc('month', "expenseDate") ASC
+      `),
+      this.prisma.expense.groupBy({
+        by: ['vendorId'],
+        where,
+        _sum: { amount: true },
+        _count: { _all: true },
+      }),
+    ]);
+    const vendorIds = vendorGroups.map((group) => group.vendorId);
+    const vendors =
+      vendorIds.length > 0
+        ? await this.prisma.vendor.findMany({
+            where: { userId, id: { in: vendorIds } },
+            select: { id: true, name: true },
+          })
+        : [];
+    const vendorNameById = new Map(
+      vendors.map((vendor) => [vendor.id, vendor.name]),
+    );
+
+    return {
+      monthlyTotals: monthlyTotals.map((total) => ({
+        month: total.month,
+        totalAmount: total.totalAmount.toNumber().toFixed(2),
+        expenseCount: total.expenseCount,
+      })),
+      vendorTotals: vendorGroups
+        .map((group) => ({
+          vendorId: group.vendorId,
+          vendorName: this.resolveVendorName(group.vendorId, vendorNameById),
+          totalAmount: group._sum.amount?.toNumber() ?? 0,
+          expenseCount: group._count._all,
+        }))
+        .sort(
+          (left, right) =>
+            right.totalAmount - left.totalAmount ||
+            left.vendorName.localeCompare(right.vendorName),
+        )
+        .map((total) => ({
+          ...total,
+          totalAmount: total.totalAmount.toFixed(2),
+        })),
+    };
+  }
+
+  private buildExpenseDateRange(
+    query: ReportDateQuery,
+  ): ExpenseDateRange | undefined {
     const { dateFrom, dateTo } = query;
 
     if (!dateFrom && !dateTo) {
-      return {};
+      return undefined;
     }
 
-    const expenseDate: Prisma.DateTimeFilter = {};
+    const expenseDate: ExpenseDateRange = {};
 
     if (dateFrom) {
       expenseDate.gte = new Date(dateFrom);
@@ -202,7 +315,7 @@ export class ReportsService {
       });
     }
 
-    return { expenseDate };
+    return expenseDate;
   }
 
   private resolveCategoryName(
@@ -219,5 +332,17 @@ export class ReportsService {
     }
 
     return categoryName;
+  }
+
+  private resolveVendorName(
+    vendorId: string,
+    vendorNameById: Map<string, string>,
+  ): string {
+    const vendorName = vendorNameById.get(vendorId);
+    if (!vendorName) {
+      throw new Error(`Missing vendor for report group: ${vendorId}`);
+    }
+
+    return vendorName;
   }
 }

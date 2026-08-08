@@ -9,6 +9,8 @@ describe('ReportsService', () => {
   const expenseGroupByMock = jest.fn();
   const expenseFindManyMock = jest.fn();
   const categoryFindManyMock = jest.fn();
+  const vendorFindManyMock = jest.fn();
+  const queryRawMock = jest.fn();
 
   const prisma = {
     expense: {
@@ -19,6 +21,10 @@ describe('ReportsService', () => {
     expenseCategory: {
       findMany: categoryFindManyMock,
     },
+    vendor: {
+      findMany: vendorFindManyMock,
+    },
+    $queryRaw: queryRawMock,
   } as unknown as PrismaService;
 
   beforeEach(() => {
@@ -29,6 +35,7 @@ describe('ReportsService', () => {
     });
     expenseGroupByMock.mockResolvedValue([]);
     expenseFindManyMock.mockResolvedValue([]);
+    queryRawMock.mockResolvedValue([]);
     service = new ReportsService(prisma);
   });
 
@@ -180,5 +187,80 @@ describe('ReportsService', () => {
     expect(expenseAggregateMock).not.toHaveBeenCalled();
     expect(expenseGroupByMock).not.toHaveBeenCalled();
     expect(expenseFindManyMock).not.toHaveBeenCalled();
+  });
+
+  it('returns monthly and vendor totals for the selected date range', async () => {
+    queryRawMock.mockResolvedValueOnce([
+      {
+        month: '2026-05',
+        totalAmount: { toNumber: () => 80.5 },
+        expenseCount: 1,
+      },
+      {
+        month: '2026-06',
+        totalAmount: { toNumber: () => 300.5 },
+        expenseCount: 2,
+      },
+    ]);
+    expenseGroupByMock.mockResolvedValueOnce([
+      {
+        vendorId: 'vendor-1',
+        _sum: { amount: { toNumber: () => 220 } },
+        _count: { _all: 1 },
+      },
+      {
+        vendorId: 'vendor-2',
+        _sum: { amount: { toNumber: () => 161 } },
+        _count: { _all: 2 },
+      },
+    ]);
+    vendorFindManyMock.mockResolvedValueOnce([
+      { id: 'vendor-1', name: 'City Transport' },
+      { id: 'vendor-2', name: 'Atlas Office' },
+    ]);
+
+    await expect(
+      service.getReportInsights(userId, {
+        dateFrom: '2026-05-01',
+        dateTo: '2026-06-30',
+      }),
+    ).resolves.toEqual({
+      monthlyTotals: [
+        { month: '2026-05', totalAmount: '80.50', expenseCount: 1 },
+        { month: '2026-06', totalAmount: '300.50', expenseCount: 2 },
+      ],
+      vendorTotals: [
+        {
+          vendorId: 'vendor-1',
+          vendorName: 'City Transport',
+          totalAmount: '220.00',
+          expenseCount: 1,
+        },
+        {
+          vendorId: 'vendor-2',
+          vendorName: 'Atlas Office',
+          totalAmount: '161.00',
+          expenseCount: 2,
+        },
+      ],
+    });
+
+    expect(expenseGroupByMock).toHaveBeenCalledWith({
+      by: ['vendorId'],
+      where: {
+        userId,
+        archivedAt: null,
+        expenseDate: {
+          gte: new Date('2026-05-01'),
+          lte: new Date('2026-06-30T23:59:59.999Z'),
+        },
+      },
+      _sum: { amount: true },
+      _count: { _all: true },
+    });
+    expect(vendorFindManyMock).toHaveBeenCalledWith({
+      where: { userId, id: { in: ['vendor-1', 'vendor-2'] } },
+      select: { id: true, name: true },
+    });
   });
 });
