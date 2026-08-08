@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Category spending comparisons between a selected date range and the immediately preceding equal-length period.
+- Current and previous period totals plus per-category amount and percentage changes.
+- Tenant-isolation, API contract, service, and frontend component coverage for category comparisons.
+
 ## [0.5.0] - 2026-08-08
 
 ### Added
