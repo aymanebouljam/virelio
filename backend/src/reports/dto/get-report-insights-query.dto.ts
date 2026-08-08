@@ -1,11 +1,3 @@
-import { IsDateString, IsOptional } from 'class-validator';
+import { GetReportDateRangeQueryDto } from './get-report-date-range-query.dto';
 
-export class GetReportInsightsQueryDto {
-  @IsOptional()
-  @IsDateString()
-  dateFrom?: string;
-
-  @IsOptional()
-  @IsDateString()
-  dateTo?: string;
-}
+export class GetReportInsightsQueryDto extends GetReportDateRangeQueryDto {}

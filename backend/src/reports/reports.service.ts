@@ -3,6 +3,7 @@ import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { GetExpenseReportQueryDto } from './dto/get-expense-report-query.dto';
 import { GetReportInsightsQueryDto } from './dto/get-report-insights-query.dto';
+import { GetReportDateRangeQueryDto } from './dto/get-report-date-range-query.dto';
 
 type ReportDateQuery = {
   dateFrom?: string;
@@ -256,6 +257,54 @@ export class ReportsService {
     };
   }
 
+  async exportExpensesCsv(
+    userId: string,
+    query: GetReportDateRangeQueryDto = {},
+  ): Promise<string> {
+    const expenseDateRange = this.buildExpenseDateRange(query);
+    const expenses = await this.prisma.expense.findMany({
+      where: {
+        userId,
+        archivedAt: null,
+        ...(expenseDateRange && { expenseDate: expenseDateRange }),
+      },
+      select: {
+        description: true,
+        amount: true,
+        currency: true,
+        expenseDate: true,
+        notes: true,
+        vendor: { select: { name: true } },
+        category: { select: { name: true } },
+      },
+      orderBy: [{ expenseDate: 'desc' }, { id: 'desc' }],
+    });
+    const rows = [
+      [
+        'Date',
+        'Description',
+        'Vendor',
+        'Category',
+        'Amount',
+        'Currency',
+        'Notes',
+      ],
+      ...expenses.map((expense) => [
+        expense.expenseDate.toISOString().slice(0, 10),
+        expense.description,
+        expense.vendor.name,
+        expense.category?.name ?? 'Uncategorized',
+        expense.amount.toNumber().toFixed(2),
+        expense.currency,
+        expense.notes ?? '',
+      ]),
+    ];
+
+    return `\uFEFF${rows
+      .map((row) => row.map((value) => this.escapeCsvValue(value)).join(','))
+      .join('\r\n')}`;
+  }
+
   private buildExpenseDateRange(
     query: ReportDateQuery,
   ): ExpenseDateRange | undefined {
@@ -332,6 +381,14 @@ export class ReportsService {
     }
 
     return categoryName;
+  }
+
+  private escapeCsvValue(value: string): string {
+    const spreadsheetSafeValue = /^[=+\-@\t\r\n]/.test(value)
+      ? `'${value}`
+      : value;
+
+    return `"${spreadsheetSafeValue.replaceAll('"', '""')}"`;
   }
 
   private resolveVendorName(

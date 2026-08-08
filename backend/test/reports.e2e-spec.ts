@@ -426,4 +426,52 @@ describe('Reports e2e', () => {
       ]);
     });
   });
+
+  describe('GET /reports/expenses.csv', () => {
+    it('requires authentication', async () => {
+      await request(http)
+        .get('/reports/expenses.csv')
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+
+    it('downloads expenses from the selected date range', async () => {
+      const vendor = await createVendor({
+        name: 'Atlas Office Supplies',
+        email: 'contact@atlasoffice.com',
+        phone: '+212600000001',
+        website: 'https://atlasoffice.com',
+        notes: 'Office supplies vendor',
+      });
+
+      await createExpense({
+        vendorId: vendor.id,
+        description: 'Excluded equipment',
+        amount: 1000,
+        expenseDate: '2026-05-31',
+      });
+      await createExpense({
+        vendorId: vendor.id,
+        description: 'Printer paper',
+        amount: 80.5,
+        expenseDate: '2026-06-21',
+        notes: 'Office restock',
+      });
+
+      const response = await request(http)
+        .get('/reports/expenses.csv')
+        .set(authHeaders)
+        .query({ dateFrom: '2026-06-01', dateTo: '2026-06-30' })
+        .expect(HttpStatus.OK)
+        .expect('Content-Type', /text\/csv/)
+        .expect(
+          'Content-Disposition',
+          'attachment; filename="virelio-expenses.csv"',
+        );
+
+      expect(response.text).toContain(
+        '"2026-06-21","Printer paper","Atlas Office Supplies","Uncategorized","80.50","USD","Office restock"',
+      );
+      expect(response.text).not.toContain('Excluded equipment');
+    });
+  });
 });

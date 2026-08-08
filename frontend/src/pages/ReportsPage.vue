@@ -2,7 +2,11 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ApiError } from '@/lib/api'
-import { fetchExpenseReport, fetchReportInsights } from '@/lib/reports/api'
+import {
+  downloadExpenseReportCsv,
+  fetchExpenseReport,
+  fetchReportInsights,
+} from '@/lib/reports/api'
 import { summarizeCategoryTotals } from '@/lib/reports/category-totals'
 import {
   expenseReportSchema,
@@ -21,6 +25,8 @@ const insights = ref<ReportInsights | null>(null)
 const loading = ref(true)
 const error = ref('')
 const dateRangeError = ref('')
+const exportError = ref('')
+const exporting = ref(false)
 
 const dateFrom = computed(() => {
   const value = route.query.dateFrom
@@ -136,6 +142,32 @@ async function updateDateRange(next: { dateFrom?: string; dateTo?: string }) {
   await router.replace({ query })
 }
 
+async function downloadCsv() {
+  exportError.value = ''
+  exporting.value = true
+
+  try {
+    const blob = await downloadExpenseReportCsv({
+      dateFrom: dateFrom.value,
+      dateTo: dateTo.value,
+    })
+    const objectUrl = URL.createObjectURL(blob)
+
+    try {
+      const link = document.createElement('a')
+      link.href = objectUrl
+      link.download = 'virelio-expenses.csv'
+      link.click()
+    } finally {
+      URL.revokeObjectURL(objectUrl)
+    }
+  } catch (err) {
+    exportError.value = err instanceof ApiError ? err.message : 'Exporting expense report failed'
+  } finally {
+    exporting.value = false
+  }
+}
+
 watch(
   () => [dateFrom.value, dateTo.value, readPageQuery()] as const,
   ([nextDateFrom, nextDateTo], [previousDateFrom, previousDateTo]) => {
@@ -222,7 +254,24 @@ onMounted(() => loadReport(true))
       >
         Clear
       </button>
+
+      <button
+        type="button"
+        :disabled="exporting"
+        class="inline-flex min-h-11 items-center justify-center rounded-2xl bg-stone-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-stone-700 disabled:cursor-not-allowed disabled:bg-stone-400"
+        @click="downloadCsv"
+      >
+        {{ exporting ? 'Exporting...' : 'Export CSV' }}
+      </button>
     </fieldset>
+
+    <p
+      v-if="exportError"
+      role="alert"
+      class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+    >
+      {{ exportError }}
+    </p>
 
     <section v-if="loading" class="space-y-4" role="status" aria-label="Loading expense report">
       <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
