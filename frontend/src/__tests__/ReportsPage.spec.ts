@@ -182,10 +182,27 @@ function categoryTotal(number: number): ExpenseReport['categoryTotals'][number] 
   }
 }
 
+function vendorTotal(number: number): ReportInsights['vendorTotals'][number] {
+  return {
+    vendorId: `vendor-${number}`,
+    vendorName: `Vendor ${number}`,
+    totalAmount: `${800 - number * 100}.00`,
+    expenseCount: 1,
+  }
+}
+
 function getMetric(wrapper: VueWrapper, label: string) {
   const metric = wrapper.findAll('article').find((candidate) => candidate.text().includes(label))
   if (!metric) throw new Error(`${label} metric not found`)
   return metric
+}
+
+function getSection(wrapper: VueWrapper, label: string) {
+  const section = wrapper
+    .findAll('section')
+    .find((candidate) => candidate.find('h3').text() === label)
+  if (!section) throw new Error(`${label} section not found`)
+  return section
 }
 
 function getButton(wrapper: VueWrapper, label: string) {
@@ -267,16 +284,40 @@ describe('report workflows', () => {
     })
 
     const { wrapper } = await mountPage()
-    const categorySection = wrapper
-      .findAll('section')
-      .find((section) => section.find('h3').text() === 'Category totals')
-    if (!categorySection) throw new Error('Category totals section not found')
+    const categorySection = getSection(wrapper, 'Category totals')
 
     expect(getMetric(wrapper, 'Categories').text()).toContain('7')
     expect(categorySection.text()).toContain('Category 5')
     expect(categorySection.text()).toContain('Other')
     expect(categorySection.text()).not.toContain('Category 6')
     expect(categorySection.text()).not.toContain('Category 7')
+  })
+
+  it('scrolls monthly totals and shows five vendors plus Other', async () => {
+    reportsApi.fetchReportInsights.mockResolvedValue({
+      monthlyTotals: Array.from({ length: 7 }, (_, index) => ({
+        month: `2026-0${index + 1}`,
+        totalAmount: '100.00',
+        expenseCount: 1,
+      })),
+      vendorTotals: Array.from({ length: 7 }, (_, index) => vendorTotal(index + 1)),
+    })
+
+    const { wrapper } = await mountPage()
+    const monthlyTotals = getSection(wrapper, 'Monthly spending').get('.space-y-3')
+    const vendorSection = getSection(wrapper, 'Vendor spending')
+
+    expect(monthlyTotals.classes()).toEqual(
+      expect.arrayContaining(['max-h-[32rem]', 'overflow-y-auto']),
+    )
+    expect(monthlyTotals.element.children).toHaveLength(7)
+    expect(monthlyTotals.element.firstElementChild?.textContent).toContain('2026-07')
+    expect(monthlyTotals.element.lastElementChild?.textContent).toContain('2026-01')
+    expect(vendorSection.text()).toContain('Vendor 5')
+    expect(vendorSection.text()).toContain('Other')
+    expect(vendorSection.text()).toContain('$300.00')
+    expect(vendorSection.text()).not.toContain('Vendor 6')
+    expect(vendorSection.text()).not.toContain('Vendor 7')
   })
 
   it('shows API loading failures', async () => {
@@ -303,10 +344,7 @@ describe('report workflows', () => {
 
   it('shows category changes for a complete date range', async () => {
     const { wrapper } = await mountPage('/reports?dateFrom=2026-08-01&dateTo=2026-08-31')
-    const comparisonSection = wrapper
-      .findAll('section')
-      .find((section) => section.find('h3').text() === 'Category comparison')
-    if (!comparisonSection) throw new Error('Category comparison section not found')
+    const comparisonSection = getSection(wrapper, 'Category comparison')
 
     expect(comparisonSection.text()).toContain('2026-08-01 to 2026-08-31')
     expect(comparisonSection.text()).toContain('$425.50')
