@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Displayed monthly spending totals newest first in a bounded, vertically scrollable list.
+- Limited vendor spending summaries to the five highest-spend vendors plus an aggregated `Other` row.
+
 ## [0.6.0] - 2026-08-08
 
 ### Added
