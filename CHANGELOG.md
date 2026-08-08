@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-08-08
+
 ### Added
 
 - Expanded local development seed data with paginated vendor and expense lists, multi-month reporting data, archived records, and downloadable proof fixtures.
