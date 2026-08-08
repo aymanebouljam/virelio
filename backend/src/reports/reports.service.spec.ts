@@ -263,4 +263,48 @@ describe('ReportsService', () => {
       select: { id: true, name: true },
     });
   });
+
+  it('exports filtered expenses as spreadsheet-safe CSV', async () => {
+    expenseFindManyMock.mockResolvedValueOnce([
+      {
+        description: '=SUM(A1:A2)',
+        amount: { toNumber: () => 80.5 },
+        currency: 'USD',
+        expenseDate: new Date('2026-06-21T00:00:00.000Z'),
+        notes: 'Line one,\n"quoted"',
+        vendor: { name: '+Atlas Office' },
+        category: null,
+      },
+    ]);
+
+    await expect(
+      service.exportExpensesCsv(userId, {
+        dateFrom: '2026-06-01',
+        dateTo: '2026-06-30',
+      }),
+    ).resolves.toBe(
+      '\uFEFF"Date","Description","Vendor","Category","Amount","Currency","Notes"\r\n' +
+        '"2026-06-21","\'=SUM(A1:A2)","\'+Atlas Office","Uncategorized","80.50","USD","Line one,\n""quoted"""',
+    );
+    expect(expenseFindManyMock).toHaveBeenCalledWith({
+      where: {
+        userId,
+        archivedAt: null,
+        expenseDate: {
+          gte: new Date('2026-06-01'),
+          lte: new Date('2026-06-30T23:59:59.999Z'),
+        },
+      },
+      select: {
+        description: true,
+        amount: true,
+        currency: true,
+        expenseDate: true,
+        notes: true,
+        vendor: { select: { name: true } },
+        category: { select: { name: true } },
+      },
+      orderBy: [{ expenseDate: 'desc' }, { id: 'desc' }],
+    });
+  });
 });
