@@ -49,6 +49,9 @@ const hasCategoryTotals = computed(() => (report.value?.categoryTotals.length ??
 const visibleCategoryTotals = computed(() =>
   summarizeCategoryTotals(report.value?.categoryTotals ?? []),
 )
+const visibleMonthlyTotals = computed(() =>
+  insights.value ? [...insights.value.monthlyTotals].reverse() : [],
+)
 const visibleVendorTotals = computed(() =>
   summarizeVendorTotals(insights.value?.vendorTotals ?? []),
 )
@@ -450,7 +453,7 @@ onMounted(() => loadReport(true))
 
           <div v-else class="mt-6 max-h-[32rem] space-y-3 overflow-y-auto pr-1">
             <div
-              v-for="month in insights.monthlyTotals"
+              v-for="month in visibleMonthlyTotals"
               :key="month.month"
               class="flex items-start justify-between gap-4 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4"
             >

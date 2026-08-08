@@ -311,6 +311,8 @@ describe('report workflows', () => {
       expect.arrayContaining(['max-h-[32rem]', 'overflow-y-auto']),
     )
     expect(monthlyTotals.element.children).toHaveLength(7)
+    expect(monthlyTotals.element.firstElementChild?.textContent).toContain('2026-07')
+    expect(monthlyTotals.element.lastElementChild?.textContent).toContain('2026-01')
     expect(vendorSection.text()).toContain('Vendor 5')
     expect(vendorSection.text()).toContain('Other')
     expect(vendorSection.text()).toContain('$300.00')
