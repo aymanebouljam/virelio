@@ -5,6 +5,13 @@ const amountSchema = z
   .trim()
   .regex(/^\d+(\.\d{1,2})?$/)
 
+const signedAmountSchema = z
+  .string()
+  .trim()
+  .regex(/^-?\d+(\.\d{1,2})?$/)
+
+const reportDateSchema = z.iso.date()
+
 const expenseRowSchema = z.object({
   id: z.string().trim().min(1),
   description: z.string().trim().min(1),
@@ -57,5 +64,28 @@ export const reportInsightsSchema = z.object({
   ),
 })
 
+const categoryComparisonPeriodSchema = z.object({
+  dateFrom: reportDateSchema,
+  dateTo: reportDateSchema,
+  totalAmount: amountSchema,
+  expenseCount: z.number().int().nonnegative(),
+})
+
+export const categoryComparisonSchema = z.object({
+  currentPeriod: categoryComparisonPeriodSchema,
+  previousPeriod: categoryComparisonPeriodSchema,
+  categories: z.array(
+    z.object({
+      categoryId: z.string().trim().min(1).nullable(),
+      categoryName: z.string().trim().min(1),
+      currentAmount: amountSchema,
+      previousAmount: amountSchema,
+      changeAmount: signedAmountSchema,
+      changePercentage: z.number().finite().nullable(),
+    }),
+  ),
+})
+
 export type ExpenseReport = z.infer<typeof expenseReportSchema>
 export type ReportInsights = z.infer<typeof reportInsightsSchema>
+export type CategoryComparison = z.infer<typeof categoryComparisonSchema>

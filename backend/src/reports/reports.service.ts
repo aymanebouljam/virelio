@@ -4,6 +4,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { GetExpenseReportQueryDto } from './dto/get-expense-report-query.dto';
 import { GetReportInsightsQueryDto } from './dto/get-report-insights-query.dto';
 import { GetReportDateRangeQueryDto } from './dto/get-report-date-range-query.dto';
+import { GetCategoryComparisonQueryDto } from './dto/get-category-comparison-query.dto';
 
 type ReportDateQuery = {
   dateFrom?: string;
@@ -62,6 +63,26 @@ export type ReportInsights = {
     vendorName: string;
     totalAmount: string;
     expenseCount: number;
+  }>;
+};
+
+type CategoryComparisonPeriod = {
+  dateFrom: string;
+  dateTo: string;
+  totalAmount: string;
+  expenseCount: number;
+};
+
+export type CategoryComparison = {
+  currentPeriod: CategoryComparisonPeriod;
+  previousPeriod: CategoryComparisonPeriod;
+  categories: Array<{
+    categoryId: string | null;
+    categoryName: string;
+    currentAmount: string;
+    previousAmount: string;
+    changeAmount: string;
+    changePercentage: number | null;
   }>;
 };
 
@@ -305,6 +326,134 @@ export class ReportsService {
       .join('\r\n')}`;
   }
 
+  async getCategoryComparison(
+    userId: string,
+    query: GetCategoryComparisonQueryDto,
+  ): Promise<CategoryComparison> {
+    const currentRange = this.buildExpenseDateRange(query);
+    if (!currentRange?.gte || !currentRange.lte) {
+      throw new Error('Category comparison requires a complete date range');
+    }
+
+    const periodDuration =
+      currentRange.lte.getTime() - currentRange.gte.getTime() + 1;
+    const previousRange = {
+      gte: new Date(currentRange.gte.getTime() - periodDuration),
+      lte: new Date(currentRange.gte.getTime() - 1),
+    };
+    const [currentGroups, previousGroups] = await Promise.all([
+      this.prisma.expense.groupBy({
+        by: ['categoryId'],
+        where: {
+          userId,
+          archivedAt: null,
+          expenseDate: currentRange,
+        },
+        _sum: { amount: true },
+        _count: { _all: true },
+      }),
+      this.prisma.expense.groupBy({
+        by: ['categoryId'],
+        where: {
+          userId,
+          archivedAt: null,
+          expenseDate: previousRange,
+        },
+        _sum: { amount: true },
+        _count: { _all: true },
+      }),
+    ]);
+    const categoryIds = [
+      ...new Set(
+        [...currentGroups, ...previousGroups].flatMap((group) =>
+          group.categoryId ? [group.categoryId] : [],
+        ),
+      ),
+    ];
+    const categories =
+      categoryIds.length > 0
+        ? await this.prisma.expenseCategory.findMany({
+            where: { userId, id: { in: categoryIds } },
+            select: { id: true, name: true },
+          })
+        : [];
+    const categoryNameById = new Map(
+      categories.map((category) => [category.id, category.name]),
+    );
+    const currentByCategory = new Map(
+      currentGroups.map((group) => [
+        group.categoryId,
+        {
+          amount: group._sum.amount?.toNumber() ?? 0,
+          expenseCount: group._count._all,
+        },
+      ]),
+    );
+    const previousByCategory = new Map(
+      previousGroups.map((group) => [
+        group.categoryId,
+        {
+          amount: group._sum.amount?.toNumber() ?? 0,
+          expenseCount: group._count._all,
+        },
+      ]),
+    );
+    const comparedCategoryIds = new Set([
+      ...currentByCategory.keys(),
+      ...previousByCategory.keys(),
+    ]);
+    const currentTotal = this.sumCategoryGroups(currentByCategory);
+    const previousTotal = this.sumCategoryGroups(previousByCategory);
+
+    return {
+      currentPeriod: {
+        dateFrom: query.dateFrom,
+        dateTo: query.dateTo,
+        totalAmount: currentTotal.amount.toFixed(2),
+        expenseCount: currentTotal.expenseCount,
+      },
+      previousPeriod: {
+        dateFrom: previousRange.gte.toISOString().slice(0, 10),
+        dateTo: previousRange.lte.toISOString().slice(0, 10),
+        totalAmount: previousTotal.amount.toFixed(2),
+        expenseCount: previousTotal.expenseCount,
+      },
+      categories: [...comparedCategoryIds]
+        .map((categoryId) => {
+          const currentAmount = currentByCategory.get(categoryId)?.amount ?? 0;
+          const previousAmount =
+            previousByCategory.get(categoryId)?.amount ?? 0;
+          const changeAmount = currentAmount - previousAmount;
+
+          return {
+            categoryId,
+            categoryName: this.resolveCategoryName(
+              categoryId,
+              categoryNameById,
+            ),
+            currentAmount,
+            previousAmount,
+            changeAmount,
+            changePercentage:
+              previousAmount === 0
+                ? null
+                : Number(((changeAmount / previousAmount) * 100).toFixed(1)),
+          };
+        })
+        .sort(
+          (left, right) =>
+            Math.abs(right.changeAmount) - Math.abs(left.changeAmount) ||
+            left.categoryName.localeCompare(right.categoryName),
+        )
+        .map((category) => ({
+          ...category,
+          currentAmount: category.currentAmount.toFixed(2),
+          previousAmount: category.previousAmount.toFixed(2),
+          changeAmount: category.changeAmount.toFixed(2),
+        })),
+    };
+  }
+
   private buildExpenseDateRange(
     query: ReportDateQuery,
   ): ExpenseDateRange | undefined {
@@ -389,6 +538,18 @@ export class ReportsService {
       : value;
 
     return `"${spreadsheetSafeValue.replaceAll('"', '""')}"`;
+  }
+
+  private sumCategoryGroups(
+    groups: Map<string | null, { amount: number; expenseCount: number }>,
+  ) {
+    return [...groups.values()].reduce(
+      (total, group) => ({
+        amount: total.amount + group.amount,
+        expenseCount: total.expenseCount + group.expenseCount,
+      }),
+      { amount: 0, expenseCount: 0 },
+    );
   }
 
   private resolveVendorName(

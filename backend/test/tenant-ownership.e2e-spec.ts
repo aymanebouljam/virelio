@@ -303,21 +303,30 @@ describe('Tenant ownership e2e', () => {
   it('returns dashboard and report aggregates only for the authenticated user', async () => {
     await createOwnerRecords();
 
-    const [dashboardResponse, reportResponse, insightsResponse] =
-      await Promise.all([
-        request(http)
-          .get('/dashboard/summary')
-          .set(otherUserHeaders)
-          .expect(HttpStatus.OK),
-        request(http)
-          .get('/reports/expenses')
-          .set(otherUserHeaders)
-          .expect(HttpStatus.OK),
-        request(http)
-          .get('/reports/insights')
-          .set(otherUserHeaders)
-          .expect(HttpStatus.OK),
-      ]);
+    const [
+      dashboardResponse,
+      reportResponse,
+      insightsResponse,
+      categoryComparisonResponse,
+    ] = await Promise.all([
+      request(http)
+        .get('/dashboard/summary')
+        .set(otherUserHeaders)
+        .expect(HttpStatus.OK),
+      request(http)
+        .get('/reports/expenses')
+        .set(otherUserHeaders)
+        .expect(HttpStatus.OK),
+      request(http)
+        .get('/reports/insights')
+        .set(otherUserHeaders)
+        .expect(HttpStatus.OK),
+      request(http)
+        .get('/reports/category-comparison')
+        .set(otherUserHeaders)
+        .query({ dateFrom: '2026-06-01', dateTo: '2026-06-30' })
+        .expect(HttpStatus.OK),
+    ]);
 
     expect(dashboardResponse.body).toMatchObject({
       totalSpend: '0.00',
@@ -347,6 +356,21 @@ describe('Tenant ownership e2e', () => {
     expect(insightsResponse.body).toEqual({
       monthlyTotals: [],
       vendorTotals: [],
+    });
+    expect(categoryComparisonResponse.body).toEqual({
+      currentPeriod: {
+        dateFrom: '2026-06-01',
+        dateTo: '2026-06-30',
+        totalAmount: '0.00',
+        expenseCount: 0,
+      },
+      previousPeriod: {
+        dateFrom: '2026-05-02',
+        dateTo: '2026-05-31',
+        totalAmount: '0.00',
+        expenseCount: 0,
+      },
+      categories: [],
     });
   });
 });

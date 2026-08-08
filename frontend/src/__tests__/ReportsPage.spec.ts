@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import type { RouteRecordRaw } from 'vue-router'
 import { ApiError } from '@/lib/api'
-import type { ExpenseReport, ReportInsights } from '@/lib/reports/schema'
+import type { CategoryComparison, ExpenseReport, ReportInsights } from '@/lib/reports/schema'
 import ReportsPage from '@/pages/ReportsPage.vue'
 import { mountWithRouter } from './test-mount'
 
@@ -20,6 +20,8 @@ const reportsApi = vi.hoisted(() => ({
     vi.fn<(filters?: { dateFrom?: string; dateTo?: string }) => Promise<ReportInsights>>(),
   downloadExpenseReportCsv:
     vi.fn<(filters?: { dateFrom?: string; dateTo?: string }) => Promise<Blob>>(),
+  fetchCategoryComparison:
+    vi.fn<(filters: { dateFrom: string; dateTo: string }) => Promise<CategoryComparison>>(),
 }))
 
 vi.mock('@/lib/reports/api', () => reportsApi)
@@ -105,6 +107,38 @@ const insights: ReportInsights = {
     },
   ],
 }
+const comparison: CategoryComparison = {
+  currentPeriod: {
+    dateFrom: '2026-08-01',
+    dateTo: '2026-08-31',
+    totalAmount: '425.50',
+    expenseCount: 3,
+  },
+  previousPeriod: {
+    dateFrom: '2026-07-01',
+    dateTo: '2026-07-31',
+    totalAmount: '225.50',
+    expenseCount: 2,
+  },
+  categories: [
+    {
+      categoryId: 'category-1',
+      categoryName: 'Travel',
+      currentAmount: '300.00',
+      previousAmount: '100.00',
+      changeAmount: '200.00',
+      changePercentage: 200,
+    },
+    {
+      categoryId: 'category-2',
+      categoryName: 'Meals',
+      currentAmount: '125.50',
+      previousAmount: '0.00',
+      changeAmount: '125.50',
+      changePercentage: null,
+    },
+  ],
+}
 
 function emptyReport(): ExpenseReport {
   return {
@@ -171,6 +205,7 @@ describe('report workflows', () => {
     vi.resetAllMocks()
     reportsApi.fetchExpenseReport.mockResolvedValue(report)
     reportsApi.fetchReportInsights.mockResolvedValue(insights)
+    reportsApi.fetchCategoryComparison.mockResolvedValue(comparison)
   })
 
   it('shows loading before rendering totals, category groups, and expense rows', async () => {
@@ -222,6 +257,7 @@ describe('report workflows', () => {
     expect(wrapper.text()).toContain('No matching expenses')
     expect(wrapper.text()).toContain('No monthly totals')
     expect(wrapper.text()).toContain('No vendor totals')
+    expect(wrapper.text()).toContain('Select both dates to compare category spending.')
   })
 
   it('shows five category totals plus Other while preserving the category count', async () => {
@@ -259,9 +295,40 @@ describe('report workflows', () => {
 
     expect(reportsApi.fetchExpenseReport).toHaveBeenCalledWith({ ...filters, ...firstPageQuery })
     expect(reportsApi.fetchReportInsights).toHaveBeenCalledWith(filters)
+    expect(reportsApi.fetchCategoryComparison).toHaveBeenCalledWith(filters)
     expect(wrapper.get('fieldset legend').text()).toBe('Report date range')
     expect(wrapper.get('#report-date-from').element).toHaveProperty('value', filters.dateFrom)
     expect(wrapper.get('#report-date-to').element).toHaveProperty('value', filters.dateTo)
+  })
+
+  it('shows category changes for a complete date range', async () => {
+    const { wrapper } = await mountPage('/reports?dateFrom=2026-08-01&dateTo=2026-08-31')
+    const comparisonSection = wrapper
+      .findAll('section')
+      .find((section) => section.find('h3').text() === 'Category comparison')
+    if (!comparisonSection) throw new Error('Category comparison section not found')
+
+    expect(comparisonSection.text()).toContain('2026-08-01 to 2026-08-31')
+    expect(comparisonSection.text()).toContain('$425.50')
+    expect(comparisonSection.text()).toContain('2026-07-01 to 2026-07-31')
+    expect(comparisonSection.text()).toContain('$225.50')
+    expect(comparisonSection.text()).toContain('Travel')
+    expect(comparisonSection.text()).toContain('$200.00')
+    expect(comparisonSection.text()).toContain('· 200%')
+    expect(comparisonSection.text()).toContain('Meals')
+    expect(comparisonSection.text()).toContain('$125.50')
+    expect(comparisonSection.text()).toContain('· New')
+  })
+
+  it('shows an empty comparison for periods without category activity', async () => {
+    reportsApi.fetchCategoryComparison.mockResolvedValue({
+      ...comparison,
+      categories: [],
+    })
+
+    const { wrapper } = await mountPage('/reports?dateFrom=2026-08-01&dateTo=2026-08-31')
+
+    expect(wrapper.text()).toContain('No category activity to compare')
   })
 
   it('updates the URL and reloads when the date range changes', async () => {
@@ -279,6 +346,7 @@ describe('report workflows', () => {
       ...firstPageQuery,
     })
     expect(reportsApi.fetchReportInsights).toHaveBeenLastCalledWith(filters)
+    expect(reportsApi.fetchCategoryComparison).toHaveBeenLastCalledWith(filters)
   })
 
   it('clears the active date range', async () => {
@@ -299,6 +367,8 @@ describe('report workflows', () => {
       dateFrom: undefined,
       dateTo: undefined,
     })
+    expect(reportsApi.fetchCategoryComparison).toHaveBeenCalledTimes(1)
+    expect(wrapper.text()).toContain('Select both dates to compare category spending.')
   })
 
   it('loads report pages from the URL and navigates between them', async () => {

@@ -1,5 +1,5 @@
 import { apiConfig } from '../api'
-import type { ExpenseReport, ReportInsights } from './schema'
+import type { CategoryComparison, ExpenseReport, ReportInsights } from './schema'
 
 type ReportDateRangeParams = {
   dateFrom?: string
@@ -49,4 +49,12 @@ export async function downloadExpenseReportCsv(params: ReportDateRangeParams = {
     },
     responseType: 'blob',
   })) as Blob
+}
+
+export async function fetchCategoryComparison(params: Required<ReportDateRangeParams>) {
+  return (await apiConfig({
+    path: 'reports',
+    action: 'category-comparison',
+    queryParams: params,
+  })) as CategoryComparison
 }

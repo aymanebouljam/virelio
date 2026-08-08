@@ -4,6 +4,7 @@ import request from 'supertest';
 import type { PrismaService } from '../prisma/prisma.service';
 import { createTestApp, resetDatabase } from './test-app';
 import type {
+  CategoryComparison,
   ExpenseReport,
   ReportInsights,
 } from '../src/reports/reports.service';
@@ -472,6 +473,132 @@ describe('Reports e2e', () => {
         '"2026-06-21","Printer paper","Atlas Office Supplies","Uncategorized","80.50","USD","Office restock"',
       );
       expect(response.text).not.toContain('Excluded equipment');
+    });
+  });
+
+  describe('GET /reports/category-comparison', () => {
+    it('requires authentication', async () => {
+      await request(http)
+        .get('/reports/category-comparison')
+        .query({ dateFrom: '2026-06-01', dateTo: '2026-06-30' })
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+
+    it('requires both comparison dates', async () => {
+      const response = await request(http)
+        .get('/reports/category-comparison')
+        .set(authHeaders)
+        .expect(HttpStatus.BAD_REQUEST);
+      const error = response.body as ErrorResponse;
+
+      expect(error.message).toBe('Validation failed');
+      expect(error.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ field: 'dateFrom' }),
+          expect.objectContaining({ field: 'dateTo' }),
+        ]),
+      );
+    });
+
+    it('compares category totals with the preceding equal-length period', async () => {
+      const vendor = await createVendor({
+        name: 'Atlas Office Supplies',
+        email: 'contact@atlasoffice.com',
+        phone: '+212600000001',
+        website: 'https://atlasoffice.com',
+        notes: 'Office supplies vendor',
+      });
+      const travel = await createCategory({
+        name: 'Travel',
+        color: '#0f766e',
+      });
+      const meals = await createCategory({
+        name: 'Meals',
+        color: '#ea580c',
+      });
+
+      await createExpense({
+        vendorId: vendor.id,
+        categoryId: travel.id,
+        description: 'Excluded previous expense',
+        amount: 999,
+        expenseDate: '2026-05-01',
+      });
+      await createExpense({
+        vendorId: vendor.id,
+        categoryId: travel.id,
+        description: 'Previous travel',
+        amount: 200,
+        expenseDate: '2026-05-10',
+      });
+      await createExpense({
+        vendorId: vendor.id,
+        description: 'Previous uncategorized',
+        amount: 50,
+        expenseDate: '2026-05-20',
+      });
+      await createExpense({
+        vendorId: vendor.id,
+        categoryId: travel.id,
+        description: 'Current travel',
+        amount: 400,
+        expenseDate: '2026-06-10',
+      });
+      await createExpense({
+        vendorId: vendor.id,
+        categoryId: meals.id,
+        description: 'Current meals',
+        amount: 100,
+        expenseDate: '2026-06-20',
+      });
+
+      const response = await request(http)
+        .get('/reports/category-comparison')
+        .set(authHeaders)
+        .query({ dateFrom: '2026-06-01', dateTo: '2026-06-30' })
+        .expect(HttpStatus.OK);
+      const comparison = response.body as CategoryComparison;
+
+      expect(comparison).toEqual({
+        currentPeriod: {
+          dateFrom: '2026-06-01',
+          dateTo: '2026-06-30',
+          totalAmount: '500.00',
+          expenseCount: 2,
+        },
+        previousPeriod: {
+          dateFrom: '2026-05-02',
+          dateTo: '2026-05-31',
+          totalAmount: '250.00',
+          expenseCount: 2,
+        },
+        categories: [
+          {
+            categoryId: travel.id,
+            categoryName: 'Travel',
+            currentAmount: '400.00',
+            previousAmount: '200.00',
+            changeAmount: '200.00',
+            changePercentage: 100,
+          },
+          {
+            categoryId: meals.id,
+            categoryName: 'Meals',
+            currentAmount: '100.00',
+            previousAmount: '0.00',
+            changeAmount: '100.00',
+            changePercentage: null,
+          },
+          {
+            categoryId: null,
+            categoryName: 'Uncategorized',
+            currentAmount: '0.00',
+            previousAmount: '50.00',
+            changeAmount: '-50.00',
+            changePercentage: -100,
+          },
+        ],
+      });
     });
   });
 });

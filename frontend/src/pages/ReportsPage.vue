@@ -4,13 +4,16 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ApiError } from '@/lib/api'
 import {
   downloadExpenseReportCsv,
+  fetchCategoryComparison,
   fetchExpenseReport,
   fetchReportInsights,
 } from '@/lib/reports/api'
 import { summarizeCategoryTotals } from '@/lib/reports/category-totals'
 import {
+  categoryComparisonSchema,
   expenseReportSchema,
   reportInsightsSchema,
+  type CategoryComparison,
   type ExpenseReport,
   type ReportInsights,
 } from '@/lib/reports/schema'
@@ -22,6 +25,7 @@ const PAGE_SIZE = 4
 
 const report = ref<ExpenseReport | null>(null)
 const insights = ref<ReportInsights | null>(null)
+const categoryComparison = ref<CategoryComparison | null>(null)
 const loading = ref(true)
 const error = ref('')
 const dateRangeError = ref('')
@@ -37,6 +41,8 @@ const dateTo = computed(() => {
   const value = route.query.dateTo
   return typeof value === 'string' ? value : undefined
 })
+
+const hasCompleteDateRange = computed(() => Boolean(dateFrom.value && dateTo.value))
 
 const hasExpenses = computed(() => (report.value?.expenses.items.length ?? 0) > 0)
 const hasCategoryTotals = computed(() => (report.value?.categoryTotals.length ?? 0) > 0)
@@ -75,13 +81,18 @@ async function loadReport(includeInsights: boolean) {
       dateFrom: dateFrom.value,
       dateTo: dateTo.value,
     }
-    const [reportResponse, insightsResponse] = await Promise.all([
+    const comparisonFilters =
+      dateFrom.value && dateTo.value ? { dateFrom: dateFrom.value, dateTo: dateTo.value } : null
+    const [reportResponse, insightsResponse, categoryComparisonResponse] = await Promise.all([
       fetchExpenseReport({
         ...filters,
         page: requestedPage,
         pageSize: PAGE_SIZE,
       }),
       includeInsights ? fetchReportInsights(filters) : Promise.resolve(null),
+      includeInsights && comparisonFilters
+        ? fetchCategoryComparison(comparisonFilters)
+        : Promise.resolve(null),
     ])
     const result = expenseReportSchema.safeParse(reportResponse)
 
@@ -98,6 +109,20 @@ async function loadReport(includeInsights: boolean) {
       }
 
       insights.value = insightsResult.data
+    }
+
+    if (includeInsights) {
+      if (categoryComparisonResponse) {
+        const comparisonResult = categoryComparisonSchema.safeParse(categoryComparisonResponse)
+        if (!comparisonResult.success) {
+          error.value = 'Failed to validate category comparison'
+          return
+        }
+
+        categoryComparison.value = comparisonResult.data
+      } else {
+        categoryComparison.value = null
+      }
     }
 
     const lastPage = Math.max(result.data.expenses.pagination.totalPages, 1)
@@ -322,6 +347,89 @@ onMounted(() => loadReport(true))
           </p>
         </article>
       </div>
+
+      <section class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
+        <h3 class="text-lg font-semibold tracking-tight text-stone-900">Category comparison</h3>
+        <p class="mt-1 text-sm text-stone-500">
+          Compare the selected period with the immediately preceding period of the same length.
+        </p>
+
+        <div
+          v-if="!hasCompleteDateRange"
+          class="mt-6 rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-10 text-center"
+        >
+          <p class="text-sm font-medium text-stone-600">
+            Select both dates to compare category spending.
+          </p>
+        </div>
+
+        <template v-else-if="categoryComparison">
+          <div class="mt-6 grid gap-3 sm:grid-cols-2">
+            <article class="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4">
+              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-stone-400">
+                Selected period
+              </p>
+              <p class="mt-2 text-sm text-stone-500">
+                {{ categoryComparison.currentPeriod.dateFrom }} to
+                {{ categoryComparison.currentPeriod.dateTo }}
+              </p>
+              <p class="mt-3 text-xl font-semibold text-stone-900">
+                ${{ formatAmount(categoryComparison.currentPeriod.totalAmount) }}
+              </p>
+            </article>
+
+            <article class="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4">
+              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-stone-400">
+                Previous period
+              </p>
+              <p class="mt-2 text-sm text-stone-500">
+                {{ categoryComparison.previousPeriod.dateFrom }} to
+                {{ categoryComparison.previousPeriod.dateTo }}
+              </p>
+              <p class="mt-3 text-xl font-semibold text-stone-900">
+                ${{ formatAmount(categoryComparison.previousPeriod.totalAmount) }}
+              </p>
+            </article>
+          </div>
+
+          <div
+            v-if="categoryComparison.categories.length === 0"
+            class="mt-6 rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-10 text-center"
+          >
+            <p class="text-sm font-medium text-stone-600">No category activity to compare</p>
+          </div>
+
+          <div v-else class="mt-6 max-h-[32rem] space-y-3 overflow-y-auto pr-1">
+            <div
+              v-for="category in categoryComparison.categories"
+              :key="category.categoryId ?? category.categoryName"
+              class="grid gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 sm:grid-cols-[1fr_auto_auto_auto] sm:items-center"
+            >
+              <p class="text-sm font-semibold text-stone-900">{{ category.categoryName }}</p>
+              <p class="text-xs text-stone-500">
+                Current
+                <span class="font-semibold text-stone-900">
+                  ${{ formatAmount(category.currentAmount) }}
+                </span>
+              </p>
+              <p class="text-xs text-stone-500">
+                Previous
+                <span class="font-semibold text-stone-900">
+                  ${{ formatAmount(category.previousAmount) }}
+                </span>
+              </p>
+              <p class="text-xs text-stone-500">
+                Change
+                <span class="font-semibold text-stone-900">
+                  ${{ formatAmount(category.changeAmount) }}
+                  <template v-if="category.changePercentage === null"> · New</template>
+                  <template v-else> · {{ category.changePercentage }}%</template>
+                </span>
+              </p>
+            </div>
+          </div>
+        </template>
+      </section>
 
       <div class="grid gap-6 xl:grid-cols-[0.85fr_1.25fr]">
         <section class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">

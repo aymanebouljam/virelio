@@ -2,6 +2,7 @@ import { Controller, Get, Header, Query, UseGuards } from '@nestjs/common';
 import { GetExpenseReportQueryDto } from './dto/get-expense-report-query.dto';
 import { GetReportInsightsQueryDto } from './dto/get-report-insights-query.dto';
 import { GetReportDateRangeQueryDto } from './dto/get-report-date-range-query.dto';
+import { GetCategoryComparisonQueryDto } from './dto/get-category-comparison-query.dto';
 import { ReportsService } from './reports.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -28,6 +29,14 @@ export class ReportsController {
     @Query() query: GetReportDateRangeQueryDto,
   ) {
     return this.reportsService.exportExpensesCsv(user.sub, query);
+  }
+
+  @Get('category-comparison')
+  getCategoryComparison(
+    @CurrentUser() user: JwtUser,
+    @Query() query: GetCategoryComparisonQueryDto,
+  ) {
+    return this.reportsService.getCategoryComparison(user.sub, query);
   }
 
   @Get('insights')

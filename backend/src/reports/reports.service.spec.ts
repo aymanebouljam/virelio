@@ -307,4 +307,109 @@ describe('ReportsService', () => {
       orderBy: [{ expenseDate: 'desc' }, { id: 'desc' }],
     });
   });
+
+  it('compares category spending with the preceding equal-length period', async () => {
+    expenseGroupByMock
+      .mockResolvedValueOnce([
+        {
+          categoryId: 'category-travel',
+          _sum: { amount: { toNumber: () => 400 } },
+          _count: { _all: 2 },
+        },
+        {
+          categoryId: 'category-meals',
+          _sum: { amount: { toNumber: () => 100 } },
+          _count: { _all: 1 },
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          categoryId: 'category-travel',
+          _sum: { amount: { toNumber: () => 200 } },
+          _count: { _all: 1 },
+        },
+        {
+          categoryId: null,
+          _sum: { amount: { toNumber: () => 50 } },
+          _count: { _all: 1 },
+        },
+      ]);
+    categoryFindManyMock.mockResolvedValueOnce([
+      { id: 'category-travel', name: 'Travel' },
+      { id: 'category-meals', name: 'Meals' },
+    ]);
+
+    await expect(
+      service.getCategoryComparison(userId, {
+        dateFrom: '2026-06-01',
+        dateTo: '2026-06-30',
+      }),
+    ).resolves.toEqual({
+      currentPeriod: {
+        dateFrom: '2026-06-01',
+        dateTo: '2026-06-30',
+        totalAmount: '500.00',
+        expenseCount: 3,
+      },
+      previousPeriod: {
+        dateFrom: '2026-05-02',
+        dateTo: '2026-05-31',
+        totalAmount: '250.00',
+        expenseCount: 2,
+      },
+      categories: [
+        {
+          categoryId: 'category-travel',
+          categoryName: 'Travel',
+          currentAmount: '400.00',
+          previousAmount: '200.00',
+          changeAmount: '200.00',
+          changePercentage: 100,
+        },
+        {
+          categoryId: 'category-meals',
+          categoryName: 'Meals',
+          currentAmount: '100.00',
+          previousAmount: '0.00',
+          changeAmount: '100.00',
+          changePercentage: null,
+        },
+        {
+          categoryId: null,
+          categoryName: 'Uncategorized',
+          currentAmount: '0.00',
+          previousAmount: '50.00',
+          changeAmount: '-50.00',
+          changePercentage: -100,
+        },
+      ],
+    });
+
+    expect(expenseGroupByMock).toHaveBeenNthCalledWith(1, {
+      by: ['categoryId'],
+      where: {
+        userId,
+        archivedAt: null,
+        expenseDate: {
+          gte: new Date('2026-06-01'),
+          lte: new Date('2026-06-30T23:59:59.999Z'),
+        },
+      },
+      _sum: { amount: true },
+      _count: { _all: true },
+    });
+    expect(expenseGroupByMock).toHaveBeenNthCalledWith(2, {
+      by: ['categoryId'],
+      where: {
+        userId,
+        archivedAt: null,
+        expenseDate: {
+          gte: new Date('2026-05-02'),
+          lte: new Date('2026-05-31T23:59:59.999Z'),
+        },
+      },
+      _sum: { amount: true },
+      _count: { _all: true },
+    });
+  });
 });
