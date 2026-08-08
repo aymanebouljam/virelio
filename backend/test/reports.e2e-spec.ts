@@ -3,7 +3,10 @@ import type { Server } from 'node:http';
 import request from 'supertest';
 import type { PrismaService } from '../prisma/prisma.service';
 import { createTestApp, resetDatabase } from './test-app';
-import type { ExpenseReport } from '../src/reports/reports.service';
+import type {
+  ExpenseReport,
+  ReportInsights,
+} from '../src/reports/reports.service';
 import { rm } from 'node:fs/promises';
 import { getUploadsRoot } from '../src/proofs/proofs-paths';
 import { createAuth } from './test-auth';
@@ -345,6 +348,82 @@ describe('Reports e2e', () => {
       expect(error.errors).toEqual(
         expect.arrayContaining([expect.objectContaining({ field })]),
       );
+    });
+  });
+
+  describe('GET /reports/insights', () => {
+    it('requires authentication', async () => {
+      await request(http)
+        .get('/reports/insights')
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+
+    it('returns date-filtered monthly and vendor spending totals', async () => {
+      const atlas = await createVendor({
+        name: 'Atlas Office Supplies',
+        email: 'contact@atlasoffice.com',
+        phone: '+212600000001',
+        website: 'https://atlasoffice.com',
+        notes: 'Office supplies vendor',
+      });
+      const transport = await createVendor({
+        name: 'City Transport',
+        email: 'contact@citytransport.com',
+        phone: '+212600000002',
+        website: 'https://citytransport.com',
+        notes: 'Transport vendor',
+      });
+
+      await createExpense({
+        vendorId: atlas.id,
+        description: 'Excluded equipment',
+        amount: 1000,
+        expenseDate: '2026-04-30',
+      });
+      await createExpense({
+        vendorId: atlas.id,
+        description: 'Printer paper',
+        amount: 80.5,
+        expenseDate: '2026-05-20',
+      });
+      await createExpense({
+        vendorId: atlas.id,
+        description: 'Notebooks',
+        amount: 50,
+        expenseDate: '2026-06-10',
+      });
+      await createExpense({
+        vendorId: transport.id,
+        description: 'Airport transfer',
+        amount: 220,
+        expenseDate: '2026-06-21',
+      });
+
+      const response = await request(http)
+        .get('/reports/insights')
+        .set(authHeaders)
+        .query({ dateFrom: '2026-05-01', dateTo: '2026-06-30' })
+        .expect(HttpStatus.OK);
+      const insights = response.body as ReportInsights;
+
+      expect(insights.monthlyTotals).toEqual([
+        { month: '2026-05', totalAmount: '80.50', expenseCount: 1 },
+        { month: '2026-06', totalAmount: '270.00', expenseCount: 2 },
+      ]);
+      expect(insights.vendorTotals).toEqual([
+        {
+          vendorId: transport.id,
+          vendorName: 'City Transport',
+          totalAmount: '220.00',
+          expenseCount: 1,
+        },
+        {
+          vendorId: atlas.id,
+          vendorName: 'Atlas Office Supplies',
+          totalAmount: '130.50',
+          expenseCount: 2,
+        },
+      ]);
     });
   });
 });
