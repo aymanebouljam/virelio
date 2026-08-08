@@ -8,7 +8,7 @@ import {
   fetchExpenseReport,
   fetchReportInsights,
 } from '@/lib/reports/api'
-import { summarizeCategoryTotals } from '@/lib/reports/category-totals'
+import { summarizeCategoryTotals, summarizeVendorTotals } from '@/lib/reports/category-totals'
 import {
   categoryComparisonSchema,
   expenseReportSchema,
@@ -48,6 +48,9 @@ const hasExpenses = computed(() => (report.value?.expenses.items.length ?? 0) > 
 const hasCategoryTotals = computed(() => (report.value?.categoryTotals.length ?? 0) > 0)
 const visibleCategoryTotals = computed(() =>
   summarizeCategoryTotals(report.value?.categoryTotals ?? []),
+)
+const visibleVendorTotals = computed(() =>
+  summarizeVendorTotals(insights.value?.vendorTotals ?? []),
 )
 
 function readPageQuery() {
@@ -445,7 +448,7 @@ onMounted(() => loadReport(true))
             <p class="text-sm font-medium text-stone-600">No monthly totals</p>
           </div>
 
-          <div v-else class="mt-6 space-y-3">
+          <div v-else class="mt-6 max-h-[32rem] space-y-3 overflow-y-auto pr-1">
             <div
               v-for="month in insights.monthlyTotals"
               :key="month.month"
@@ -479,7 +482,7 @@ onMounted(() => loadReport(true))
 
           <div v-else class="mt-6 space-y-3">
             <div
-              v-for="vendor in insights.vendorTotals"
+              v-for="vendor in visibleVendorTotals"
               :key="vendor.vendorId"
               class="flex items-start justify-between gap-4 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4"
             >
