@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import type { RouteRecordRaw } from 'vue-router'
 import { ApiError } from '@/lib/api'
-import type { ExpenseReport } from '@/lib/reports/schema'
+import type { ExpenseReport, ReportInsights } from '@/lib/reports/schema'
 import ReportsPage from '@/pages/ReportsPage.vue'
 import { mountWithRouter } from './test-mount'
 
@@ -16,6 +16,8 @@ const reportsApi = vi.hoisted(() => ({
         pageSize?: number
       }) => Promise<ExpenseReport>
     >(),
+  fetchReportInsights:
+    vi.fn<(filters?: { dateFrom?: string; dateTo?: string }) => Promise<ReportInsights>>(),
 }))
 
 vi.mock('@/lib/reports/api', () => reportsApi)
@@ -81,6 +83,26 @@ const report: ExpenseReport = {
 }
 
 const firstPageQuery = { page: 1, pageSize: 4 }
+const insights: ReportInsights = {
+  monthlyTotals: [
+    { month: '2026-07', totalAmount: '125.50', expenseCount: 1 },
+    { month: '2026-08', totalAmount: '300.00', expenseCount: 2 },
+  ],
+  vendorTotals: [
+    {
+      vendorId: 'vendor-1',
+      vendorName: 'Atlas Supplies',
+      totalAmount: '300.00',
+      expenseCount: 2,
+    },
+    {
+      vendorId: 'vendor-2',
+      vendorName: 'Nova Services',
+      totalAmount: '125.50',
+      expenseCount: 1,
+    },
+  ],
+}
 
 function emptyReport(): ExpenseReport {
   return {
@@ -140,13 +162,20 @@ describe('report workflows', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     reportsApi.fetchExpenseReport.mockResolvedValue(report)
+    reportsApi.fetchReportInsights.mockResolvedValue(insights)
   })
 
   it('shows loading before rendering totals, category groups, and expense rows', async () => {
     let resolveReport!: (report: ExpenseReport) => void
+    let resolveInsights!: (insights: ReportInsights) => void
     reportsApi.fetchExpenseReport.mockReturnValue(
       new Promise<ExpenseReport>((resolve) => {
         resolveReport = resolve
+      }),
+    )
+    reportsApi.fetchReportInsights.mockReturnValue(
+      new Promise<ReportInsights>((resolve) => {
+        resolveInsights = resolve
       }),
     )
 
@@ -155,6 +184,7 @@ describe('report workflows', () => {
     expect(wrapper.get('[role="status"]').attributes('aria-label')).toBe('Loading expense report')
 
     resolveReport(report)
+    resolveInsights(insights)
     await flushPromises()
 
     expect(getMetric(wrapper, 'Total amount').text()).toContain('$425.50')
@@ -167,16 +197,23 @@ describe('report workflows', () => {
     expect(wrapper.text()).toContain('Office supplies')
     expect(wrapper.find('a[href="/expenses/expense-1"]').exists()).toBe(true)
     expect(wrapper.find('a[href="/expenses/expense-2"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Monthly spending')
+    expect(wrapper.text()).toContain('2026-07')
+    expect(wrapper.text()).toContain('Vendor spending')
+    expect(wrapper.text()).toContain('Nova Services')
   })
 
   it('renders empty report sections', async () => {
     reportsApi.fetchExpenseReport.mockResolvedValue(emptyReport())
+    reportsApi.fetchReportInsights.mockResolvedValue({ monthlyTotals: [], vendorTotals: [] })
 
     const { wrapper } = await mountPage()
 
     expect(getMetric(wrapper, 'Total amount').text()).toContain('$0.00')
     expect(wrapper.text()).toContain('No category totals')
     expect(wrapper.text()).toContain('No matching expenses')
+    expect(wrapper.text()).toContain('No monthly totals')
+    expect(wrapper.text()).toContain('No vendor totals')
   })
 
   it('shows five category totals plus Other while preserving the category count', async () => {
@@ -213,6 +250,7 @@ describe('report workflows', () => {
     const { wrapper } = await mountPage('/reports?dateFrom=2026-08-01&dateTo=2026-08-31')
 
     expect(reportsApi.fetchExpenseReport).toHaveBeenCalledWith({ ...filters, ...firstPageQuery })
+    expect(reportsApi.fetchReportInsights).toHaveBeenCalledWith(filters)
     expect(wrapper.get('fieldset legend').text()).toBe('Report date range')
     expect(wrapper.get('#report-date-from').element).toHaveProperty('value', filters.dateFrom)
     expect(wrapper.get('#report-date-to').element).toHaveProperty('value', filters.dateTo)
@@ -232,6 +270,7 @@ describe('report workflows', () => {
       ...filters,
       ...firstPageQuery,
     })
+    expect(reportsApi.fetchReportInsights).toHaveBeenLastCalledWith(filters)
   })
 
   it('clears the active date range', async () => {
@@ -247,6 +286,10 @@ describe('report workflows', () => {
       dateFrom: undefined,
       dateTo: undefined,
       ...firstPageQuery,
+    })
+    expect(reportsApi.fetchReportInsights).toHaveBeenLastCalledWith({
+      dateFrom: undefined,
+      dateTo: undefined,
     })
   })
 
@@ -278,6 +321,7 @@ describe('report workflows', () => {
       page: 3,
       pageSize: 4,
     })
+    expect(reportsApi.fetchReportInsights).toHaveBeenCalledTimes(1)
   })
 
   it('redirects an out-of-range page to the final report page', async () => {

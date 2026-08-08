@@ -1,9 +1,12 @@
 import { apiConfig } from '../api'
-import type { ExpenseReport } from './schema'
+import type { ExpenseReport, ReportInsights } from './schema'
 
-type FetchExpenseReportParams = {
+type ReportDateRangeParams = {
   dateFrom?: string
   dateTo?: string
+}
+
+type FetchExpenseReportParams = ReportDateRangeParams & {
   page?: number
   pageSize?: number
 }
@@ -23,4 +26,15 @@ export async function fetchExpenseReport({
       pageSize,
     },
   })) as ExpenseReport
+}
+
+export async function fetchReportInsights(params: ReportDateRangeParams = {}) {
+  return (await apiConfig({
+    path: 'reports',
+    action: 'insights',
+    queryParams: {
+      ...(params.dateFrom ? { dateFrom: params.dateFrom } : {}),
+      ...(params.dateTo ? { dateTo: params.dateTo } : {}),
+    },
+  })) as ReportInsights
 }

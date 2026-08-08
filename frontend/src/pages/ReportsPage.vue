@@ -2,9 +2,14 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ApiError } from '@/lib/api'
-import { fetchExpenseReport } from '@/lib/reports/api'
+import { fetchExpenseReport, fetchReportInsights } from '@/lib/reports/api'
 import { summarizeCategoryTotals } from '@/lib/reports/category-totals'
-import { expenseReportSchema, type ExpenseReport } from '@/lib/reports/schema'
+import {
+  expenseReportSchema,
+  reportInsightsSchema,
+  type ExpenseReport,
+  type ReportInsights,
+} from '@/lib/reports/schema'
 import { formatAmount, formatDate } from '@/lib/helpers'
 
 const route = useRoute()
@@ -12,6 +17,7 @@ const router = useRouter()
 const PAGE_SIZE = 4
 
 const report = ref<ExpenseReport | null>(null)
+const insights = ref<ReportInsights | null>(null)
 const loading = ref(true)
 const error = ref('')
 const dateRangeError = ref('')
@@ -53,24 +59,39 @@ async function changePage(page: number) {
   await router.replace({ query })
 }
 
-async function loadReport() {
+async function loadReport(includeInsights: boolean) {
   try {
     error.value = ''
     dateRangeError.value = ''
 
     const requestedPage = readPageQuery()
-    const result = expenseReportSchema.safeParse(
-      await fetchExpenseReport({
-        dateFrom: dateFrom.value,
-        dateTo: dateTo.value,
+    const filters = {
+      dateFrom: dateFrom.value,
+      dateTo: dateTo.value,
+    }
+    const [reportResponse, insightsResponse] = await Promise.all([
+      fetchExpenseReport({
+        ...filters,
         page: requestedPage,
         pageSize: PAGE_SIZE,
       }),
-    )
+      includeInsights ? fetchReportInsights(filters) : Promise.resolve(null),
+    ])
+    const result = expenseReportSchema.safeParse(reportResponse)
 
     if (!result.success) {
       error.value = 'Failed to validate expense report'
       return
+    }
+
+    if (insightsResponse) {
+      const insightsResult = reportInsightsSchema.safeParse(insightsResponse)
+      if (!insightsResult.success) {
+        error.value = 'Failed to validate report insights'
+        return
+      }
+
+      insights.value = insightsResult.data
     }
 
     const lastPage = Math.max(result.data.expenses.pagination.totalPages, 1)
@@ -116,14 +137,15 @@ async function updateDateRange(next: { dateFrom?: string; dateTo?: string }) {
 }
 
 watch(
-  () => [dateFrom.value, dateTo.value, readPageQuery()],
-  () => {
+  () => [dateFrom.value, dateTo.value, readPageQuery()] as const,
+  ([nextDateFrom, nextDateTo], [previousDateFrom, previousDateTo]) => {
     loading.value = true
-    void loadReport()
+    const dateRangeChanged = nextDateFrom !== previousDateFrom || nextDateTo !== previousDateTo
+    void loadReport(dateRangeChanged)
   },
 )
 
-onMounted(loadReport)
+onMounted(() => loadReport(true))
 </script>
 
 <template>
@@ -253,6 +275,70 @@ onMounted(loadReport)
       </div>
 
       <div class="grid gap-6 xl:grid-cols-[0.85fr_1.25fr]">
+        <section class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
+          <h3 class="text-lg font-semibold tracking-tight text-stone-900">Monthly spending</h3>
+          <p class="mt-1 text-sm text-stone-500">
+            Spending totals by calendar month for the current report period.
+          </p>
+
+          <div
+            v-if="!insights?.monthlyTotals.length"
+            class="mt-6 rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-10 text-center"
+          >
+            <p class="text-sm font-medium text-stone-600">No monthly totals</p>
+          </div>
+
+          <div v-else class="mt-6 space-y-3">
+            <div
+              v-for="month in insights.monthlyTotals"
+              :key="month.month"
+              class="flex items-start justify-between gap-4 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4"
+            >
+              <div>
+                <p class="text-sm font-semibold text-stone-900">{{ month.month }}</p>
+                <p class="mt-1 text-xs text-stone-500">
+                  {{ month.expenseCount }} expense{{ month.expenseCount === 1 ? '' : 's' }}
+                </p>
+              </div>
+              <span class="shrink-0 text-sm font-semibold text-stone-900">
+                ${{ formatAmount(month.totalAmount) }}
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
+          <h3 class="text-lg font-semibold tracking-tight text-stone-900">Vendor spending</h3>
+          <p class="mt-1 text-sm text-stone-500">
+            Vendors ranked by total spend for the current report period.
+          </p>
+
+          <div
+            v-if="!insights?.vendorTotals.length"
+            class="mt-6 rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-10 text-center"
+          >
+            <p class="text-sm font-medium text-stone-600">No vendor totals</p>
+          </div>
+
+          <div v-else class="mt-6 space-y-3">
+            <div
+              v-for="vendor in insights.vendorTotals"
+              :key="vendor.vendorId"
+              class="flex items-start justify-between gap-4 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4"
+            >
+              <div>
+                <p class="text-sm font-semibold text-stone-900">{{ vendor.vendorName }}</p>
+                <p class="mt-1 text-xs text-stone-500">
+                  {{ vendor.expenseCount }} expense{{ vendor.expenseCount === 1 ? '' : 's' }}
+                </p>
+              </div>
+              <span class="shrink-0 text-sm font-semibold text-stone-900">
+                ${{ formatAmount(vendor.totalAmount) }}
+              </span>
+            </div>
+          </div>
+        </section>
+
         <section class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
           <h3 class="text-lg font-semibold tracking-tight text-stone-900">Category totals</h3>
           <p class="mt-1 text-sm text-stone-500">

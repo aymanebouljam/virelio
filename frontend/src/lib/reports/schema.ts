@@ -1,12 +1,14 @@
 import { z } from 'zod'
 
+const amountSchema = z
+  .string()
+  .trim()
+  .regex(/^\d+(\.\d{1,2})?$/)
+
 const expenseRowSchema = z.object({
   id: z.string().trim().min(1),
   description: z.string().trim().min(1),
-  amount: z
-    .string()
-    .trim()
-    .regex(/^\d+(\.\d{1,2})?$/),
+  amount: amountSchema,
   expenseDate: z.iso.datetime(),
   vendorId: z.string().trim().min(1),
   vendorName: z.string().trim().min(1),
@@ -16,19 +18,13 @@ const expenseRowSchema = z.object({
 })
 
 export const expenseReportSchema = z.object({
-  totalAmount: z
-    .string()
-    .trim()
-    .regex(/^\d+(\.\d{1,2})?$/),
+  totalAmount: amountSchema,
   expenseCount: z.number().int().nonnegative(),
   categoryTotals: z.array(
     z.object({
       categoryId: z.string().trim().min(1).nullable(),
       categoryName: z.string().trim().min(1),
-      totalAmount: z
-        .string()
-        .trim()
-        .regex(/^\d+(\.\d{1,2})?$/),
+      totalAmount: amountSchema,
       expenseCount: z.number().int().nonnegative(),
     }),
   ),
@@ -43,4 +39,23 @@ export const expenseReportSchema = z.object({
   }),
 })
 
+export const reportInsightsSchema = z.object({
+  monthlyTotals: z.array(
+    z.object({
+      month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+      totalAmount: amountSchema,
+      expenseCount: z.number().int().nonnegative(),
+    }),
+  ),
+  vendorTotals: z.array(
+    z.object({
+      vendorId: z.string().trim().min(1),
+      vendorName: z.string().trim().min(1),
+      totalAmount: amountSchema,
+      expenseCount: z.number().int().nonnegative(),
+    }),
+  ),
+})
+
 export type ExpenseReport = z.infer<typeof expenseReportSchema>
+export type ReportInsights = z.infer<typeof reportInsightsSchema>
