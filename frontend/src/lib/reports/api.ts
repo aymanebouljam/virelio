@@ -38,3 +38,15 @@ export async function fetchReportInsights(params: ReportDateRangeParams = {}) {
     },
   })) as ReportInsights
 }
+
+export async function downloadExpenseReportCsv(params: ReportDateRangeParams = {}) {
+  return (await apiConfig({
+    path: 'reports',
+    action: 'expenses.csv',
+    queryParams: {
+      ...(params.dateFrom ? { dateFrom: params.dateFrom } : {}),
+      ...(params.dateTo ? { dateTo: params.dateTo } : {}),
+    },
+    responseType: 'blob',
+  })) as Blob
+}

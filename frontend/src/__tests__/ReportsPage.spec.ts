@@ -18,6 +18,8 @@ const reportsApi = vi.hoisted(() => ({
     >(),
   fetchReportInsights:
     vi.fn<(filters?: { dateFrom?: string; dateTo?: string }) => Promise<ReportInsights>>(),
+  downloadExpenseReportCsv:
+    vi.fn<(filters?: { dateFrom?: string; dateTo?: string }) => Promise<Blob>>(),
 }))
 
 vi.mock('@/lib/reports/api', () => reportsApi)
@@ -150,6 +152,12 @@ function getMetric(wrapper: VueWrapper, label: string) {
   const metric = wrapper.findAll('article').find((candidate) => candidate.text().includes(label))
   if (!metric) throw new Error(`${label} metric not found`)
   return metric
+}
+
+function getButton(wrapper: VueWrapper, label: string) {
+  const button = wrapper.findAll('button').find((candidate) => candidate.text() === label)
+  if (!button) throw new Error(`${label} button not found`)
+  return button
 }
 
 async function mountPage(initialRoute = '/reports') {
@@ -308,10 +316,7 @@ describe('report workflows', () => {
       'Page 2 of 7 · 25 expenses',
     )
 
-    const nextButton = wrapper.findAll('button').find((button) => button.text() === 'Next')
-    if (!nextButton) throw new Error('Next page button not found')
-
-    await nextButton.trigger('click')
+    await getButton(wrapper, 'Next').trigger('click')
     await flushPromises()
 
     expect(router.currentRoute.value.query).toEqual({ page: '3' })
@@ -322,6 +327,35 @@ describe('report workflows', () => {
       pageSize: 4,
     })
     expect(reportsApi.fetchReportInsights).toHaveBeenCalledTimes(1)
+  })
+
+  it('downloads a CSV using the active date range', async () => {
+    const csv = new Blob(['Date,Description'], { type: 'text/csv' })
+    reportsApi.downloadExpenseReportCsv.mockResolvedValue(csv)
+    const createObjectUrl = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:report-csv')
+    const revokeObjectUrl = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
+    const filters = { dateFrom: '2026-08-01', dateTo: '2026-08-31' }
+    const { wrapper } = await mountPage('/reports?dateFrom=2026-08-01&dateTo=2026-08-31')
+
+    await getButton(wrapper, 'Export CSV').trigger('click')
+    await flushPromises()
+
+    expect(reportsApi.downloadExpenseReportCsv).toHaveBeenCalledExactlyOnceWith(filters)
+    expect(createObjectUrl).toHaveBeenCalledExactlyOnceWith(csv)
+    expect(click).toHaveBeenCalledOnce()
+    expect(revokeObjectUrl).toHaveBeenCalledExactlyOnceWith('blob:report-csv')
+  })
+
+  it('keeps the report visible when CSV export fails', async () => {
+    reportsApi.downloadExpenseReportCsv.mockRejectedValue(new ApiError('export unavailable'))
+    const { wrapper } = await mountPage()
+
+    await getButton(wrapper, 'Export CSV').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[role="alert"]').text()).toBe('Export unavailable')
+    expect(getMetric(wrapper, 'Total amount').text()).toContain('$425.50')
   })
 
   it('redirects an out-of-range page to the final report page', async () => {
