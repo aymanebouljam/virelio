@@ -13,12 +13,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - End-to-end coverage verifying repeated seed runs preserve database records and proof files.
 - URL-backed pagination for active expense-category management with six categories per page.
 - URL-backed pagination for detailed report expense rows with four expenses per page.
+- Date-filtered monthly spending totals and vendor spending rankings in expense reports.
+- Authenticated CSV export for every active expense matching the selected report period.
 
 ### Changed
 
 - Made development seeding repeatable without modifying the existing seed user or rewriting existing proof files.
 - Standardized active vendor and expense lists at six rows and dashboard recent activity at six entries.
 - Limited dashboard and report category summaries to five leading categories plus an aggregated `Other` row.
+- Reused shared date-range validation across report totals, insights, and CSV exports.
+
+### Security
+
+- Escaped CSV fields and neutralized spreadsheet formula prefixes in exported user-entered values.
 
 ## [0.4.0] - 2026-08-06
 
