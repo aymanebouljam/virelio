@@ -1,15 +1,8 @@
 import { Type } from 'class-transformer';
-import { IsDateString, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, Max, Min } from 'class-validator';
+import { GetReportDateRangeQueryDto } from './get-report-date-range-query.dto';
 
-export class GetExpenseReportQueryDto {
-  @IsOptional()
-  @IsDateString()
-  dateFrom?: string;
-
-  @IsOptional()
-  @IsDateString()
-  dateTo?: string;
-
+export class GetExpenseReportQueryDto extends GetReportDateRangeQueryDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt()
