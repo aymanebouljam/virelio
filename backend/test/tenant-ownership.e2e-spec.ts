@@ -303,16 +303,21 @@ describe('Tenant ownership e2e', () => {
   it('returns dashboard and report aggregates only for the authenticated user', async () => {
     await createOwnerRecords();
 
-    const [dashboardResponse, reportResponse] = await Promise.all([
-      request(http)
-        .get('/dashboard/summary')
-        .set(otherUserHeaders)
-        .expect(HttpStatus.OK),
-      request(http)
-        .get('/reports/expenses')
-        .set(otherUserHeaders)
-        .expect(HttpStatus.OK),
-    ]);
+    const [dashboardResponse, reportResponse, insightsResponse] =
+      await Promise.all([
+        request(http)
+          .get('/dashboard/summary')
+          .set(otherUserHeaders)
+          .expect(HttpStatus.OK),
+        request(http)
+          .get('/reports/expenses')
+          .set(otherUserHeaders)
+          .expect(HttpStatus.OK),
+        request(http)
+          .get('/reports/insights')
+          .set(otherUserHeaders)
+          .expect(HttpStatus.OK),
+      ]);
 
     expect(dashboardResponse.body).toMatchObject({
       totalSpend: '0.00',
@@ -338,6 +343,10 @@ describe('Tenant ownership e2e', () => {
           totalPages: 0,
         },
       },
+    });
+    expect(insightsResponse.body).toEqual({
+      monthlyTotals: [],
+      vendorTotals: [],
     });
   });
 });
