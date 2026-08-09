@@ -32,7 +32,10 @@ async function logout() {
           </p>
         </div>
 
-        <nav aria-label="Primary navigation" class="mt-8 flex gap-2 lg:flex-col">
+        <nav
+          aria-label="Primary navigation"
+          class="mt-8 flex flex-wrap gap-2 lg:flex-col lg:flex-nowrap"
+        >
           <RouterLink
             to="/"
             class="rounded-2xl px-4 py-3 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
@@ -83,6 +86,20 @@ async function logout() {
             active-class="bg-stone-900 text-white hover:bg-stone-900 hover:text-white"
           >
             Archived Expenses
+          </RouterLink>
+          <RouterLink
+            to="/recurring-expenses"
+            class="rounded-2xl px-4 py-3 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
+            active-class="bg-stone-900 text-white hover:bg-stone-900 hover:text-white"
+          >
+            Recurring Expenses
+          </RouterLink>
+          <RouterLink
+            to="/recurring-expenses/archived"
+            class="rounded-2xl px-4 py-3 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
+            active-class="bg-stone-900 text-white hover:bg-stone-900 hover:text-white"
+          >
+            Archived Recurring
           </RouterLink>
           <RouterLink
             to="/reports"
