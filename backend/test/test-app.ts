@@ -30,6 +30,7 @@ export async function createTestApp(): Promise<TestApp> {
 export async function resetDatabase(prisma: PrismaService) {
   await prisma.proofDocument.deleteMany();
   await prisma.expense.deleteMany();
+  await prisma.recurringExpenseTemplate.deleteMany();
   await prisma.expenseCategory.deleteMany();
   await prisma.vendor.deleteMany();
   await prisma.user.deleteMany();
