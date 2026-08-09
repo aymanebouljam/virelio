@@ -39,7 +39,7 @@ export type RecurringExpenseUpdatePayload = Partial<
   notes?: string | null
 }
 
-export const recurringExpenseTemplateSchema = z.object({
+export const recurringExpenseRecordSchema = z.object({
   id: z.string().trim().min(1),
   vendorId: z.string().trim().min(1),
   categoryId: z.string().trim().nullable(),
@@ -55,6 +55,11 @@ export const recurringExpenseTemplateSchema = z.object({
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
   archivedAt: z.iso.datetime().nullable(),
+})
+
+export type RecurringExpenseRecord = z.infer<typeof recurringExpenseRecordSchema>
+
+export const recurringExpenseTemplateSchema = recurringExpenseRecordSchema.extend({
   vendor: vendorSchema,
   category: expenseCategorySchema.nullable(),
 })

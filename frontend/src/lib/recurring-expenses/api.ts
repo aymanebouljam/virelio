@@ -2,6 +2,7 @@ import { apiConfig, type PaginatedResponse } from '../api'
 import type { Expense } from '../expenses/schema'
 import type {
   RecurringExpensePayload,
+  RecurringExpenseRecord,
   RecurringExpenseTemplate,
   RecurringExpenseUpdatePayload,
 } from './schema'
@@ -55,7 +56,7 @@ export async function archiveRecurringExpense(id: string) {
     method: 'PATCH',
     id,
     action: 'archive',
-  })) as RecurringExpenseTemplate
+  })) as RecurringExpenseRecord
 }
 
 export async function restoreRecurringExpense(id: string) {
@@ -64,7 +65,7 @@ export async function restoreRecurringExpense(id: string) {
     method: 'PATCH',
     id,
     action: 'restore',
-  })) as RecurringExpenseTemplate
+  })) as RecurringExpenseRecord
 }
 
 export async function generateRecurringExpense(id: string) {
