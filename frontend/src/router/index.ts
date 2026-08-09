@@ -12,6 +12,8 @@ import ReportsPage from '@/pages/ReportsPage.vue'
 import RegisterPage from '@/pages/RegisterPage.vue'
 import LoginPage from '@/pages/LoginPage.vue'
 import ProfileSettingsPage from '@/pages/ProfileSettingsPage.vue'
+import RecurringExpensesPage from '@/pages/RecurringExpensesPage.vue'
+import ArchivedRecurringExpensesPage from '@/pages/ArchivedRecurringExpensesPage.vue'
 import { clearAccessToken, currentUser, isAuthenticated } from '@/lib/auth/storage'
 import { fetchCurrentUser } from '@/lib/auth/api'
 import { ApiError } from '@/lib/api'
@@ -77,6 +79,18 @@ const router = createRouter({
       path: '/reports',
       name: 'reports',
       component: ReportsPage,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/recurring-expenses',
+      name: 'recurringExpenses',
+      component: RecurringExpensesPage,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/recurring-expenses/archived',
+      name: 'recurringExpensesArchived',
+      component: ArchivedRecurringExpensesPage,
       meta: { requiresAuth: true },
     },
     {
