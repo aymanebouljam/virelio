@@ -10,6 +10,7 @@ import { ProofsModule } from './proofs/proofs.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ReportsModule } from './reports/reports.module';
 import { AuthModule } from './auth/auth.module';
+import { RecurringExpenseTemplatesModule } from './recurring-expenses/recurring-expense-templates.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AuthModule } from './auth/auth.module';
     DashboardModule,
     ReportsModule,
     AuthModule,
+    RecurringExpenseTemplatesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
