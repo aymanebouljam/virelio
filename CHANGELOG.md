@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Tenant-scoped weekly, monthly, and yearly recurring expense templates.
+- Six-item pagination and due-date ordering for active recurring expense schedules.
+- Recurring expense creation, editing, archival, restoration, and permanent removal workflows.
+- Atomic generation of linked expenses when recurring templates become due, including automatic schedule advancement.
+- Active and archived recurring-expense frontend pages with form validation, due-state indicators, and component integration coverage.
+
 ### Changed
 
 - Displayed monthly spending totals newest first in a bounded, vertically scrollable list.
