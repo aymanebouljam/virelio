@@ -8,6 +8,12 @@ datasource db {
   provider = "postgresql"
 }
 
+enum RecurrenceFrequency {
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
 // Models
 model Vendor {
   id         String    @id @default(uuid()) @db.Uuid
@@ -20,9 +26,10 @@ model Vendor {
   updatedAt  DateTime  @updatedAt
   archivedAt DateTime?
 
-  expenses Expense[]
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId   String    @db.Uuid
+  expenses                  Expense[]
+  recurringExpenseTemplates RecurringExpenseTemplate[]
+  user                      User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                    String                     @db.Uuid
 
   @@unique([userId, name])
   @@unique([userId, email])
@@ -38,32 +45,60 @@ model ExpenseCategory {
   updatedAt  DateTime  @updatedAt
   archivedAt DateTime?
 
-  expenses Expense[]
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId   String    @db.Uuid
+  expenses                  Expense[]
+  recurringExpenseTemplates RecurringExpenseTemplate[]
+  user                      User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                    String                     @db.Uuid
 
   @@unique([userId, name])
 }
 
 model Expense {
-  id          String    @id @default(uuid()) @db.Uuid
-  vendorId    String    @db.Uuid
-  categoryId  String?   @db.Uuid
-  description String
-  amount      Decimal   @db.Decimal(12, 2)
-  currency    String    @default("USD")
-  expenseDate DateTime
-  notes       String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  archivedAt  DateTime?
+  id                         String    @id @default(uuid()) @db.Uuid
+  vendorId                   String    @db.Uuid
+  categoryId                 String?   @db.Uuid
+  description                String
+  amount                     Decimal   @db.Decimal(12, 2)
+  currency                   String    @default("USD")
+  expenseDate                DateTime
+  notes                      String?
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+  archivedAt                 DateTime?
+  recurringExpenseTemplateId String?   @db.Uuid
 
   proofs ProofDocument[]
 
-  vendor   Vendor           @relation(fields: [vendorId], references: [id], onDelete: Restrict)
-  category ExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId   String           @db.Uuid
+  vendor                   Vendor                    @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+  category                 ExpenseCategory?          @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  recurringExpenseTemplate RecurringExpenseTemplate? @relation(fields: [recurringExpenseTemplateId], references: [id], onDelete: SetNull)
+  user                     User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                   String                    @db.Uuid
+
+  @@unique([recurringExpenseTemplateId, expenseDate])
+}
+
+model RecurringExpenseTemplate {
+  id          String              @id @default(uuid()) @db.Uuid
+  vendorId    String              @db.Uuid
+  categoryId  String?             @db.Uuid
+  description String
+  amount      Decimal             @db.Decimal(12, 2)
+  currency    String              @default("USD")
+  frequency   RecurrenceFrequency
+  nextDueDate DateTime
+  notes       String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  archivedAt  DateTime?
+
+  generatedExpenses Expense[]
+  vendor            Vendor           @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+  category          ExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String           @db.Uuid
+
+  @@index([userId, archivedAt, nextDueDate])
 }
 
 model ProofDocument {
@@ -86,7 +121,8 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  vendors           Vendor[]
-  expenses          Expense[]
-  ExpenseCategories ExpenseCategory[]
+  vendors                   Vendor[]
+  expenses                  Expense[]
+  recurringExpenseTemplates RecurringExpenseTemplate[]
+  ExpenseCategories         ExpenseCategory[]
 }
