@@ -116,6 +116,7 @@ describe('vendor management', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('No vendors yet')
+    expect(wrapper.text()).toContain('Create first vendor')
   })
 
   it('shows API loading failures', async () => {
@@ -136,6 +137,7 @@ describe('vendor management', () => {
       pageSize: 6,
     })
     expect(wrapper.get('input[type="search"]').element).toHaveProperty('value', 'Atlas')
+    expect(wrapper.text()).toContain('Search active')
     expect(wrapper.text()).toContain('No matching vendors')
 
     await wrapper.get('input[type="search"]').setValue('  office supplies  ')
@@ -236,6 +238,20 @@ describe('vendor management', () => {
     expect(wrapper.get('#vendor-email').attributes('type')).toBe('email')
     expect(wrapper.get('#vendor-phone').attributes('type')).toBe('tel')
     expect(wrapper.get('#vendor-website').attributes('type')).toBe('url')
+  })
+
+  it('presents vendor contact details and directory count', async () => {
+    vendorsApi.fetchVendorsPage.mockResolvedValue(vendorPage([atlas]))
+
+    const { wrapper } = await mountPage()
+
+    expect(wrapper.text()).toContain('1 vendor in your directory')
+    expect(wrapper.text()).toContain('hello@atlas.example')
+    expect(wrapper.text()).toContain('+212600000001')
+    expect(wrapper.get('a[href="https://atlas.example"]').attributes()).toMatchObject({
+      rel: 'noopener',
+      target: '_blank',
+    })
   })
 
   it('edits a vendor in place', async () => {

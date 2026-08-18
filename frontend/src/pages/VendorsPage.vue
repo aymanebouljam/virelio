@@ -1,6 +1,18 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import {
+  Archive,
+  Building2,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  Mail,
+  Pencil,
+  Phone,
+  Plus,
+  Search,
+} from '@lucide/vue'
 import { archiveVendor, createVendor, fetchVendorsPage, updateVendor } from '@/lib/vendors/api'
 
 import { ApiError } from '@/lib/api'
@@ -297,30 +309,28 @@ onMounted(loadVendors)
 </script>
 
 <template>
-  <section class="space-y-8">
-    <header class="space-y-3">
-      <p class="text-xs font-semibold uppercase tracking-[0.24em] text-stone-400">Vendors</p>
-
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <section class="space-y-7">
+    <header class="space-y-4">
+      <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 class="text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">
+          <p class="text-xs font-semibold uppercase tracking-[0.24em] text-accent">Directory</p>
+          <h2 class="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
             Vendor directory
           </h2>
-          <p class="mt-2 max-w-2xl text-sm leading-6 text-stone-500 sm:text-base">
-            Manage the businesses that issue your invoices and receipts before linking them to
-            expenses.
+          <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-base">
+            Keep supplier details organized and ready for every expense.
           </p>
         </div>
 
-        <div v-if="!showVendorForm">
-          <button
-            type="button"
-            class="inline-flex items-center justify-center rounded-2xl bg-stone-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-stone-700"
-            @click="openCreateForm"
-          >
-            Add vendor
-          </button>
-        </div>
+        <button
+          v-if="!showVendorForm"
+          type="button"
+          class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white shadow-card transition hover:bg-brand-strong"
+          @click="openCreateForm"
+        >
+          <Plus :size="17" aria-hidden="true" />
+          Add vendor
+        </button>
       </div>
       <div
         v-if="actionError"
@@ -332,32 +342,40 @@ onMounted(loadVendors)
     </header>
 
     <form
-      class="flex flex-col gap-3 rounded-3xl border border-stone-200 bg-white p-4 shadow-sm sm:flex-row"
+      class="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-4 shadow-card sm:flex-row sm:items-end"
       role="search"
       @submit.prevent="applySearch"
     >
       <label class="flex-1">
-        <span class="sr-only">Search vendors</span>
-        <input
-          v-model="search"
-          type="search"
-          maxlength="120"
-          placeholder="Search by name, email, phone, or website"
-          class="min-h-11 w-full rounded-2xl border border-stone-200 bg-white px-4 py-2 text-sm text-stone-700 outline-none transition focus:border-stone-400"
-        />
+        <span class="mb-1.5 block text-xs font-medium text-ink-muted">Search vendors</span>
+        <span class="relative block">
+          <Search
+            :size="16"
+            aria-hidden="true"
+            class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"
+          />
+          <input
+            v-model="search"
+            type="search"
+            maxlength="120"
+            placeholder="Name, email, phone, or website"
+            class="min-h-10 w-full rounded-xl border border-line bg-white py-2 pl-9 pr-3 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+          />
+        </span>
       </label>
 
       <button
         type="submit"
-        class="inline-flex min-h-11 items-center justify-center rounded-2xl bg-stone-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-stone-700"
+        class="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
       >
+        <Search :size="16" aria-hidden="true" />
         Search
       </button>
 
       <button
         v-if="hasSearch"
         type="button"
-        class="inline-flex min-h-11 items-center justify-center rounded-2xl border border-stone-200 bg-stone-50 px-4 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:bg-stone-100 hover:text-stone-900"
+        class="min-h-10 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
         @click="clearSearch"
       >
         Clear
@@ -366,24 +384,37 @@ onMounted(loadVendors)
 
     <section
       v-if="showVendorForm"
-      class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm"
+      class="overflow-hidden rounded-2xl border border-line bg-surface shadow-lifted"
     >
-      <div class="flex items-start justify-between gap-4">
+      <header
+        class="flex items-center gap-3 border-b border-line bg-brand-soft/55 px-5 py-4 sm:px-6"
+      >
+        <span class="flex size-10 items-center justify-center rounded-xl bg-brand text-white">
+          <Pencil v-if="editingVendorId" :size="18" aria-hidden="true" />
+          <Plus v-else :size="18" aria-hidden="true" />
+        </span>
         <div>
-          <h3 class="text-lg font-semibold tracking-tight text-stone-900">
+          <h3 class="text-lg font-semibold tracking-tight text-ink">
             {{ editingVendorId ? 'Edit vendor' : 'Create vendor' }}
           </h3>
-
-          <p class="mt-1 text-sm text-stone-500">
-            Add a vendor before linking expenses and uploaded proofs.
+          <p class="text-xs text-ink-muted">
+            {{
+              editingVendorId
+                ? 'Update this supplier and their contact details.'
+                : 'Add a supplier before linking expenses and proofs.'
+            }}
           </p>
         </div>
-      </div>
+      </header>
 
-      <form aria-label="Vendor form" class="mt-6 space-y-5" @submit.prevent="submitVendorForm">
+      <form
+        aria-label="Vendor form"
+        class="space-y-5 p-5 sm:p-6"
+        @submit.prevent="submitVendorForm"
+      >
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="block">
-            <span class="mb-2 block text-sm font-medium text-stone-700">Name</span>
+            <span class="mb-1.5 block text-sm font-medium text-ink">Name</span>
             <input
               id="vendor-name"
               v-model="form.name"
@@ -392,10 +423,10 @@ onMounted(loadVendors)
               :aria-describedby="formErrors.name ? 'vendor-name-error' : undefined"
               :aria-invalid="Boolean(formErrors.name)"
               :class="[
-                'w-full rounded-2xl border bg-white px-4 py-3 text-sm text-stone-900 outline-none transition',
+                'min-h-11 w-full rounded-xl border bg-white px-3 py-2 text-sm text-ink outline-none transition',
                 formErrors.name
                   ? 'border-red-300 focus:border-red-500'
-                  : 'border-stone-300 focus:border-stone-900',
+                  : 'border-line hover:border-stone-300 focus:border-brand',
               ]"
             />
 
@@ -405,7 +436,7 @@ onMounted(loadVendors)
           </label>
 
           <label class="block">
-            <span class="mb-2 block text-sm font-medium text-stone-700">Email</span>
+            <span class="mb-1.5 block text-sm font-medium text-ink">Email</span>
             <input
               id="vendor-email"
               v-model="form.email"
@@ -414,10 +445,10 @@ onMounted(loadVendors)
               :aria-describedby="formErrors.email ? 'vendor-email-error' : undefined"
               :aria-invalid="Boolean(formErrors.email)"
               :class="[
-                'w-full rounded-2xl border bg-white px-4 py-3 text-sm text-stone-900 outline-none transition',
+                'min-h-11 w-full rounded-xl border bg-white px-3 py-2 text-sm text-ink outline-none transition',
                 formErrors.email
                   ? 'border-red-300 focus:border-red-500'
-                  : 'border-stone-300 focus:border-stone-900',
+                  : 'border-line hover:border-stone-300 focus:border-brand',
               ]"
             />
 
@@ -431,7 +462,7 @@ onMounted(loadVendors)
           </label>
 
           <label class="block">
-            <span class="mb-2 block text-sm font-medium text-stone-700">Phone</span>
+            <span class="mb-1.5 block text-sm font-medium text-ink">Phone</span>
             <input
               id="vendor-phone"
               v-model="form.phone"
@@ -440,10 +471,10 @@ onMounted(loadVendors)
               :aria-describedby="formErrors.phone ? 'vendor-phone-error' : undefined"
               :aria-invalid="Boolean(formErrors.phone)"
               :class="[
-                'w-full rounded-2xl border bg-white px-4 py-3 text-sm text-stone-900 outline-none transition',
+                'min-h-11 w-full rounded-xl border bg-white px-3 py-2 text-sm text-ink outline-none transition',
                 formErrors.phone
                   ? 'border-red-300 focus:border-red-500'
-                  : 'border-stone-300 focus:border-stone-900',
+                  : 'border-line hover:border-stone-300 focus:border-brand',
               ]"
             />
 
@@ -457,7 +488,7 @@ onMounted(loadVendors)
           </label>
 
           <label class="block">
-            <span class="mb-2 block text-sm font-medium text-stone-700">Website</span>
+            <span class="mb-1.5 block text-sm font-medium text-ink">Website</span>
             <input
               id="vendor-website"
               v-model="form.website"
@@ -466,10 +497,10 @@ onMounted(loadVendors)
               :aria-describedby="formErrors.website ? 'vendor-website-error' : undefined"
               :aria-invalid="Boolean(formErrors.website)"
               :class="[
-                'w-full rounded-2xl border bg-white px-4 py-3 text-sm text-stone-900 outline-none transition',
+                'min-h-11 w-full rounded-xl border bg-white px-3 py-2 text-sm text-ink outline-none transition',
                 formErrors.website
                   ? 'border-red-300 focus:border-red-500'
-                  : 'border-stone-300 focus:border-stone-900',
+                  : 'border-line hover:border-stone-300 focus:border-brand',
               ]"
             />
 
@@ -484,7 +515,7 @@ onMounted(loadVendors)
         </div>
 
         <label class="block">
-          <span class="mb-2 block text-sm font-medium text-stone-700">Notes</span>
+          <span class="mb-1.5 block text-sm font-medium text-ink">Notes</span>
           <textarea
             id="vendor-notes"
             v-model="form.notes"
@@ -493,10 +524,10 @@ onMounted(loadVendors)
             :aria-describedby="formErrors.notes ? 'vendor-notes-error' : undefined"
             :aria-invalid="Boolean(formErrors.notes)"
             :class="[
-              'w-full rounded-2xl border bg-white px-4 py-3 text-sm text-stone-900 outline-none transition',
+              'w-full rounded-xl border bg-white px-3 py-2 text-sm text-ink outline-none transition',
               formErrors.notes
                 ? 'border-red-300 focus:border-red-500'
-                : 'border-stone-300 focus:border-stone-900',
+                : 'border-line hover:border-stone-300 focus:border-brand',
             ]"
           />
 
@@ -516,7 +547,7 @@ onMounted(loadVendors)
         <div class="flex items-center justify-end gap-3">
           <button
             type="button"
-            class="rounded-2xl px-4 py-3 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
+            class="min-h-11 rounded-xl px-4 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
             @click="closeVendorForm"
           >
             Cancel
@@ -525,7 +556,7 @@ onMounted(loadVendors)
           <button
             type="submit"
             :disabled="submitting"
-            class="inline-flex items-center justify-center rounded-2xl bg-stone-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-stone-700 disabled:cursor-not-allowed disabled:bg-stone-400"
+            class="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-stone-400"
           >
             {{ submitting ? 'Saving...' : 'Save vendor' }}
           </button>
@@ -533,110 +564,158 @@ onMounted(loadVendors)
       </form>
     </section>
 
-    <section class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-      <div v-if="loading" class="space-y-3" role="status" aria-label="Loading vendors">
-        <div class="h-5 w-40 animate-pulse rounded bg-stone-200"></div>
-        <div class="space-y-2">
-          <div class="h-16 animate-pulse rounded-2xl bg-stone-100"></div>
-          <div class="h-16 animate-pulse rounded-2xl bg-stone-100"></div>
-          <div class="h-16 animate-pulse rounded-2xl bg-stone-100"></div>
+    <section class="overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
+      <header
+        class="flex items-center justify-between gap-4 border-b border-line px-5 py-4 sm:px-6"
+      >
+        <div>
+          <h3 class="text-base font-semibold text-ink">Active vendors</h3>
+          <p class="mt-0.5 text-xs text-ink-muted">
+            {{ pagination.totalItems }} vendor{{ pagination.totalItems === 1 ? '' : 's' }} in your
+            directory
+          </p>
+        </div>
+        <span
+          v-if="hasSearch"
+          class="rounded-full bg-accent-soft px-2.5 py-1 text-xs font-semibold text-accent"
+        >
+          Search active
+        </span>
+      </header>
+
+      <div v-if="loading" class="space-y-3 p-5 sm:p-6" role="status" aria-label="Loading vendors">
+        <div class="h-4 w-36 animate-pulse rounded bg-surface-muted"></div>
+        <div class="space-y-3">
+          <div class="h-24 animate-pulse rounded-2xl bg-surface-muted"></div>
+          <div class="h-24 animate-pulse rounded-2xl bg-surface-muted"></div>
         </div>
       </div>
 
       <div
         v-else-if="error"
         role="alert"
-        class="rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-700"
+        class="m-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-700 sm:m-6"
       >
         <p class="font-medium">Could not load vendors</p>
         <p class="mt-1">{{ error }}</p>
       </div>
 
-      <div
-        v-else-if="vendors.length === 0"
-        class="rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-12 text-center"
-      >
-        <p class="text-base font-medium text-stone-700">
+      <div v-else-if="vendors.length === 0" class="px-5 py-14 text-center sm:px-6">
+        <span
+          class="mx-auto flex size-12 items-center justify-center rounded-2xl bg-brand-soft text-brand"
+        >
+          <Building2 :size="22" :stroke-width="1.7" aria-hidden="true" />
+        </span>
+        <p class="mt-4 text-base font-semibold text-ink">
           {{ hasSearch ? 'No matching vendors' : 'No vendors yet' }}
         </p>
-        <p class="mt-2 text-sm text-stone-500">
+        <p class="mx-auto mt-1 max-w-sm text-sm leading-6 text-ink-muted">
           {{
             hasSearch
               ? 'Try a different search term or clear the current search.'
               : 'Add your first vendor to start organizing expense records.'
           }}
         </p>
+        <button
+          v-if="hasSearch"
+          type="button"
+          class="mt-5 min-h-10 rounded-xl border border-line bg-white px-4 text-sm font-semibold text-ink transition hover:bg-surface-muted"
+          @click="clearSearch"
+        >
+          Clear search
+        </button>
+        <button
+          v-else
+          type="button"
+          class="mt-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
+          @click="openCreateForm"
+        >
+          <Plus :size="16" aria-hidden="true" />
+          Create first vendor
+        </button>
       </div>
 
-      <div v-else class="space-y-3">
-        <article
-          v-for="vendor in vendors"
-          :key="vendor.id"
-          class="rounded-2xl border border-stone-200 bg-stone-50 px-5 py-4 transition hover:border-stone-300 hover:bg-stone-100"
-        >
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div class="min-w-0">
-              <h3 class="text-base font-semibold tracking-tight text-stone-900">
-                {{ vendor.name }}
-              </h3>
-
-              <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-stone-500">
-                <span v-if="vendor.email">{{ vendor.email }}</span>
-                <span v-if="vendor.phone">{{ vendor.phone }}</span>
-                <a
-                  v-if="vendor.website"
-                  :href="vendor.website"
-                  target="_blank"
-                  rel="noopener"
-                  class="font-medium text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-stone-900"
+      <div v-else>
+        <div class="divide-y divide-line">
+          <article
+            v-for="vendor in vendors"
+            :key="vendor.id"
+            class="group px-5 py-5 transition hover:bg-surface-muted/45 sm:px-6"
+          >
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div class="flex min-w-0 items-start gap-3.5">
+                <span
+                  class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand"
                 >
-                  Website
-                </a>
+                  <Building2 :size="18" :stroke-width="1.8" aria-hidden="true" />
+                </span>
+                <div class="min-w-0">
+                  <h4 class="truncate text-sm font-semibold text-ink sm:text-base">
+                    {{ vendor.name }}
+                  </h4>
+
+                  <div class="mt-1.5 flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-ink-muted">
+                    <span v-if="vendor.email" class="inline-flex items-center gap-1.5">
+                      <Mail :size="13" aria-hidden="true" />
+                      {{ vendor.email }}
+                    </span>
+                    <span v-if="vendor.phone" class="inline-flex items-center gap-1.5">
+                      <Phone :size="13" aria-hidden="true" />
+                      {{ vendor.phone }}
+                    </span>
+                    <a
+                      v-if="vendor.website"
+                      :href="vendor.website"
+                      target="_blank"
+                      rel="noopener"
+                      class="inline-flex items-center gap-1 font-semibold text-brand hover:text-brand-strong"
+                    >
+                      Website
+                      <ExternalLink :size="12" aria-hidden="true" />
+                    </a>
+                  </div>
+
+                  <p v-if="vendor.notes" class="mt-2 line-clamp-2 text-sm leading-6 text-ink-muted">
+                    {{ vendor.notes }}
+                  </p>
+                </div>
               </div>
 
-              <p v-if="vendor.notes" class="mt-3 text-sm leading-6 text-stone-600">
-                {{ vendor.notes }}
-              </p>
+              <div class="flex flex-wrap items-center gap-2 lg:justify-end">
+                <RouterLink
+                  :to="{ name: 'vendorDetails', params: { id: vendor.id } }"
+                  class="inline-flex min-h-10 items-center rounded-xl bg-brand-soft px-3 text-sm font-semibold text-brand transition hover:bg-brand hover:text-white"
+                >
+                  View
+                </RouterLink>
+
+                <button
+                  type="button"
+                  class="inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
+                  @click="openEditForm(vendor)"
+                >
+                  <Pencil :size="14" aria-hidden="true" />
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  class="inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-red-50 hover:text-red-700"
+                  @click="archive(vendor)"
+                >
+                  <Archive :size="14" aria-hidden="true" />
+                  Archive
+                </button>
+              </div>
             </div>
-
-            <div class="flex shrink-0 items-center gap-3">
-              <RouterLink
-                :to="{ name: 'vendorDetails', params: { id: vendor.id } }"
-                class="inline-flex items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900"
-              >
-                View
-              </RouterLink>
-
-              <button
-                type="button"
-                class="inline-flex items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900"
-                @click="openEditForm(vendor)"
-              >
-                Edit
-              </button>
-              <button
-                type="button"
-                class="inline-flex items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900"
-                @click="archive(vendor)"
-              >
-                Archive
-              </button>
-
-              <span
-                class="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-medium text-stone-500 ring-1 ring-stone-200"
-              >
-                Active
-              </span>
-            </div>
-          </div>
-        </article>
+          </article>
+        </div>
 
         <nav
           v-if="pagination.totalPages > 1"
           aria-label="Vendor pagination"
-          class="flex flex-col gap-3 border-t border-stone-200 pt-4 sm:flex-row sm:items-center sm:justify-between"
+          class="flex flex-col gap-3 border-t border-line px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"
         >
-          <p class="text-sm text-stone-500">
+          <p class="text-sm text-ink-muted">
             Page {{ pagination.page }} of {{ pagination.totalPages }} ·
             {{ pagination.totalItems }} vendors
           </p>
@@ -645,18 +724,20 @@ onMounted(loadVendors)
             <button
               type="button"
               :disabled="pagination.page === 1"
-              class="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 disabled:cursor-not-allowed disabled:text-stone-300"
+              class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink-muted transition hover:border-stone-300 hover:text-ink disabled:cursor-not-allowed disabled:text-stone-300"
               @click="changePage(pagination.page - 1)"
             >
+              <ChevronLeft :size="15" aria-hidden="true" />
               Previous
             </button>
             <button
               type="button"
               :disabled="pagination.page === pagination.totalPages"
-              class="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 disabled:cursor-not-allowed disabled:text-stone-300"
+              class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink-muted transition hover:border-stone-300 hover:text-ink disabled:cursor-not-allowed disabled:text-stone-300"
               @click="changePage(pagination.page + 1)"
             >
               Next
+              <ChevronRight :size="15" aria-hidden="true" />
             </button>
           </div>
         </nav>
