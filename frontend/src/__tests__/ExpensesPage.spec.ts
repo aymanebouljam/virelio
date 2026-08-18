@@ -166,6 +166,7 @@ describe('expense listing and filters', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('No expenses yet')
+    expect(wrapper.text()).toContain('Create first expense')
   })
 
   it('renders expenses with their vendor and category', async () => {
@@ -177,6 +178,8 @@ describe('expense listing and filters', () => {
     expect(wrapper.text()).toContain('Atlas Supplies')
     expect(wrapper.text()).toContain('Travel')
     expect(wrapper.text()).toContain('Quarterly visit')
+    expect(wrapper.text()).toContain('$125.50')
+    expect(wrapper.text()).toContain('1 recorded expense')
   })
 
   it('loads the requested page and navigates to the previous page', async () => {
@@ -224,6 +227,7 @@ describe('expense listing and filters', () => {
     expect(getFilterField(wrapper, 'Category').element).toHaveProperty('value', travel.id)
     expect(getFilterField(wrapper, 'From').element).toHaveProperty('value', '2026-08-01')
     expect(getFilterField(wrapper, 'To').element).toHaveProperty('value', '2026-08-31')
+    expect(wrapper.text()).toContain('5 active')
     expect(wrapper.text()).toContain('No matching expenses')
   })
 
