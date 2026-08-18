@@ -16,9 +16,19 @@ vi.mock('@/lib/dashboard/api', () => dashboardApi)
 const routes: RouteRecordRaw[] = [
   { path: '/', name: 'dashboard', component: DashboardPage },
   {
+    path: '/expenses',
+    name: 'expenses',
+    component: { template: '<p>Expenses</p>' },
+  },
+  {
     path: '/expenses/:id',
     name: 'expenseDetails',
     component: { template: '<p>Expense details</p>' },
+  },
+  {
+    path: '/vendors',
+    name: 'vendors',
+    component: { template: '<p>Vendors</p>' },
   },
 ]
 
@@ -112,6 +122,9 @@ describe('dashboard workflows', () => {
     expect(wrapper.text()).toContain('Client-site flight')
     expect(wrapper.text()).toContain('receipt.pdf')
     expect(wrapper.findAll('a[href="/expenses/expense-1"]')).toHaveLength(2)
+    expect(
+      wrapper.get('[aria-label="Travel share of total spend"]').attributes('aria-valuenow'),
+    ).toBe('71')
   })
 
   it('renders empty dashboard sections', async () => {
@@ -122,6 +135,7 @@ describe('dashboard workflows', () => {
     expect(wrapper.text()).toContain('$0.00')
     expect(wrapper.text()).toContain('No activity yet')
     expect(wrapper.text()).toContain('No category activity yet')
+    expect(wrapper.get('a[href="/expenses"]').text()).toContain('Manage expenses')
   })
 
   it('renders the combined remaining category activity as Other', async () => {
@@ -140,11 +154,12 @@ describe('dashboard workflows', () => {
     const { wrapper } = await mountPage()
     const categorySection = wrapper
       .findAll('section')
-      .find((section) => section.text().includes('Category breakdown'))
+      .find((section) => section.text().includes('Spend by category'))
 
     expect(categorySection?.text()).toContain('Other')
     expect(categorySection?.text()).toContain('2 expenses')
     expect(categorySection?.text()).toContain('$300.00')
+    expect(categorySection?.get('[role="progressbar"]').attributes('aria-valuenow')).toBe('0')
   })
 
   it('shows API loading failures', async () => {
