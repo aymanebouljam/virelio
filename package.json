@@ -1,7 +1,7 @@
 {
   "name": "virelio",
-  "version": "0.1.0",
-  "description": "Invoice and Expense Tracker",
+  "version": "0.7.0",
+  "description": "Multi-tenant expense tracking, proof management, reporting, and recurring expenses",
   "author": "Aymane Bouljam",
   "private": true,
   "packageManager": "pnpm@11.22.0",
