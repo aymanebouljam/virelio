@@ -1,6 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
+import {
+  ArrowRight,
+  Building2,
+  CalendarDays,
+  CircleDollarSign,
+  FileText,
+  Plus,
+  ReceiptText,
+  Tags,
+} from '@lucide/vue'
 import { ApiError } from '@/lib/api'
 import { fetchDashboardSummary } from '@/lib/dashboard/api'
 import { formatAmount, formatDate } from '@/lib/helpers'
@@ -24,8 +34,16 @@ const dateTo = computed(() => {
   return typeof value === 'string' ? value : undefined
 })
 
+const hasDateRange = computed(() => Boolean(dateFrom.value || dateTo.value))
 const hasCategoryBreakdown = computed(() => (summary.value?.categoryBreakdown.length ?? 0) > 0)
 const hasRecentActivity = computed(() => (summary.value?.recentActivity.length ?? 0) > 0)
+
+function categoryShare(totalAmount: string) {
+  const totalSpend = Number(summary.value?.totalSpend ?? 0)
+  if (totalSpend <= 0) return 0
+
+  return Math.min(100, Math.round((Number(totalAmount) / totalSpend) * 100))
+}
 
 async function loadSummary() {
   try {
@@ -90,77 +108,85 @@ onMounted(loadSummary)
 </script>
 
 <template>
-  <section class="space-y-8">
-    <header class="space-y-3">
-      <p class="text-xs font-semibold uppercase tracking-[0.24em] text-stone-400">Dashboard</p>
-
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h2 class="text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">
-            Spending at a glance
-          </h2>
-          <p class="mt-2 max-w-2xl text-sm leading-6 text-stone-500 sm:text-base">
-            Monitor spend, category distribution, and recent expense activity from one view.
-          </p>
-        </div>
+  <section class="space-y-7">
+    <header class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-accent">Overview</p>
+        <h2 class="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
+          Your spending, clearly.
+        </h2>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-base">
+          See where your money is going and what needs your attention.
+        </p>
       </div>
+
+      <RouterLink
+        to="/expenses"
+        class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white shadow-card transition hover:bg-brand-strong"
+      >
+        <Plus :size="17" aria-hidden="true" />
+        Manage expenses
+      </RouterLink>
     </header>
 
     <fieldset
-      class="flex flex-col gap-3 rounded-3xl border border-stone-200 bg-white p-4 shadow-sm sm:flex-row sm:flex-wrap sm:items-end"
+      class="rounded-2xl border border-line bg-surface px-4 py-3 shadow-card sm:flex sm:items-end sm:gap-3"
     >
       <legend class="sr-only">Dashboard date range</legend>
 
-      <div class="flex flex-col gap-2">
-        <label
-          for="dashboard-date-from"
-          class="text-xs font-medium uppercase tracking-[0.18em] text-stone-400"
-        >
-          From
-        </label>
-        <input
-          id="dashboard-date-from"
-          :value="dateFrom"
-          type="date"
-          :aria-describedby="dateRangeError ? 'dashboard-date-range-error' : undefined"
-          :aria-invalid="Boolean(dateRangeError)"
-          class="min-h-11 rounded-2xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-stone-400"
-          @change="
-            updateDateRange({
-              dateFrom: ($event.target as HTMLInputElement).value,
-              dateTo: dateTo,
-            })
-          "
-        />
+      <div class="mb-3 flex items-center gap-2 sm:mb-0 sm:mr-auto sm:self-center">
+        <span class="flex size-9 items-center justify-center rounded-xl bg-brand-soft text-brand">
+          <CalendarDays :size="17" aria-hidden="true" />
+        </span>
+        <div>
+          <p class="text-sm font-semibold text-ink">Reporting period</p>
+          <p class="text-xs text-ink-muted">
+            {{ hasDateRange ? 'Custom date range' : 'All recorded expenses' }}
+          </p>
+        </div>
       </div>
 
-      <div class="flex flex-col gap-2">
-        <label
-          for="dashboard-date-to"
-          class="text-xs font-medium uppercase tracking-[0.18em] text-stone-400"
-        >
-          To
-        </label>
-        <input
-          id="dashboard-date-to"
-          :value="dateTo"
-          type="date"
-          :aria-describedby="dateRangeError ? 'dashboard-date-range-error' : undefined"
-          :aria-invalid="Boolean(dateRangeError)"
-          class="min-h-11 rounded-2xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-stone-400"
-          @change="
-            updateDateRange({
-              dateFrom: dateFrom,
-              dateTo: ($event.target as HTMLInputElement).value,
-            })
-          "
-        />
-      </div>
+      <div class="grid gap-3 sm:flex sm:items-end">
+        <div class="flex flex-col gap-1.5">
+          <label for="dashboard-date-from" class="text-xs font-medium text-ink-muted">From</label>
+          <input
+            id="dashboard-date-from"
+            :value="dateFrom"
+            type="date"
+            :aria-describedby="dateRangeError ? 'dashboard-date-range-error' : undefined"
+            :aria-invalid="Boolean(dateRangeError)"
+            class="min-h-10 rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+            @change="
+              updateDateRange({
+                dateFrom: ($event.target as HTMLInputElement).value,
+                dateTo: dateTo,
+              })
+            "
+          />
+        </div>
 
-      <div v-if="dateFrom || dateTo">
+        <div class="flex flex-col gap-1.5">
+          <label for="dashboard-date-to" class="text-xs font-medium text-ink-muted">To</label>
+          <input
+            id="dashboard-date-to"
+            :value="dateTo"
+            type="date"
+            :aria-describedby="dateRangeError ? 'dashboard-date-range-error' : undefined"
+            :aria-invalid="Boolean(dateRangeError)"
+            class="min-h-10 rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+            @change="
+              updateDateRange({
+                dateFrom: dateFrom,
+                dateTo: ($event.target as HTMLInputElement).value,
+              })
+            "
+          />
+        </div>
+
         <button
+          v-if="hasDateRange"
           type="button"
-          class="inline-flex min-h-11 items-center justify-center rounded-2xl border border-stone-200 bg-stone-50 px-4 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:bg-stone-100 hover:text-stone-900"
+          class="min-h-10 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
           @click="updateDateRange({ dateFrom: undefined, dateTo: undefined })"
         >
           Clear
@@ -177,7 +203,7 @@ onMounted(loadSummary)
       <div
         v-for="index in 4"
         :key="index"
-        class="h-36 animate-pulse rounded-3xl border border-stone-200 bg-stone-100"
+        class="h-40 animate-pulse rounded-2xl border border-line bg-surface-muted"
       />
     </div>
 
@@ -193,132 +219,225 @@ onMounted(loadSummary)
     </section>
 
     <template v-else-if="summary">
-      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <article class="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
-          <p class="text-xs font-semibold uppercase tracking-[0.22em] text-stone-400">
-            Total spend
-          </p>
-          <p class="mt-4 text-3xl font-semibold tracking-tight text-stone-900">
-            ${{ formatAmount(summary.totalSpend) }}
-          </p>
-          <p class="mt-2 text-sm text-stone-500">Across all active recorded expenses.</p>
-        </article>
-
-        <article class="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
-          <p class="text-xs font-semibold uppercase tracking-[0.22em] text-stone-400">
-            Active vendors
-          </p>
-          <p class="mt-4 text-3xl font-semibold tracking-tight text-stone-900">
-            {{ summary.activeVendors }}
-          </p>
-          <p class="mt-2 text-sm text-stone-500">Vendors available for new expense entries.</p>
-        </article>
-
-        <article class="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
-          <p class="text-xs font-semibold uppercase tracking-[0.22em] text-stone-400">
-            Uncategorized
-          </p>
-          <p class="mt-4 text-3xl font-semibold tracking-tight text-stone-900">
-            {{ summary.uncategorizedExpenses }}
-          </p>
-          <p class="mt-2 text-sm text-stone-500">Expenses still waiting for category assignment.</p>
-        </article>
-
-        <article class="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
-          <p class="text-xs font-semibold uppercase tracking-[0.22em] text-stone-400">
-            Proof documents
-          </p>
-          <p class="mt-4 text-3xl font-semibold tracking-tight text-stone-900">
-            {{ summary.proofDocuments }}
-          </p>
-          <p class="mt-2 text-sm text-stone-500">Uploaded receipts and invoices on file.</p>
-        </article>
-      </div>
-
-      <div class="grid gap-6 xl:grid-cols-[1.25fr_0.85fr]">
-        <section class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <h3 class="text-lg font-semibold tracking-tight text-stone-900">Recent activity</h3>
-              <p class="mt-1 text-sm text-stone-500">
-                The latest expense records and proof uploads across active expenses.
-              </p>
-            </div>
-          </div>
-
+      <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Spending overview">
+        <article
+          class="relative overflow-hidden rounded-2xl bg-brand-strong p-5 text-white shadow-lifted sm:col-span-2 xl:col-span-1"
+        >
           <div
-            v-if="!hasRecentActivity"
-            class="mt-6 rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-10 text-center"
-          >
-            <p class="text-sm font-medium text-stone-600">No activity yet</p>
-            <p class="mt-2 text-sm text-stone-500">
-              Add expenses or upload proof documents to populate this activity stream.
+            class="absolute -right-10 -top-12 size-36 rounded-full border-[24px] border-white/5"
+            aria-hidden="true"
+          />
+          <div class="relative">
+            <span class="flex size-10 items-center justify-center rounded-xl bg-white/10">
+              <CircleDollarSign :size="20" :stroke-width="1.8" aria-hidden="true" />
+            </span>
+            <p class="mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-white/55">
+              Total spend
+            </p>
+            <p class="mt-1 text-3xl font-semibold tracking-tight">
+              ${{ formatAmount(summary.totalSpend) }}
+            </p>
+            <p class="mt-2 text-xs text-white/55">
+              {{ hasDateRange ? 'Within the selected period' : 'Across active expenses' }}
             </p>
           </div>
+        </article>
 
-          <div v-else class="mt-6 space-y-3">
+        <article class="rounded-2xl border border-line bg-surface p-5 shadow-card">
+          <span
+            class="flex size-10 items-center justify-center rounded-xl bg-brand-soft text-brand"
+          >
+            <Building2 :size="20" :stroke-width="1.8" aria-hidden="true" />
+          </span>
+          <div class="mt-5 flex items-end justify-between gap-3">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-ink-muted">
+                Active vendors
+              </p>
+              <p class="mt-1 text-3xl font-semibold tracking-tight text-ink">
+                {{ summary.activeVendors }}
+              </p>
+            </div>
+            <RouterLink
+              to="/vendors"
+              aria-label="View active vendors"
+              class="flex size-9 items-center justify-center rounded-full text-ink-muted transition hover:bg-surface-muted hover:text-brand"
+            >
+              <ArrowRight :size="17" aria-hidden="true" />
+            </RouterLink>
+          </div>
+        </article>
+
+        <article class="rounded-2xl border border-line bg-surface p-5 shadow-card">
+          <span
+            class="flex size-10 items-center justify-center rounded-xl bg-accent-soft text-accent"
+          >
+            <Tags :size="20" :stroke-width="1.8" aria-hidden="true" />
+          </span>
+          <div class="mt-5 flex items-end justify-between gap-3">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-ink-muted">
+                Uncategorized
+              </p>
+              <p class="mt-1 text-3xl font-semibold tracking-tight text-ink">
+                {{ summary.uncategorizedExpenses }}
+              </p>
+            </div>
+            <RouterLink
+              to="/expenses"
+              aria-label="Review uncategorized expenses"
+              class="flex size-9 items-center justify-center rounded-full text-ink-muted transition hover:bg-surface-muted hover:text-brand"
+            >
+              <ArrowRight :size="17" aria-hidden="true" />
+            </RouterLink>
+          </div>
+        </article>
+
+        <article class="rounded-2xl border border-line bg-surface p-5 shadow-card">
+          <span
+            class="flex size-10 items-center justify-center rounded-xl bg-surface-muted text-ink-muted"
+          >
+            <FileText :size="20" :stroke-width="1.8" aria-hidden="true" />
+          </span>
+          <div class="mt-5">
+            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-ink-muted">
+              Proof documents
+            </p>
+            <p class="mt-1 text-3xl font-semibold tracking-tight text-ink">
+              {{ summary.proofDocuments }}
+            </p>
+          </div>
+        </article>
+      </section>
+
+      <div class="grid gap-5 xl:grid-cols-[1.35fr_0.9fr]">
+        <section class="overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
+          <header
+            class="flex items-start justify-between gap-4 border-b border-line px-5 py-5 sm:px-6"
+          >
+            <div>
+              <h3 class="text-lg font-semibold tracking-tight text-ink">Recent activity</h3>
+              <p class="mt-1 text-sm text-ink-muted">Your latest expense and document updates.</p>
+            </div>
+            <RouterLink
+              to="/expenses"
+              class="hidden items-center gap-1.5 text-sm font-semibold text-brand hover:text-brand-strong sm:inline-flex"
+            >
+              View all
+              <ArrowRight :size="15" aria-hidden="true" />
+            </RouterLink>
+          </header>
+
+          <div v-if="!hasRecentActivity" class="px-5 py-12 text-center sm:px-6">
+            <span
+              class="mx-auto flex size-12 items-center justify-center rounded-2xl bg-brand-soft text-brand"
+            >
+              <ReceiptText :size="22" :stroke-width="1.7" aria-hidden="true" />
+            </span>
+            <p class="mt-4 text-sm font-semibold text-ink">No activity yet</p>
+            <p class="mx-auto mt-1 max-w-sm text-sm leading-6 text-ink-muted">
+              Record your first expense to start building a useful spending overview.
+            </p>
+            <RouterLink
+              to="/expenses"
+              class="mt-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white hover:bg-brand-strong"
+            >
+              <Plus :size="16" aria-hidden="true" />
+              Add an expense
+            </RouterLink>
+          </div>
+
+          <div v-else class="divide-y divide-line">
             <RouterLink
               v-for="item in summary.recentActivity"
               :key="`${item.type}-${item.id}`"
               :to="`/expenses/${item.expenseId}`"
-              class="flex items-start justify-between gap-4 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 transition hover:border-stone-300 hover:bg-stone-100"
+              class="group flex items-center gap-4 px-5 py-4 transition hover:bg-surface-muted/55 sm:px-6"
             >
-              <div class="min-w-0">
-                <div class="flex flex-wrap items-center gap-2">
-                  <p class="text-sm font-semibold text-stone-900">
-                    {{ item.title }}
-                  </p>
+              <span
+                class="flex size-10 shrink-0 items-center justify-center rounded-xl"
+                :class="
+                  item.type === 'proof' ? 'bg-accent-soft text-accent' : 'bg-brand-soft text-brand'
+                "
+              >
+                <FileText v-if="item.type === 'proof'" :size="18" aria-hidden="true" />
+                <ReceiptText v-else :size="18" aria-hidden="true" />
+              </span>
+
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2">
+                  <p class="truncate text-sm font-semibold text-ink">{{ item.title }}</p>
                   <span
-                    class="inline-flex items-center rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-stone-500 ring-1 ring-stone-200"
+                    class="shrink-0 rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-muted"
                   >
-                    {{ item.type === 'proof' ? 'Proof upload' : 'Expense' }}
+                    {{ item.type === 'proof' ? 'Proof' : 'Expense' }}
                   </span>
                 </div>
-
-                <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-500">
-                  <span>{{ item.subtitle }}</span>
-                  <span>{{ formatDate(item.occurredAt) }}</span>
-                </div>
+                <p class="mt-1 truncate text-xs text-ink-muted">
+                  {{ item.subtitle }} · {{ formatDate(item.occurredAt) }}
+                </p>
               </div>
+
+              <ArrowRight
+                :size="17"
+                aria-hidden="true"
+                class="shrink-0 text-stone-300 transition group-hover:translate-x-0.5 group-hover:text-brand"
+              />
             </RouterLink>
           </div>
         </section>
 
-        <section class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-          <h3 class="text-lg font-semibold tracking-tight text-stone-900">Category breakdown</h3>
-          <p class="mt-1 text-sm text-stone-500">
-            Spend distribution across active expense categories.
-          </p>
+        <section class="rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6">
+          <div>
+            <h3 class="text-lg font-semibold tracking-tight text-ink">Spend by category</h3>
+            <p class="mt-1 text-sm text-ink-muted">How your total is distributed.</p>
+          </div>
 
-          <div
-            v-if="!hasCategoryBreakdown"
-            class="mt-6 rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-10 text-center"
-          >
-            <p class="text-sm font-medium text-stone-600">No category activity yet</p>
-            <p class="mt-2 text-sm text-stone-500">
-              Categorized expenses will appear here once recorded.
+          <div v-if="!hasCategoryBreakdown" class="py-12 text-center">
+            <span
+              class="mx-auto flex size-12 items-center justify-center rounded-2xl bg-accent-soft text-accent"
+            >
+              <Tags :size="22" :stroke-width="1.7" aria-hidden="true" />
+            </span>
+            <p class="mt-4 text-sm font-semibold text-ink">No category activity yet</p>
+            <p class="mx-auto mt-1 max-w-xs text-sm leading-6 text-ink-muted">
+              Categorized expenses will reveal where your spending is concentrated.
             </p>
           </div>
 
-          <div v-else class="mt-6 space-y-3">
+          <div v-else class="mt-7 space-y-6">
             <div
               v-for="category in summary.categoryBreakdown"
               :key="category.categoryId ?? category.categoryName"
-              class="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4"
             >
-              <div class="flex items-start justify-between gap-4">
-                <div>
-                  <p class="text-sm font-semibold text-stone-900">
-                    {{ category.categoryName }}
-                  </p>
-                  <p class="mt-1 text-xs text-stone-500">
+              <div class="flex items-end justify-between gap-4">
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-semibold text-ink">{{ category.categoryName }}</p>
+                  <p class="mt-0.5 text-xs text-ink-muted">
                     {{ category.expenseCount }} expense{{ category.expenseCount === 1 ? '' : 's' }}
                   </p>
                 </div>
-
-                <span class="shrink-0 text-sm font-semibold text-stone-900">
-                  ${{ formatAmount(category.totalAmount) }}
-                </span>
+                <div class="shrink-0 text-right">
+                  <p class="text-sm font-semibold text-ink">
+                    ${{ formatAmount(category.totalAmount) }}
+                  </p>
+                  <p class="mt-0.5 text-xs text-ink-muted">
+                    {{ categoryShare(category.totalAmount) }}%
+                  </p>
+                </div>
+              </div>
+              <div
+                class="mt-3 h-2 overflow-hidden rounded-full bg-surface-muted"
+                role="progressbar"
+                :aria-label="`${category.categoryName} share of total spend`"
+                :aria-valuenow="categoryShare(category.totalAmount)"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              >
+                <div
+                  class="h-full rounded-full bg-brand"
+                  :style="{ width: `${categoryShare(category.totalAmount)}%` }"
+                />
               </div>
             </div>
           </div>

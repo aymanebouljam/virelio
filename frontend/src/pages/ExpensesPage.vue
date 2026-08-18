@@ -1,6 +1,19 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ZodError } from 'zod'
+import {
+  Archive,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  Pencil,
+  Plus,
+  ReceiptText,
+  Search,
+  Store,
+  Tags,
+} from '@lucide/vue'
 import { ApiError } from '@/lib/api'
 import { useRoute, useRouter } from 'vue-router'
 import { archiveExpense, createExpense, fetchExpenses, updateExpense } from '@/lib/expenses/api'
@@ -49,6 +62,7 @@ const filters = reactive({
 })
 
 const hasFilters = computed(() => Object.values(readRouteFilters()).some(Boolean))
+const activeFilterCount = computed(() => Object.values(readRouteFilters()).filter(Boolean).length)
 
 function readQueryValue(key: string) {
   const value = route.query[key]
@@ -373,27 +387,26 @@ onMounted(loadExpensesPage)
 </script>
 
 <template>
-  <section class="space-y-8">
-    <header class="space-y-3">
-      <p class="text-xs font-semibold uppercase tracking-[0.24em] text-stone-400">Expenses</p>
-
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <section class="space-y-7">
+    <header class="space-y-4">
+      <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 class="text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">Expenses</h2>
-          <p class="mt-2 max-w-2xl text-sm leading-6 text-stone-500 sm:text-base">
-            Track operational spending with vendor and category references.
+          <p class="text-xs font-semibold uppercase tracking-[0.24em] text-accent">Spending</p>
+          <h2 class="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">Expenses</h2>
+          <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-base">
+            Keep every purchase organized, categorized, and easy to revisit.
           </p>
         </div>
 
-        <div v-if="!showForm">
-          <button
-            type="button"
-            class="inline-flex items-center justify-center rounded-2xl bg-stone-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-stone-700"
-            @click="openCreateForm"
-          >
-            Add expense
-          </button>
-        </div>
+        <button
+          v-if="!showForm"
+          type="button"
+          class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white shadow-card transition hover:bg-brand-strong"
+          @click="openCreateForm"
+        >
+          <Plus :size="17" aria-hidden="true" />
+          Add expense
+        </button>
       </div>
 
       <div
@@ -406,112 +419,145 @@ onMounted(loadExpensesPage)
     </header>
 
     <form
-      class="grid gap-3 rounded-3xl border border-stone-200 bg-white p-4 shadow-sm sm:grid-cols-2 xl:grid-cols-6"
+      class="rounded-2xl border border-line bg-surface p-4 shadow-card"
       role="search"
       @submit.prevent="applyFilters"
     >
-      <label class="sm:col-span-2 xl:col-span-2">
-        <span class="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-stone-400">
-          Search
-        </span>
-        <input
-          v-model="filters.search"
-          type="search"
-          maxlength="240"
-          placeholder="Description, notes, vendor, or category"
-          class="min-h-11 w-full rounded-2xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-stone-400"
-        />
-      </label>
+      <div class="mb-4 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <span class="flex size-9 items-center justify-center rounded-xl bg-brand-soft text-brand">
+            <Filter :size="17" aria-hidden="true" />
+          </span>
+          <div>
+            <p class="text-sm font-semibold text-ink">Filter expenses</p>
+            <p class="text-xs text-ink-muted">
+              {{ activeFilterCount ? `${activeFilterCount} active` : 'Showing all records' }}
+            </p>
+          </div>
+        </div>
 
-      <label>
-        <span class="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-stone-400">
-          Vendor
-        </span>
-        <select
-          v-model="filters.vendorId"
-          class="min-h-11 w-full rounded-2xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-stone-400"
-        >
-          <option value="">All vendors</option>
-          <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
-            {{ vendor.name }}
-          </option>
-        </select>
-      </label>
-
-      <label>
-        <span class="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-stone-400">
-          Category
-        </span>
-        <select
-          v-model="filters.categoryId"
-          class="min-h-11 w-full rounded-2xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-stone-400"
-        >
-          <option value="">All categories</option>
-          <option v-for="category in categories" :key="category.id" :value="category.id">
-            {{ category.name }}
-          </option>
-        </select>
-      </label>
-
-      <label>
-        <span class="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-stone-400">
-          From
-        </span>
-        <input
-          v-model="filters.dateFrom"
-          type="date"
-          class="min-h-11 w-full rounded-2xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-stone-400"
-        />
-      </label>
-
-      <label>
-        <span class="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-stone-400">
-          To
-        </span>
-        <input
-          v-model="filters.dateTo"
-          type="date"
-          class="min-h-11 w-full rounded-2xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-stone-400"
-        />
-      </label>
-
-      <div class="flex items-end gap-3 sm:col-span-2 xl:col-span-6">
-        <button
-          type="submit"
-          class="inline-flex min-h-11 items-center justify-center rounded-2xl bg-stone-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-stone-700"
-        >
-          Apply filters
-        </button>
         <button
           v-if="hasFilters"
           type="button"
-          class="inline-flex min-h-11 items-center justify-center rounded-2xl border border-stone-200 bg-stone-50 px-4 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:bg-stone-100 hover:text-stone-900"
+          class="min-h-10 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
           @click="clearFilters"
         >
           Clear
         </button>
       </div>
+
+      <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-12">
+        <label class="sm:col-span-2 xl:col-span-4">
+          <span class="mb-1.5 block text-xs font-medium text-ink-muted">Search</span>
+          <span class="relative block">
+            <Search
+              :size="16"
+              aria-hidden="true"
+              class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"
+            />
+            <input
+              v-model="filters.search"
+              type="search"
+              maxlength="240"
+              placeholder="Description, notes, vendor..."
+              class="min-h-10 w-full rounded-xl border border-line bg-white py-2 pl-9 pr-3 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+            />
+          </span>
+        </label>
+
+        <label class="xl:col-span-2">
+          <span class="mb-1.5 block text-xs font-medium text-ink-muted">Vendor</span>
+          <select
+            v-model="filters.vendorId"
+            class="min-h-10 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+          >
+            <option value="">All vendors</option>
+            <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
+              {{ vendor.name }}
+            </option>
+          </select>
+        </label>
+
+        <label class="xl:col-span-2">
+          <span class="mb-1.5 block text-xs font-medium text-ink-muted">Category</span>
+          <select
+            v-model="filters.categoryId"
+            class="min-h-10 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+          >
+            <option value="">All categories</option>
+            <option v-for="category in categories" :key="category.id" :value="category.id">
+              {{ category.name }}
+            </option>
+          </select>
+        </label>
+
+        <label class="xl:col-span-2">
+          <span class="mb-1.5 block text-xs font-medium text-ink-muted">From</span>
+          <input
+            v-model="filters.dateFrom"
+            type="date"
+            class="min-h-10 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+          />
+        </label>
+
+        <label class="xl:col-span-2">
+          <span class="mb-1.5 block text-xs font-medium text-ink-muted">To</span>
+          <input
+            v-model="filters.dateTo"
+            type="date"
+            class="min-h-10 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+          />
+        </label>
+      </div>
+
+      <div class="mt-4 flex justify-end border-t border-line pt-4">
+        <button
+          type="submit"
+          class="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
+        >
+          <Search :size="16" aria-hidden="true" />
+          Apply filters
+        </button>
+      </div>
     </form>
 
-    <section v-if="showForm" class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-      <h3 class="text-lg font-semibold tracking-tight text-stone-900">
-        {{ editingId ? 'Edit expense' : 'Create expense' }}
-      </h3>
+    <section
+      v-if="showForm"
+      class="overflow-hidden rounded-2xl border border-line bg-surface shadow-lifted"
+    >
+      <header
+        class="flex items-center gap-3 border-b border-line bg-brand-soft/55 px-5 py-4 sm:px-6"
+      >
+        <span class="flex size-10 items-center justify-center rounded-xl bg-brand text-white">
+          <Pencil v-if="editingId" :size="18" aria-hidden="true" />
+          <Plus v-else :size="18" aria-hidden="true" />
+        </span>
+        <div>
+          <h3 class="text-lg font-semibold tracking-tight text-ink">
+            {{ editingId ? 'Edit expense' : 'Create expense' }}
+          </h3>
+          <p class="text-xs text-ink-muted">
+            {{
+              editingId ? 'Update the details for this record.' : 'Add a purchase to your ledger.'
+            }}
+          </p>
+        </div>
+      </header>
 
-      <form aria-label="Expense form" class="mt-6 space-y-5" @submit.prevent="submitForm">
+      <form aria-label="Expense form" class="space-y-5 p-5 sm:p-6" @submit.prevent="submitForm">
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="block">
-            <span class="mb-2 block text-sm font-medium text-stone-700">Vendor</span>
+            <span class="mb-1.5 block text-sm font-medium text-ink">Vendor</span>
             <select
               id="expense-vendor"
               v-model="form.vendorId"
               :aria-describedby="formErrors.vendorId ? 'expense-vendor-error' : undefined"
               :aria-invalid="Boolean(formErrors.vendorId)"
               :class="[
-                'w-full rounded-2xl border bg-white px-4 py-3 text-sm text-stone-900 outline-none transition',
+                'min-h-11 w-full rounded-xl border bg-white px-3 py-2 text-sm text-ink outline-none transition',
                 formErrors.vendorId
                   ? 'border-red-300 focus:border-red-500'
-                  : 'border-stone-300 focus:border-stone-900',
+                  : 'border-line hover:border-stone-300 focus:border-brand',
               ]"
             >
               <option value="">Select vendor</option>
@@ -529,13 +575,13 @@ onMounted(loadExpensesPage)
           </label>
 
           <label class="block">
-            <span class="mb-2 block text-sm font-medium text-stone-700">Category</span>
+            <span class="mb-1.5 block text-sm font-medium text-ink">Category</span>
             <select
               id="expense-category"
               v-model="form.categoryId"
               :aria-describedby="formErrors.categoryId ? 'expense-category-error' : undefined"
               :aria-invalid="Boolean(formErrors.categoryId)"
-              class="w-full rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-stone-900"
+              class="min-h-11 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
             >
               <option value="">No category</option>
               <option v-for="category in categories" :key="category.id" :value="category.id">
@@ -552,7 +598,7 @@ onMounted(loadExpensesPage)
           </label>
 
           <label class="block sm:col-span-2">
-            <span class="mb-2 block text-sm font-medium text-stone-700">Description</span>
+            <span class="mb-1.5 block text-sm font-medium text-ink">Description</span>
             <input
               id="expense-description"
               v-model="form.description"
@@ -561,10 +607,10 @@ onMounted(loadExpensesPage)
               :aria-describedby="formErrors.description ? 'expense-description-error' : undefined"
               :aria-invalid="Boolean(formErrors.description)"
               :class="[
-                'w-full rounded-2xl border bg-white px-4 py-3 text-sm text-stone-900 outline-none transition',
+                'min-h-11 w-full rounded-xl border bg-white px-3 py-2 text-sm text-ink outline-none transition',
                 formErrors.description
                   ? 'border-red-300 focus:border-red-500'
-                  : 'border-stone-300 focus:border-stone-900',
+                  : 'border-line hover:border-stone-300 focus:border-brand',
               ]"
             />
             <p
@@ -577,7 +623,7 @@ onMounted(loadExpensesPage)
           </label>
 
           <label class="block">
-            <span class="mb-2 block text-sm font-medium text-stone-700">Amount</span>
+            <span class="mb-1.5 block text-sm font-medium text-ink">Amount</span>
             <input
               id="expense-amount"
               v-model.number="form.amount"
@@ -587,10 +633,10 @@ onMounted(loadExpensesPage)
               :aria-describedby="formErrors.amount ? 'expense-amount-error' : undefined"
               :aria-invalid="Boolean(formErrors.amount)"
               :class="[
-                'w-full rounded-2xl border bg-white px-4 py-3 text-sm text-stone-900 outline-none transition',
+                'min-h-11 w-full rounded-xl border bg-white px-3 py-2 text-sm text-ink outline-none transition',
                 formErrors.amount
                   ? 'border-red-300 focus:border-red-500'
-                  : 'border-stone-300 focus:border-stone-900',
+                  : 'border-line hover:border-stone-300 focus:border-brand',
               ]"
             />
             <p
@@ -603,7 +649,7 @@ onMounted(loadExpensesPage)
           </label>
 
           <label class="block">
-            <span class="mb-2 block text-sm font-medium text-stone-700">Expense date</span>
+            <span class="mb-1.5 block text-sm font-medium text-ink">Expense date</span>
             <input
               id="expense-date"
               v-model="form.expenseDate"
@@ -611,10 +657,10 @@ onMounted(loadExpensesPage)
               :aria-describedby="formErrors.expenseDate ? 'expense-date-error' : undefined"
               :aria-invalid="Boolean(formErrors.expenseDate)"
               :class="[
-                'w-full rounded-2xl border bg-white px-4 py-3 text-sm text-stone-900 outline-none transition',
+                'min-h-11 w-full rounded-xl border bg-white px-3 py-2 text-sm text-ink outline-none transition',
                 formErrors.expenseDate
                   ? 'border-red-300 focus:border-red-500'
-                  : 'border-stone-300 focus:border-stone-900',
+                  : 'border-line hover:border-stone-300 focus:border-brand',
               ]"
             />
             <p
@@ -627,7 +673,7 @@ onMounted(loadExpensesPage)
           </label>
 
           <label class="block sm:col-span-2">
-            <span class="mb-2 block text-sm font-medium text-stone-700">Notes</span>
+            <span class="mb-1.5 block text-sm font-medium text-ink">Notes</span>
             <textarea
               id="expense-notes"
               v-model="form.notes"
@@ -636,10 +682,10 @@ onMounted(loadExpensesPage)
               :aria-describedby="formErrors.notes ? 'expense-notes-error' : undefined"
               :aria-invalid="Boolean(formErrors.notes)"
               :class="[
-                'w-full rounded-2xl border bg-white px-4 py-3 text-sm text-stone-900 outline-none transition',
+                'w-full rounded-xl border bg-white px-3 py-2 text-sm text-ink outline-none transition',
                 formErrors.notes
                   ? 'border-red-300 focus:border-red-500'
-                  : 'border-stone-300 focus:border-stone-900',
+                  : 'border-line hover:border-stone-300 focus:border-brand',
               ]"
             />
             <p
@@ -663,7 +709,7 @@ onMounted(loadExpensesPage)
         <div class="flex items-center justify-end gap-3">
           <button
             type="button"
-            class="rounded-2xl px-4 py-3 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
+            class="min-h-11 rounded-xl px-4 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
             @click="resetForm"
           >
             Cancel
@@ -672,7 +718,7 @@ onMounted(loadExpensesPage)
           <button
             type="submit"
             :disabled="submitting"
-            class="inline-flex items-center justify-center rounded-2xl bg-stone-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-stone-700 disabled:cursor-not-allowed disabled:bg-stone-400"
+            class="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-stone-400"
           >
             {{ submitting ? 'Saving...' : 'Save expense' }}
           </button>
@@ -680,95 +726,157 @@ onMounted(loadExpensesPage)
       </form>
     </section>
 
-    <section class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-      <div v-if="loading" class="space-y-3" role="status" aria-label="Loading expenses">
-        <div class="h-5 w-40 animate-pulse rounded bg-stone-200"></div>
-        <div class="space-y-2">
-          <div class="h-16 animate-pulse rounded-2xl bg-stone-100"></div>
-          <div class="h-16 animate-pulse rounded-2xl bg-stone-100"></div>
+    <section class="overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
+      <header
+        class="flex items-center justify-between gap-4 border-b border-line px-5 py-4 sm:px-6"
+      >
+        <div>
+          <h3 class="text-base font-semibold text-ink">Expense ledger</h3>
+          <p class="mt-0.5 text-xs text-ink-muted">
+            {{ pagination.totalItems }} recorded expense{{ pagination.totalItems === 1 ? '' : 's' }}
+          </p>
+        </div>
+        <span
+          v-if="hasFilters"
+          class="rounded-full bg-accent-soft px-2.5 py-1 text-xs font-semibold text-accent"
+        >
+          Filtered
+        </span>
+      </header>
+
+      <div v-if="loading" class="space-y-3 p-5 sm:p-6" role="status" aria-label="Loading expenses">
+        <div class="h-4 w-36 animate-pulse rounded bg-surface-muted"></div>
+        <div class="space-y-3">
+          <div class="h-24 animate-pulse rounded-2xl bg-surface-muted"></div>
+          <div class="h-24 animate-pulse rounded-2xl bg-surface-muted"></div>
         </div>
       </div>
 
       <div
         v-else-if="error"
         role="alert"
-        class="rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-700"
+        class="m-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-700 sm:m-6"
       >
         <p class="font-medium">Could not load expenses</p>
         <p class="mt-1">{{ error }}</p>
       </div>
 
-      <div
-        v-else-if="expenses.length === 0"
-        class="rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-12 text-center"
-      >
-        <p class="text-base font-medium text-stone-700">
+      <div v-else-if="expenses.length === 0" class="px-5 py-14 text-center sm:px-6">
+        <span
+          class="mx-auto flex size-12 items-center justify-center rounded-2xl bg-brand-soft text-brand"
+        >
+          <ReceiptText :size="22" :stroke-width="1.7" aria-hidden="true" />
+        </span>
+        <p class="mt-4 text-base font-semibold text-ink">
           {{ hasFilters ? 'No matching expenses' : 'No expenses yet' }}
         </p>
-        <p v-if="hasFilters" class="mt-2 text-sm text-stone-500">
-          Adjust or clear the current filters to see more expenses.
+        <p class="mx-auto mt-1 max-w-sm text-sm leading-6 text-ink-muted">
+          {{
+            hasFilters
+              ? 'Adjust or clear the current filters to see more expenses.'
+              : 'Add your first expense to begin building a clear spending history.'
+          }}
         </p>
+        <button
+          v-if="hasFilters"
+          type="button"
+          class="mt-5 min-h-10 rounded-xl border border-line bg-white px-4 text-sm font-semibold text-ink transition hover:bg-surface-muted"
+          @click="clearFilters"
+        >
+          Clear filters
+        </button>
+        <button
+          v-else
+          type="button"
+          class="mt-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
+          @click="openCreateForm"
+        >
+          <Plus :size="16" aria-hidden="true" />
+          Create first expense
+        </button>
       </div>
 
-      <div v-else class="space-y-3">
-        <article
-          v-for="expense in expenses"
-          :key="expense.id"
-          class="rounded-2xl border border-stone-200 bg-stone-50 px-5 py-4 transition hover:border-stone-300 hover:bg-stone-100"
-        >
-          <div class="flex items-start justify-between gap-4">
-            <div class="min-w-0">
-              <h3 class="text-base font-semibold tracking-tight text-stone-900">
-                {{ expense.description }}
-              </h3>
-              <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-stone-500">
-                <span>{{ vendorNameById.get(expense.vendorId) ?? 'Unknown vendor' }}</span>
-                <span>{{ categoryNameById.get(expense.categoryId ?? '') ?? 'No category' }}</span>
-                <span>{{ formatDate(expense.expenseDate) }}</span>
+      <div v-else>
+        <div class="divide-y divide-line">
+          <article
+            v-for="expense in expenses"
+            :key="expense.id"
+            class="group px-5 py-5 transition hover:bg-surface-muted/45 sm:px-6"
+          >
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div class="flex min-w-0 items-start gap-3.5">
+                <span
+                  class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand"
+                >
+                  <ReceiptText :size="18" :stroke-width="1.8" aria-hidden="true" />
+                </span>
+                <div class="min-w-0">
+                  <h4 class="truncate text-sm font-semibold text-ink sm:text-base">
+                    {{ expense.description }}
+                  </h4>
+                  <div class="mt-1.5 flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-ink-muted">
+                    <span class="inline-flex items-center gap-1.5">
+                      <Store :size="13" aria-hidden="true" />
+                      {{ vendorNameById.get(expense.vendorId) ?? 'Unknown vendor' }}
+                    </span>
+                    <span class="inline-flex items-center gap-1.5">
+                      <Tags :size="13" aria-hidden="true" />
+                      {{ categoryNameById.get(expense.categoryId ?? '') ?? 'No category' }}
+                    </span>
+                    <span class="inline-flex items-center gap-1.5">
+                      <CalendarDays :size="13" aria-hidden="true" />
+                      {{ formatDate(expense.expenseDate) }}
+                    </span>
+                  </div>
+                  <p v-if="expense.notes" class="mt-2 line-clamp-2 text-sm text-ink-muted">
+                    {{ expense.notes }}
+                  </p>
+                </div>
               </div>
-              <p v-if="expense.notes" class="mt-2 text-sm text-stone-500">
-                {{ expense.notes }}
-              </p>
+
+              <div
+                class="flex flex-wrap items-center justify-between gap-3 sm:flex-nowrap lg:justify-end"
+              >
+                <span class="mr-auto text-lg font-semibold tracking-tight text-ink sm:mr-2">
+                  ${{ formatAmount(expense.amount) }}
+                </span>
+
+                <button
+                  type="button"
+                  class="inline-flex min-h-10 items-center rounded-xl bg-brand-soft px-3 text-sm font-semibold text-brand transition hover:bg-brand hover:text-white"
+                  @click="openExpense(expense)"
+                >
+                  View
+                </button>
+
+                <button
+                  type="button"
+                  class="inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
+                  @click="openEditForm(expense)"
+                >
+                  <Pencil :size="14" aria-hidden="true" />
+                  Edit
+                </button>
+
+                <button
+                  type="button"
+                  class="inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-red-50 hover:text-red-700"
+                  @click="archive(expense)"
+                >
+                  <Archive :size="14" aria-hidden="true" />
+                  Archive
+                </button>
+              </div>
             </div>
-
-            <div class="flex shrink-0 items-center gap-3">
-              <span class="text-sm font-semibold text-stone-900">
-                {{ formatAmount(expense.amount) }}
-              </span>
-
-              <button
-                type="button"
-                class="inline-flex items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900"
-                @click="openExpense(expense)"
-              >
-                View
-              </button>
-
-              <button
-                type="button"
-                class="inline-flex items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900"
-                @click="openEditForm(expense)"
-              >
-                Edit
-              </button>
-
-              <button
-                type="button"
-                class="inline-flex items-center rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 transition hover:border-red-300 hover:text-red-800"
-                @click="archive(expense)"
-              >
-                Archive
-              </button>
-            </div>
-          </div>
-        </article>
+          </article>
+        </div>
 
         <nav
           v-if="pagination.totalPages > 1"
           aria-label="Expense pagination"
-          class="flex flex-col gap-3 border-t border-stone-200 pt-4 sm:flex-row sm:items-center sm:justify-between"
+          class="flex flex-col gap-3 border-t border-line px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"
         >
-          <p class="text-sm text-stone-500">
+          <p class="text-sm text-ink-muted">
             Page {{ pagination.page }} of {{ pagination.totalPages }} ·
             {{ pagination.totalItems }} expenses
           </p>
@@ -777,18 +885,20 @@ onMounted(loadExpensesPage)
             <button
               type="button"
               :disabled="pagination.page === 1"
-              class="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 disabled:cursor-not-allowed disabled:text-stone-300"
+              class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink-muted transition hover:border-stone-300 hover:text-ink disabled:cursor-not-allowed disabled:text-stone-300"
               @click="changePage(pagination.page - 1)"
             >
+              <ChevronLeft :size="15" aria-hidden="true" />
               Previous
             </button>
             <button
               type="button"
               :disabled="pagination.page === pagination.totalPages"
-              class="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 disabled:cursor-not-allowed disabled:text-stone-300"
+              class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink-muted transition hover:border-stone-300 hover:text-ink disabled:cursor-not-allowed disabled:text-stone-300"
               @click="changePage(pagination.page + 1)"
             >
               Next
+              <ChevronRight :size="15" aria-hidden="true" />
             </button>
           </div>
         </nav>
