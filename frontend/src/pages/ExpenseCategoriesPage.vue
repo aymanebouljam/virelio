@@ -2,6 +2,7 @@
 import { onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ZodError } from 'zod'
+import { Archive, ChevronLeft, ChevronRight, Palette, Pencil, Plus, Tags } from '@lucide/vue'
 import { ApiError } from '@/lib/api'
 import { mapZodErrors } from '@/lib/zod'
 import {
@@ -236,29 +237,28 @@ onMounted(loadCategoriesPage)
 </script>
 
 <template>
-  <section class="space-y-8">
-    <header class="space-y-3">
-      <p class="text-xs font-semibold uppercase tracking-[0.24em] text-stone-400">Categories</p>
-
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <section class="space-y-7">
+    <header class="space-y-4">
+      <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 class="text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">
+          <p class="text-xs font-semibold uppercase tracking-[0.24em] text-accent">Organization</p>
+          <h2 class="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
             Expense categories
           </h2>
-          <p class="mt-2 max-w-2xl text-sm leading-6 text-stone-500 sm:text-base">
-            Organize expenses into a manageable set of categories before building expense entry.
+          <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-base">
+            Build a simple, recognizable system for understanding where money goes.
           </p>
         </div>
 
-        <div v-if="!showForm">
-          <button
-            type="button"
-            class="inline-flex items-center justify-center rounded-2xl bg-stone-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-stone-700"
-            @click="openCreateForm"
-          >
-            Add category
-          </button>
-        </div>
+        <button
+          v-if="!showForm"
+          type="button"
+          class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white shadow-card transition hover:bg-brand-strong"
+          @click="openCreateForm"
+        >
+          <Plus :size="17" aria-hidden="true" />
+          Add category
+        </button>
       </div>
 
       <div
@@ -270,15 +270,29 @@ onMounted(loadCategoriesPage)
       </div>
     </header>
 
-    <section v-if="showForm" class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-      <h3 class="text-lg font-semibold tracking-tight text-stone-900">
-        {{ editingId ? 'Edit category' : 'Create category' }}
-      </h3>
+    <section
+      v-if="showForm"
+      class="overflow-hidden rounded-2xl border border-line bg-surface shadow-lifted"
+    >
+      <header
+        class="flex items-center gap-3 border-b border-line bg-brand-soft/55 px-5 py-4 sm:px-6"
+      >
+        <span class="flex size-10 items-center justify-center rounded-xl bg-brand text-white">
+          <Pencil v-if="editingId" :size="18" aria-hidden="true" />
+          <Plus v-else :size="18" aria-hidden="true" />
+        </span>
+        <div>
+          <h3 class="text-lg font-semibold tracking-tight text-ink">
+            {{ editingId ? 'Edit category' : 'Create category' }}
+          </h3>
+          <p class="text-xs text-ink-muted">Choose a clear name and a recognizable color.</p>
+        </div>
+      </header>
 
-      <form aria-label="Category form" class="mt-6 space-y-5" @submit.prevent="submitForm">
-        <div class="grid gap-4 sm:grid-cols-[1fr_auto]">
+      <form aria-label="Category form" class="space-y-5 p-5 sm:p-6" @submit.prevent="submitForm">
+        <div class="grid gap-4 sm:grid-cols-[1fr_10rem]">
           <label class="block">
-            <span class="mb-2 block text-sm font-medium text-stone-700">Name</span>
+            <span class="mb-1.5 block text-sm font-medium text-ink">Name</span>
             <input
               id="category-name"
               v-model="form.name"
@@ -287,10 +301,10 @@ onMounted(loadCategoriesPage)
               :aria-describedby="formErrors.name ? 'category-name-error' : undefined"
               :aria-invalid="Boolean(formErrors.name)"
               :class="[
-                'w-full rounded-2xl border bg-white px-4 py-3 text-sm text-stone-900 outline-none transition',
+                'min-h-11 w-full rounded-xl border bg-white px-3 py-2 text-sm text-ink outline-none transition',
                 formErrors.name
                   ? 'border-red-300 focus:border-red-500'
-                  : 'border-stone-300 focus:border-stone-900',
+                  : 'border-line hover:border-stone-300 focus:border-brand',
               ]"
             />
             <p
@@ -303,15 +317,20 @@ onMounted(loadCategoriesPage)
           </label>
 
           <label class="block">
-            <span class="mb-2 block text-sm font-medium text-stone-700">Color</span>
-            <input
-              id="category-color"
-              v-model="form.color"
-              type="color"
-              :aria-describedby="formErrors.color ? 'category-color-error' : undefined"
-              :aria-invalid="Boolean(formErrors.color)"
-              class="h-12.5 w-20 rounded-2xl border border-stone-300 bg-white p-2"
-            />
+            <span class="mb-1.5 block text-sm font-medium text-ink">Color</span>
+            <span
+              class="flex min-h-11 items-center gap-2 rounded-xl border border-line bg-white px-2"
+            >
+              <input
+                id="category-color"
+                v-model="form.color"
+                type="color"
+                :aria-describedby="formErrors.color ? 'category-color-error' : undefined"
+                :aria-invalid="Boolean(formErrors.color)"
+                class="size-8 cursor-pointer rounded-lg border-0 bg-transparent p-0"
+              />
+              <span class="font-mono text-xs uppercase text-ink-muted">{{ form.color }}</span>
+            </span>
             <p
               v-if="formErrors.color"
               id="category-color-error"
@@ -333,7 +352,7 @@ onMounted(loadCategoriesPage)
         <div class="flex items-center justify-end gap-3">
           <button
             type="button"
-            class="rounded-2xl px-4 py-3 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
+            class="min-h-11 rounded-xl px-4 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
             @click="resetForm"
           >
             Cancel
@@ -342,7 +361,7 @@ onMounted(loadCategoriesPage)
           <button
             type="submit"
             :disabled="submitting"
-            class="inline-flex items-center justify-center rounded-2xl bg-stone-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-stone-700 disabled:cursor-not-allowed disabled:bg-stone-400"
+            class="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-stone-400"
           >
             {{ submitting ? 'Saving...' : 'Save category' }}
           </button>
@@ -350,67 +369,108 @@ onMounted(loadCategoriesPage)
       </form>
     </section>
 
-    <section class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-      <div v-if="loading" class="space-y-3" role="status" aria-label="Loading categories">
-        <div class="h-5 w-40 animate-pulse rounded bg-stone-200"></div>
-        <div class="space-y-2">
-          <div class="h-16 animate-pulse rounded-2xl bg-stone-100"></div>
-          <div class="h-16 animate-pulse rounded-2xl bg-stone-100"></div>
+    <section class="overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
+      <header class="border-b border-line px-5 py-4 sm:px-6">
+        <h3 class="text-base font-semibold text-ink">Active categories</h3>
+        <p class="mt-0.5 text-xs text-ink-muted">
+          {{ pagination.totalItems }} categor{{ pagination.totalItems === 1 ? 'y' : 'ies' }}
+          available for expenses
+        </p>
+      </header>
+
+      <div
+        v-if="loading"
+        class="space-y-3 p-5 sm:p-6"
+        role="status"
+        aria-label="Loading categories"
+      >
+        <div class="h-4 w-36 animate-pulse rounded bg-surface-muted"></div>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div class="h-28 animate-pulse rounded-2xl bg-surface-muted"></div>
+          <div class="h-28 animate-pulse rounded-2xl bg-surface-muted"></div>
         </div>
       </div>
 
       <div
         v-else-if="error"
         role="alert"
-        class="rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-700"
+        class="m-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-700 sm:m-6"
       >
         <p class="font-medium">Could not load categories</p>
         <p class="mt-1">{{ error }}</p>
       </div>
 
-      <div
-        v-else-if="categories.length === 0"
-        class="rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-12 text-center"
-      >
-        <p class="text-base font-medium text-stone-700">No categories yet</p>
+      <div v-else-if="categories.length === 0" class="px-5 py-14 text-center sm:px-6">
+        <span
+          class="mx-auto flex size-12 items-center justify-center rounded-2xl bg-accent-soft text-accent"
+        >
+          <Palette :size="22" :stroke-width="1.7" aria-hidden="true" />
+        </span>
+        <p class="mt-4 text-base font-semibold text-ink">No categories yet</p>
+        <p class="mx-auto mt-1 max-w-sm text-sm leading-6 text-ink-muted">
+          Create your first category to make spending patterns easier to recognize.
+        </p>
+        <button
+          type="button"
+          class="mt-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
+          @click="openCreateForm"
+        >
+          <Plus :size="16" aria-hidden="true" />
+          Create first category
+        </button>
       </div>
 
-      <div v-else class="space-y-3">
+      <div v-else class="grid gap-3 p-5 sm:grid-cols-2 sm:p-6 xl:grid-cols-3">
         <article
           v-for="category in categories"
           :key="category.id"
-          class="rounded-2xl border border-stone-200 bg-stone-50 px-5 py-4 transition hover:border-stone-300 hover:bg-stone-100"
+          class="relative overflow-hidden rounded-2xl border border-line bg-white p-4 transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-card"
         >
-          <div class="flex items-center justify-between gap-3">
+          <span
+            class="absolute inset-x-0 top-0 h-1"
+            :style="{ backgroundColor: category.color ?? '#94a3b8' }"
+            aria-hidden="true"
+          />
+          <div class="flex items-start justify-between gap-3 pt-1">
             <div class="flex min-w-0 items-center gap-3">
               <span
-                class="h-4 w-4 shrink-0 rounded-full ring-1 ring-black/5"
-                :style="{ backgroundColor: category.color ?? '#94a3b8' }"
-              />
+                class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface-muted"
+              >
+                <span
+                  class="size-4 rounded-full ring-2 ring-white shadow-sm"
+                  :style="{ backgroundColor: category.color ?? '#94a3b8' }"
+                />
+              </span>
               <div class="min-w-0">
-                <h3 class="text-base font-semibold tracking-tight text-stone-900">
+                <h4 class="truncate text-sm font-semibold text-ink sm:text-base">
                   {{ category.name }}
-                </h3>
+                </h4>
+                <p class="mt-0.5 flex items-center gap-1 text-xs text-ink-muted">
+                  <Tags :size="12" aria-hidden="true" />
+                  Expense category
+                </p>
               </div>
             </div>
+          </div>
 
-            <div class="flex shrink-0 items-center gap-3">
-              <button
-                type="button"
-                class="inline-flex items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900"
-                @click="openEditForm(category)"
-              >
-                Edit
-              </button>
+          <div class="mt-5 flex items-center gap-2 border-t border-line pt-3">
+            <button
+              type="button"
+              class="inline-flex min-h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
+              @click="openEditForm(category)"
+            >
+              <Pencil :size="14" aria-hidden="true" />
+              Edit
+            </button>
 
-              <button
-                type="button"
-                class="inline-flex items-center rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 transition hover:border-red-300 hover:text-red-800"
-                @click="archive(category)"
-              >
-                Archive
-              </button>
-            </div>
+            <button
+              type="button"
+              class="inline-flex min-h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-red-50 hover:text-red-700"
+              @click="archive(category)"
+            >
+              <Archive :size="14" aria-hidden="true" />
+              Archive
+            </button>
           </div>
         </article>
       </div>
@@ -418,9 +478,9 @@ onMounted(loadCategoriesPage)
       <nav
         v-if="!loading && !error && pagination.totalPages > 1"
         aria-label="Expense category pagination"
-        class="mt-6 flex flex-col gap-3 border-t border-stone-200 pt-4 sm:flex-row sm:items-center sm:justify-between"
+        class="flex flex-col gap-3 border-t border-line px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"
       >
-        <p class="text-sm text-stone-500">
+        <p class="text-sm text-ink-muted">
           Page {{ pagination.page }} of {{ pagination.totalPages }} ·
           {{ pagination.totalItems }} categories
         </p>
@@ -429,18 +489,20 @@ onMounted(loadCategoriesPage)
           <button
             type="button"
             :disabled="pagination.page === 1"
-            class="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 disabled:cursor-not-allowed disabled:text-stone-300"
+            class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink-muted transition hover:border-stone-300 hover:text-ink disabled:cursor-not-allowed disabled:text-stone-300"
             @click="changePage(pagination.page - 1)"
           >
+            <ChevronLeft :size="15" aria-hidden="true" />
             Previous
           </button>
           <button
             type="button"
             :disabled="pagination.page === pagination.totalPages"
-            class="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 disabled:cursor-not-allowed disabled:text-stone-300"
+            class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink-muted transition hover:border-stone-300 hover:text-ink disabled:cursor-not-allowed disabled:text-stone-300"
             @click="changePage(pagination.page + 1)"
           >
             Next
+            <ChevronRight :size="15" aria-hidden="true" />
           </button>
         </div>
       </nav>

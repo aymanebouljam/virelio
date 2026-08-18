@@ -113,6 +113,23 @@ describe('expense category management', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('No categories yet')
+    expect(wrapper.text()).toContain('Create first category')
+  })
+
+  it('presents category color and collection count', async () => {
+    categoriesApi.fetchExpenseCategoriesPage.mockResolvedValue(categoryPage([travel]))
+
+    const { wrapper } = await mountPage()
+
+    expect(wrapper.text()).toContain('1 category available for expenses')
+    expect(wrapper.text()).toContain('Expense category')
+    const colorMarkers = wrapper.findAll('article [style]')
+    expect(colorMarkers).toHaveLength(2)
+    expect(
+      colorMarkers.every((element) =>
+        (element.attributes('style') ?? '').includes('background-color'),
+      ),
+    ).toBe(true)
   })
 
   it('loads direct page queries and navigates between pages', async () => {
