@@ -22,7 +22,6 @@ type ProofResponse = {
   originalName: string;
   mimeType: string;
   sizeBytes: number;
-  storagePath: string;
   createdAt: string;
 };
 
@@ -112,9 +111,7 @@ describe('Proofs e2e', () => {
         sizeBytes: Buffer.byteLength(content),
       });
 
-      expect(createdProof.storagePath).toMatch(
-        new RegExp(`^uploads/proofs/${expense.id}/[^/]+\\.txt$`),
-      );
+      expect(createdProof).not.toHaveProperty('storagePath');
 
       const storedProof = await prisma.proofDocument.findUnique({
         where: { id: createdProof.id },
@@ -174,13 +171,11 @@ describe('Proofs e2e', () => {
   });
 
   describe('GET /expenses/:expenseId/proofs/:proofId', () => {
-    it('does not expose the proof through its legacy public path', async () => {
+    it('does not expose the proof storage path', async () => {
       const expense = await createExpense();
       const createdProof = await createProof(expense);
 
-      await request(http)
-        .get(`/${createdProof.storagePath}`)
-        .expect(HttpStatus.NOT_FOUND);
+      expect(createdProof).not.toHaveProperty('storagePath');
     });
 
     it('downloads an owned proof through the authenticated endpoint', async () => {

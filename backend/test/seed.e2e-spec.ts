@@ -91,8 +91,8 @@ describe('Development seed e2e', () => {
     const proofFiles = await Promise.all(
       proofs.map(async (proof) => ({
         storagePath: proof.storagePath,
-        content: await readFile(join(uploadsRoot, proof.storagePath), 'utf8'),
-        modifiedAt: (await stat(join(uploadsRoot, proof.storagePath))).mtimeMs,
+        content: await readFile(proof.storagePath, 'utf8'),
+        modifiedAt: (await stat(proof.storagePath)).mtimeMs,
       })),
     );
 

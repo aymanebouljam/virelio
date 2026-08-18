@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { access, mkdir, rename, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { PrismaService } from '../../prisma/prisma.service';
-import { getAbsoluteProofPath, getExpenseProofDir } from './proofs-paths';
+import { getExpenseProofDir } from './proofs-paths';
 import { Expense, ProofDocument } from '../../generated/prisma/client';
 
 @Injectable()
@@ -11,24 +11,25 @@ export class ProofsService {
 
   async upload(userId: string, expenseId: string, file: Express.Multer.File) {
     const expenseDir = getExpenseProofDir(expenseId);
-    const finalPath = join(expenseDir, file.filename);
-    const publicPath = `uploads/proofs/${expenseId}/${file.filename}`;
+    const storagePath = join(expenseDir, file.filename);
     try {
       await this.assertExpense(userId, expenseId);
       await mkdir(expenseDir, { recursive: true });
-      await rename(file.path, finalPath);
+      await rename(file.path, storagePath);
 
-      return await this.prisma.proofDocument.create({
+      const proof = await this.prisma.proofDocument.create({
         data: {
           expenseId,
           originalName: file.originalname,
           mimeType: file.mimetype,
           sizeBytes: file.size,
-          storagePath: publicPath,
+          storagePath,
         },
       });
+
+      return this.toResponse(proof);
     } catch (error: unknown) {
-      await this.unlinkSafely(finalPath);
+      await this.unlinkSafely(storagePath);
       await this.unlinkSafely(file.path);
 
       throw error;
@@ -39,7 +40,7 @@ export class ProofsService {
     await this.assertExpense(userId, expenseId);
 
     const proof = await this.assertProofDocument(expenseId, proofId);
-    const absolutePath = getAbsoluteProofPath(proof.storagePath);
+    const absolutePath = proof.storagePath;
 
     try {
       await access(absolutePath);
@@ -59,7 +60,7 @@ export class ProofsService {
     await this.assertExpense(userId, expenseId);
 
     const proof = await this.assertProofDocument(expenseId, proofId);
-    const absolutePath = getAbsoluteProofPath(proof.storagePath);
+    const absolutePath = proof.storagePath;
 
     await this.unlinkSafely(absolutePath);
 
@@ -74,6 +75,17 @@ export class ProofsService {
     } catch {
       //
     }
+  }
+
+  private toResponse(proof: ProofDocument) {
+    return {
+      id: proof.id,
+      expenseId: proof.expenseId,
+      originalName: proof.originalName,
+      mimeType: proof.mimeType,
+      sizeBytes: proof.sizeBytes,
+      createdAt: proof.createdAt,
+    };
   }
 
   private async assertExpense(

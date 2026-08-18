@@ -147,11 +147,11 @@ async function main() {
     if (existingProof) continue;
 
     const proofDirectory = getExpenseProofDir(expenseId);
-    const storagePath = `uploads/proofs/${expenseId}/${proof.originalName}`;
+    const storagePath = join(proofDirectory, proof.originalName);
     const sizeBytes = Buffer.byteLength(proof.content);
 
     await mkdir(proofDirectory, { recursive: true });
-    await writeFile(join(proofDirectory, proof.originalName), proof.content);
+    await writeFile(storagePath, proof.content);
 
     await prisma.proofDocument.create({
       data: {

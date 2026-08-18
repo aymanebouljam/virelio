@@ -53,7 +53,7 @@ describe('ProofsService', () => {
       originalName: 'invoice.pdf',
       mimeType: 'application/pdf',
       sizeBytes: 245760,
-      storagePath: 'uploads/proofs/expense-1/generated-file-name.pdf',
+      storagePath: expectedPath,
       createdAt: new Date(),
     };
 
@@ -89,11 +89,18 @@ describe('ProofsService', () => {
         originalName: 'invoice.pdf',
         mimeType: 'application/pdf',
         sizeBytes: 245760,
-        storagePath: 'uploads/proofs/expense-1/generated-file-name.pdf',
+        storagePath: expectedPath,
       },
     });
 
-    expect(result).toEqual(createdProof);
+    expect(result).toEqual({
+      id: createdProof.id,
+      expenseId: createdProof.expenseId,
+      originalName: createdProof.originalName,
+      mimeType: createdProof.mimeType,
+      sizeBytes: createdProof.sizeBytes,
+      createdAt: createdProof.createdAt,
+    });
   });
 
   it('rejects upload when expense does not exist', async () => {
@@ -124,7 +131,10 @@ describe('ProofsService', () => {
       originalName: 'invoice.pdf',
       mimeType: 'application/pdf',
       sizeBytes: 245760,
-      storagePath: 'uploads/proofs/expense-1/generated-file-name.pdf',
+      storagePath: join(
+        getExpenseProofDir('expense-1'),
+        'generated-file-name.pdf',
+      ),
       createdAt: new Date('2026-06-19T10:00:00.000Z'),
     };
 
@@ -163,7 +173,10 @@ describe('ProofsService', () => {
       originalName: 'invoice.pdf',
       mimeType: 'application/pdf',
       sizeBytes: 245760,
-      storagePath: 'uploads/proofs/expense-1/generated-file-name.pdf',
+      storagePath: join(
+        getExpenseProofDir('expense-1'),
+        'generated-file-name.pdf',
+      ),
       createdAt: new Date('2026-06-19T10:00:00.000Z'),
     };
 
@@ -190,7 +203,10 @@ describe('ProofsService', () => {
       originalName: 'invoice.pdf',
       mimeType: 'application/pdf',
       sizeBytes: 245760,
-      storagePath: 'uploads/proofs/expense-1/generated-file-name.pdf',
+      storagePath: join(
+        getExpenseProofDir('expense-1'),
+        'generated-file-name.pdf',
+      ),
       createdAt: new Date('2026-06-19T10:00:00.000Z'),
     };
     expenseFindUniqueMock.mockResolvedValueOnce({
