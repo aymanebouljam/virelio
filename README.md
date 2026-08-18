@@ -1,6 +1,6 @@
 # Virelio
 
-Virelio is a multi-tenant expense tracker for managing vendors, business expenses, receipts, recurring costs, and spending reports. The current pre-release is `v0.7.0`.
+Virelio is a multi-tenant expense tracker for managing vendors, business expenses, receipts, recurring costs, and spending reports. The current pre-release is `v0.8.0`.
 
 ## Features
 
@@ -116,6 +116,6 @@ CI runs formatting, linting, typechecking, unit and component tests, PostgreSQL 
 
 ## Release Status
 
-Virelio uses pre-`1.0` minor releases for complete user-facing milestones. Releases through `v0.7.0` cover the MVP, search and pagination, profile settings, accessibility and audit history, reporting insights, category comparisons, and recurring expenses.
+Virelio uses pre-`1.0` minor releases for complete user-facing milestones. Releases through `v0.8.0` cover the MVP, search and pagination, profile settings, accessibility and audit history, reporting insights, category comparisons, recurring expenses, authentication error handling, and hardened proof uploads.
 
 The application is feature-complete for its current pre-release scope, but it is not yet described as production-ready. See [CHANGELOG.md](CHANGELOG.md) for release details.

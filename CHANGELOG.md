@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-08-18
+
+### Added
+
+- A configurable proof upload size limit with a 10 MiB default.
+- PDF, JPEG, and PNG content-signature validation with canonical stored extensions and MIME types.
+- Unit and end-to-end coverage for proof content validation and upload size limits.
+
+### Changed
+
+- Stored proof files under generated names instead of user-controlled filenames.
+- Preserved authentication sessions for non-unauthorized API errors, while continuing to clear expired or invalid sessions on `401` responses.
+- Cleaned up temporary proof files when validation or persistence fails.
+
 ## [0.7.0] - 2026-08-09
 
 ### Added
