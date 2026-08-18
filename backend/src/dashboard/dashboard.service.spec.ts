@@ -149,7 +149,6 @@ describe('DashboardService', () => {
           originalName: 'receipt.jpg',
           mimeType: 'image/jpeg',
           sizeBytes: 245760,
-          storagePath: 'uploads/proofs/expense-1/receipt.jpg',
           createdAt: new Date('2026-06-22T10:00:00.000Z').toISOString(),
           expenseId: 'expense-1',
           expenseDescription: 'Airport transfer',

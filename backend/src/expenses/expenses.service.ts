@@ -86,7 +86,16 @@ export class ExpensesService {
         include: {
           vendor: true,
           category: true,
-          proofs: true,
+          proofs: {
+            select: {
+              id: true,
+              expenseId: true,
+              originalName: true,
+              mimeType: true,
+              sizeBytes: true,
+              createdAt: true,
+            },
+          },
         },
       });
     } catch (error) {

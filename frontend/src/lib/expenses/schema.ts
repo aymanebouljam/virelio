@@ -73,7 +73,6 @@ export const expenseDetailSchema = expenseSchema.extend({
       originalName: z.string().trim().min(1),
       mimeType: z.string().trim().min(1),
       sizeBytes: z.number().int().nonnegative(),
-      storagePath: z.string().trim().min(1),
       createdAt: z.iso.datetime(),
     }),
   ),

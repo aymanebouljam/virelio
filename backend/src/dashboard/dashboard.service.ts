@@ -26,7 +26,6 @@ export type DashboardSummary = {
     mimeType: string;
     sizeBytes: number;
     createdAt: string;
-    storagePath: string;
     expenseId: string;
     expenseDescription: string;
   }>;
@@ -149,7 +148,6 @@ export class DashboardService {
       originalName: proof.originalName,
       mimeType: proof.mimeType,
       sizeBytes: proof.sizeBytes,
-      storagePath: proof.storagePath,
       createdAt: proof.createdAt.toISOString(),
       expenseId: proof.expense.id,
       expenseDescription: proof.expense.description,
