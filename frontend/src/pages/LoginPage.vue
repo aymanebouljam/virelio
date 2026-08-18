@@ -68,11 +68,14 @@ async function submit() {
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-[70vh] w-full max-w-md items-center">
-    <div class="w-full rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
+  <section class="mx-auto w-full max-w-md">
+    <div class="w-full rounded-3xl border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
       <header class="space-y-2">
-        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-stone-400">Auth</p>
-        <h1 class="text-2xl font-semibold tracking-tight text-stone-900">Sign in</h1>
+        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-stone-400">Welcome back</p>
+        <h1 class="text-3xl font-semibold tracking-tight text-stone-900">Sign in to Virelio</h1>
+        <p class="text-sm leading-6 text-stone-500">
+          Continue managing expenses, vendors, and proof documents.
+        </p>
       </header>
 
       <form aria-label="Login form" class="mt-6 space-y-4" @submit.prevent="submit">
@@ -124,6 +127,13 @@ async function submit() {
           {{ submitting ? 'Signing in...' : 'Sign in' }}
         </button>
       </form>
+
+      <p class="mt-6 text-center text-sm text-stone-500">
+        New to Virelio?
+        <RouterLink to="/register" class="font-semibold text-stone-900 hover:underline">
+          Create an account
+        </RouterLink>
+      </p>
     </div>
   </section>
 </template>
