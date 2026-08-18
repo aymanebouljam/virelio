@@ -1,6 +1,72 @@
 @import 'tailwindcss';
 
+@theme {
+  --font-sans:
+    'Aptos', 'Segoe UI Variable', 'Segoe UI', ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, sans-serif;
+
+  --color-canvas: #f3f0e8;
+  --color-surface: #fffdf8;
+  --color-surface-muted: #e9e8df;
+  --color-ink: #17231e;
+  --color-ink-muted: #667069;
+  --color-line: #dcd9ce;
+  --color-brand: #245540;
+  --color-brand-strong: #183e2e;
+  --color-brand-soft: #dce9df;
+  --color-accent: #b96f3d;
+  --color-accent-soft: #f3e2d4;
+
+  --shadow-card: 0 1px 2px rgb(23 35 30 / 0.04), 0 12px 30px rgb(23 35 30 / 0.06);
+  --shadow-lifted: 0 2px 4px rgb(23 35 30 / 0.06), 0 20px 45px rgb(23 35 30 / 0.1);
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+  }
+
+  html {
+    min-width: 320px;
+    background: var(--color-canvas);
+  }
+
+  body {
+    min-width: 320px;
+    min-height: 100vh;
+    margin: 0;
+    background: var(--color-canvas);
+    color: var(--color-ink);
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  ::selection {
+    background: var(--color-brand-soft);
+    color: var(--color-brand-strong);
+  }
+}
+
 :focus-visible {
-  outline: 2px solid #78716c;
+  outline: 2px solid var(--color-surface);
   outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--color-brand);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
