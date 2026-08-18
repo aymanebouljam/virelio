@@ -1,9 +1,37 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { access, mkdir, rename, unlink } from 'node:fs/promises';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { access, mkdir, readFile, rename, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { PrismaService } from '../../prisma/prisma.service';
 import { getExpenseProofDir } from './proofs-paths';
 import { Expense, ProofDocument } from '../../generated/prisma/client';
+
+type SupportedProofType = {
+  extension: 'jpg' | 'pdf' | 'png';
+  mimeType: 'application/pdf' | 'image/jpeg' | 'image/png';
+  signature: readonly number[];
+};
+
+const supportedProofTypes: readonly SupportedProofType[] = [
+  {
+    extension: 'pdf',
+    mimeType: 'application/pdf',
+    signature: [0x25, 0x50, 0x44, 0x46, 0x2d],
+  },
+  {
+    extension: 'jpg',
+    mimeType: 'image/jpeg',
+    signature: [0xff, 0xd8, 0xff],
+  },
+  {
+    extension: 'png',
+    mimeType: 'image/png',
+    signature: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
+  },
+];
 
 @Injectable()
 export class ProofsService {
@@ -11,9 +39,11 @@ export class ProofsService {
 
   async upload(userId: string, expenseId: string, file: Express.Multer.File) {
     const expenseDir = getExpenseProofDir(expenseId);
-    const storagePath = join(expenseDir, file.filename);
+    let storagePath: string | undefined;
     try {
       await this.assertExpense(userId, expenseId);
+      const proofType = await this.detectProofType(file.path);
+      storagePath = join(expenseDir, `${file.filename}.${proofType.extension}`);
       await mkdir(expenseDir, { recursive: true });
       await rename(file.path, storagePath);
 
@@ -21,7 +51,7 @@ export class ProofsService {
         data: {
           expenseId,
           originalName: file.originalname,
-          mimeType: file.mimetype,
+          mimeType: proofType.mimeType,
           sizeBytes: file.size,
           storagePath,
         },
@@ -29,7 +59,9 @@ export class ProofsService {
 
       return this.toResponse(proof);
     } catch (error: unknown) {
-      await this.unlinkSafely(storagePath);
+      if (storagePath !== undefined) {
+        await this.unlinkSafely(storagePath);
+      }
       await this.unlinkSafely(file.path);
 
       throw error;
@@ -75,6 +107,29 @@ export class ProofsService {
     } catch {
       //
     }
+  }
+
+  private async detectProofType(path: string): Promise<SupportedProofType> {
+    const contents = await readFile(path);
+    const proofType = supportedProofTypes.find(({ signature }) =>
+      signature.every((byte, index) => contents[index] === byte),
+    );
+
+    if (!proofType) {
+      throw new BadRequestException({
+        message: 'Validation failed',
+        errors: [
+          {
+            field: 'file',
+            constraints: {
+              isFileType: 'Proof file must be a PDF, JPEG, or PNG',
+            },
+          },
+        ],
+      });
+    }
+
+    return proofType;
   }
 
   private toResponse(proof: ProofDocument) {
