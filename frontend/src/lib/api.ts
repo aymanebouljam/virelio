@@ -29,6 +29,7 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public readonly content: Record<string, string> | null = null,
+    public readonly status: number | null = null,
   ) {
     super(message.charAt(0).toUpperCase() + message.slice(1))
     this.name = 'ApiError'
@@ -54,14 +55,14 @@ async function validateResponse(response: Response) {
   return body
 }
 
-function parseError(body: ApiErrorResponse | null) {
+function parseError(body: ApiErrorResponse | null, status: number) {
   let message = 'Something went wrong'
-  if (body === null) throw new ApiError(message)
+  if (body === null) throw new ApiError(message, null, status)
   if (!Array.isArray(body.errors) || body.errors.length === 0) {
     if (typeof body.message === 'string' && body.message.length > 0) {
       message = body.message
     }
-    throw new ApiError(message)
+    throw new ApiError(message, null, status)
   } else {
     const isEntry = (value: [string, string] | null) => value !== null
     const content = Object.fromEntries(
@@ -76,7 +77,7 @@ function parseError(body: ApiErrorResponse | null) {
         .filter(isEntry),
     )
 
-    throw new ApiError('Invalid form input', content)
+    throw new ApiError('Invalid form input', content, status)
   }
 }
 
@@ -150,7 +151,7 @@ export async function apiConfig({
 
   if (!response.ok) {
     const body = (await validateResponse(response)) as ApiErrorResponse | null
-    parseError(body)
+    parseError(body, response.status)
   }
 
   if (responseType === 'blob') {

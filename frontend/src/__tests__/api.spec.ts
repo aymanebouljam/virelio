@@ -121,10 +121,22 @@ describe('apiConfig', () => {
       name: 'ApiError',
       message: 'Invalid form input',
       content: { name: 'Name should not be empty' },
+      status: 400,
     })
     expect(fetchMock).toHaveBeenCalledExactlyOnceWith(new URL('vendors', testUrl), {
       method: 'GET',
       headers: { Accept: 'application/json' },
+    })
+  })
+
+  it('retains the HTTP status on unstructured API failures', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ message: 'Service unavailable' }, 503))
+
+    await expect(apiConfig({ path: 'vendors' })).rejects.toMatchObject({
+      name: 'ApiError',
+      message: 'Service unavailable',
+      content: null,
+      status: 503,
     })
   })
 
