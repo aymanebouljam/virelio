@@ -29,7 +29,6 @@ export const dashboardSummarySchema = z.object({
       mimeType: z.string().trim().min(1),
       sizeBytes: z.number().int().nonnegative(),
       createdAt: z.iso.datetime(),
-      storagePath: z.string().trim().min(1),
       expenseId: z.string().trim().min(1),
       expenseDescription: z.string().trim().min(1),
     }),

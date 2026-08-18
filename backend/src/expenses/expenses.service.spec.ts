@@ -212,7 +212,6 @@ describe('ExpensesService', () => {
           originalName: 'invoice.pdf',
           mimeType: 'application/pdf',
           sizeBytes: 245760,
-          storagePath: 'uploads/proofs/expense-1/invoice.pdf',
           createdAt: new Date('2026-06-18T10:00:00.000Z'),
         },
       ],
@@ -232,7 +231,16 @@ describe('ExpensesService', () => {
       include: {
         vendor: true,
         category: true,
-        proofs: true,
+        proofs: {
+          select: {
+            id: true,
+            expenseId: true,
+            originalName: true,
+            mimeType: true,
+            sizeBytes: true,
+            createdAt: true,
+          },
+        },
       },
     });
   });

@@ -64,7 +64,6 @@ const receipt: ProofDocument = {
   originalName: 'receipt.pdf',
   mimeType: 'application/pdf',
   sizeBytes: 2048,
-  storagePath: 'test/receipt.pdf',
   createdAt: '2026-08-05T10:00:00.000Z',
 }
 

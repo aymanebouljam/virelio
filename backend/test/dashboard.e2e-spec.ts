@@ -86,7 +86,6 @@ describe('Dashboard e2e', () => {
       originalName: string;
       mimeType: string;
       sizeBytes: number;
-      storagePath: string;
       createdAt: string;
     };
   }
@@ -318,9 +317,7 @@ describe('Dashboard e2e', () => {
         expenseDescription: 'Printer paper',
       });
 
-      expect(summary.recentProofs[0].storagePath).toMatch(
-        new RegExp(`^uploads/proofs/${activeExpense.id}/[^/]+\\.jpg$`),
-      );
+      expect(summary.recentProofs[0]).not.toHaveProperty('storagePath');
 
       expect(summary.recentActivity).toEqual(
         expect.arrayContaining([

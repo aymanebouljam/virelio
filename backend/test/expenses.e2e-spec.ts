@@ -42,7 +42,6 @@ type ExpenseResponse = {
     originalName: string;
     mimeType: string;
     sizeBytes: number;
-    storagePath: string;
     createdAt: string;
   }[];
 };

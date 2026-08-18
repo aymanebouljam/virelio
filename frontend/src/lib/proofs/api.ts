@@ -6,7 +6,6 @@ export type ProofDocument = {
   originalName: string
   mimeType: string
   sizeBytes: number
-  storagePath: string
   createdAt: string
 }
 
