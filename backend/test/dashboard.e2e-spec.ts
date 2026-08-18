@@ -74,10 +74,14 @@ describe('Dashboard e2e', () => {
   }
 
   async function uploadProof(expenseId: string, filename = 'receipt.jpg') {
+    const jpegContent = Buffer.concat([
+      Buffer.from([0xff, 0xd8, 0xff]),
+      Buffer.from('receipt content'),
+    ]);
     const response = await request(http)
       .post(`/expenses/${expenseId}/proofs`)
       .set(authHeaders)
-      .attach('file', Buffer.from('receipt content'), filename)
+      .attach('file', jpegContent, filename)
       .expect(HttpStatus.CREATED);
 
     return response.body as {
