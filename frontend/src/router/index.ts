@@ -134,13 +134,14 @@ router.beforeEach(async (to) => {
     try {
       currentUser.value = await fetchCurrentUser()
     } catch (error) {
-      clearAccessToken()
-
-      if (error instanceof ApiError) {
-        return { name: 'login', query: { redirect: to.fullPath } }
+      if (!(error instanceof ApiError)) {
+        throw error
       }
 
-      throw error
+      if (error.status === 401) {
+        clearAccessToken()
+        return { name: 'login', query: { redirect: to.fullPath } }
+      }
     }
   }
 

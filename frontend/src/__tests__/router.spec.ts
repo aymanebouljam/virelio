@@ -101,12 +101,24 @@ describe('authentication route guard', () => {
   it('clears invalid sessions and preserves the intended destination', async () => {
     const { ApiError } = await import('@/lib/api')
     auth.isAuthenticated.value = true
-    auth.fetchCurrentUser.mockRejectedValue(new ApiError('Invalid token'))
+    auth.fetchCurrentUser.mockRejectedValue(new ApiError('Invalid token', null, 401))
 
     const router = await navigate('/reports')
 
     expect(auth.clearAccessToken).toHaveBeenCalledOnce()
     expect(router.currentRoute.value.name).toBe('login')
     expect(router.currentRoute.value.query).toEqual({ redirect: '/reports' })
+  })
+
+  it('preserves the session when current-user hydration fails temporarily', async () => {
+    const { ApiError } = await import('@/lib/api')
+    auth.isAuthenticated.value = true
+    auth.fetchCurrentUser.mockRejectedValue(new ApiError('Service unavailable', null, 503))
+
+    const router = await navigate('/reports')
+
+    expect(auth.clearAccessToken).not.toHaveBeenCalled()
+    expect(auth.isAuthenticated.value).toBe(true)
+    expect(router.currentRoute.value.name).toBe('reports')
   })
 })
