@@ -44,9 +44,27 @@ describe('App', () => {
 
     expect(wrapper.get('nav[aria-label="Primary navigation"]').text()).toContain('Dashboard')
     expect(wrapper.get('nav[aria-label="Primary navigation"]').text()).toContain('Expenses')
-    expect(wrapper.get('nav[aria-label="Archived records"]').text()).toContain('Vendors')
+    expect(wrapper.find('nav[aria-label="Archived records"]').exists()).toBe(false)
+    expect(wrapper.get('button[aria-label="Archived records"]').attributes('aria-expanded')).toBe(
+      'false',
+    )
     expect(wrapper.text()).toContain(user.fullName)
     expect(wrapper.text()).toContain(user.email)
+  })
+
+  it('expands archived navigation on demand', async () => {
+    setAccessToken('test-token')
+    currentUser.value = user
+    const { wrapper } = await mountWithRouter(App, routes)
+    const archiveTrigger = wrapper.get('button[aria-label="Archived records"]')
+
+    expect(archiveTrigger.attributes('aria-expanded')).toBe('false')
+
+    await archiveTrigger.trigger('click')
+
+    expect(archiveTrigger.attributes('aria-expanded')).toBe('true')
+    expect(wrapper.get('nav[aria-label="Archived records"]').text()).toContain('Vendors')
+    expect(wrapper.get('nav[aria-label="Archived records"]').text()).toContain('Expenses')
   })
 
   it('toggles the mobile navigation control', async () => {
