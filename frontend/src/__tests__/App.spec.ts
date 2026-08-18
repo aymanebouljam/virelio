@@ -33,8 +33,8 @@ describe('App', () => {
     expect(wrapper.text()).toContain('Vendors')
     expect(wrapper.text()).toContain('Dashboard page')
     expect(wrapper.get('nav').attributes('aria-label')).toBe('Primary navigation')
-    expect(wrapper.get('a[href="#main-content"]').text()).toBe('Skip to main content')
-    expect(wrapper.get('main').attributes()).toMatchObject({ id: 'main-content', tabindex: '-1' })
+    expect(wrapper.find('a[href="#main-content"]').exists()).toBe(false)
+    expect(wrapper.get('main').attributes('tabindex')).toBeUndefined()
   })
 
   it('clears the session and navigates to login on logout', async () => {

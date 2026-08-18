@@ -275,7 +275,7 @@ onMounted(loadExpense)
             <div class="mt-4 flex flex-col gap-3">
               <label
                 for="expense-proof-upload"
-                class="inline-flex w-fit cursor-pointer items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 focus-within:outline-3 focus-within:outline-offset-3 focus-within:outline-sky-600"
+                class="inline-flex w-fit cursor-pointer items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-stone-500"
               >
                 <input
                   id="expense-proof-upload"
