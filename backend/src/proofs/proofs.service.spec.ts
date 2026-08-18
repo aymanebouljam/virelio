@@ -1,5 +1,5 @@
-import { NotFoundException } from '@nestjs/common';
-import { access, mkdir, rename, unlink } from 'node:fs/promises';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { access, mkdir, readFile, rename, unlink } from 'node:fs/promises';
 import { ProofsService } from './proofs.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { join } from 'node:path';
@@ -8,6 +8,7 @@ import { getExpenseProofDir } from './proofs-paths';
 jest.mock('node:fs/promises', () => ({
   access: jest.fn(),
   mkdir: jest.fn(),
+  readFile: jest.fn(),
   rename: jest.fn(),
   unlink: jest.fn(),
 }));
@@ -42,6 +43,7 @@ describe('ProofsService', () => {
       id: 'expense-1',
       userId,
     });
+    jest.mocked(readFile).mockResolvedValueOnce(Buffer.from('%PDF-1.7'));
 
     const expectedDirectory = getExpenseProofDir('expense-1');
 
@@ -50,7 +52,7 @@ describe('ProofsService', () => {
     const createdProof = {
       id: 'proof-1',
       expenseId: 'expense-1',
-      originalName: 'invoice.pdf',
+      originalName: 'invoice.txt',
       mimeType: 'application/pdf',
       sizeBytes: 245760,
       storagePath: expectedPath,
@@ -60,11 +62,11 @@ describe('ProofsService', () => {
     proofCreateMock.mockResolvedValueOnce(createdProof);
 
     const file = {
-      originalname: 'invoice.pdf',
-      mimetype: 'application/pdf',
+      originalname: 'invoice.txt',
+      mimetype: 'text/plain',
       size: 245760,
-      filename: 'generated-file-name.pdf',
-      path: '/tmp/generated-file-name.pdf',
+      filename: 'generated-file-name',
+      path: '/tmp/generated-file-name',
     } as Express.Multer.File;
 
     const result = await service.upload(userId, 'expense-1', file);
@@ -86,7 +88,7 @@ describe('ProofsService', () => {
     expect(proofCreateMock).toHaveBeenCalledWith({
       data: {
         expenseId: 'expense-1',
-        originalName: 'invoice.pdf',
+        originalName: 'invoice.txt',
         mimeType: 'application/pdf',
         sizeBytes: 245760,
         storagePath: expectedPath,
@@ -101,6 +103,31 @@ describe('ProofsService', () => {
       sizeBytes: createdProof.sizeBytes,
       createdAt: createdProof.createdAt,
     });
+  });
+
+  it('rejects unsupported file content and removes the temporary upload', async () => {
+    expenseFindUniqueMock.mockResolvedValueOnce({
+      id: 'expense-1',
+      userId,
+    });
+    jest.mocked(readFile).mockResolvedValueOnce(Buffer.from('plain text'));
+
+    const file = {
+      originalname: 'invoice.pdf',
+      mimetype: 'application/pdf',
+      size: 10,
+      filename: 'generated-file-name',
+      path: '/tmp/generated-file-name',
+    } as Express.Multer.File;
+
+    await expect(
+      service.upload(userId, 'expense-1', file),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(unlink).toHaveBeenCalledWith(file.path);
+    expect(mkdir).not.toHaveBeenCalled();
+    expect(rename).not.toHaveBeenCalled();
+    expect(proofCreateMock).not.toHaveBeenCalled();
   });
 
   it('rejects upload when expense does not exist', async () => {

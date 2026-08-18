@@ -269,17 +269,18 @@ describe('Tenant ownership e2e', () => {
 
   it('does not let another user upload or remove an owned proof', async () => {
     const { expenseId } = await createOwnerRecords();
+    const proofContent = Buffer.from('%PDF-1.7\nreceipt');
 
     const proofResponse = (await request(http)
       .post(`/expenses/${expenseId}/proofs`)
       .set(ownerHeaders)
-      .attach('file', Buffer.from('receipt'), 'receipt.txt')
+      .attach('file', proofContent, 'receipt.pdf')
       .expect(HttpStatus.CREATED)) as ApiResponse;
 
     await request(http)
       .post(`/expenses/${expenseId}/proofs`)
       .set(otherUserHeaders)
-      .attach('file', Buffer.from('receipt'), 'other-receipt.txt')
+      .attach('file', proofContent, 'other-receipt.pdf')
       .expect(HttpStatus.NOT_FOUND);
 
     await request(http)

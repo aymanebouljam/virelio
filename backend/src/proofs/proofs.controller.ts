@@ -14,20 +14,11 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { createReadStream, mkdirSync } from 'node:fs';
-import { randomUUID } from 'node:crypto';
-import { extname } from 'node:path';
-import { diskStorage } from 'multer';
+import { createReadStream } from 'node:fs';
 import { ProofsService } from './proofs.service';
-import { getTmpUploadDir } from './proofs-paths';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { JwtUser } from '../auth/auth.types';
-
-function buildStoredFilename(originalName: string) {
-  const extension = extname(originalName);
-  return `${randomUUID()}${extension}`;
-}
 
 @UseGuards(JwtAuthGuard)
 @Controller('expenses/:expenseId/proofs')
@@ -35,20 +26,7 @@ export class ProofsController {
   constructor(private readonly proofsService: ProofsService) {}
 
   @Post()
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: diskStorage({
-        destination: (_req, _file, callback) => {
-          const tmpUploadDir = getTmpUploadDir();
-          mkdirSync(tmpUploadDir, { recursive: true });
-          callback(null, tmpUploadDir);
-        },
-        filename: (_req, file, callback) => {
-          callback(null, buildStoredFilename(file.originalname));
-        },
-      }),
-    }),
-  )
+  @UseInterceptors(FileInterceptor('file'))
   uploadProof(
     @CurrentUser() user: JwtUser,
     @Param('expenseId', new ParseUUIDPipe({ version: '4' })) expenseId: string,

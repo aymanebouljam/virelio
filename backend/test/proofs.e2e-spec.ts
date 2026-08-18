@@ -26,12 +26,17 @@ type ProofResponse = {
 };
 
 describe('Proofs e2e', () => {
+  const proofContent = Buffer.from('%PDF-1.7\ninvoice content');
+  const proofUploadMaxBytes = 64;
   let app: INestApplication;
   let http: Server;
   let prisma: PrismaService;
   let authHeaders: Record<string, string>;
+  let originalProofUploadMaxBytes: string | undefined;
 
   beforeAll(async () => {
+    originalProofUploadMaxBytes = process.env['PROOF_UPLOAD_MAX_BYTES'];
+    process.env['PROOF_UPLOAD_MAX_BYTES'] = String(proofUploadMaxBytes);
     ({ app, http, prisma } = await createTestApp());
   });
 
@@ -42,9 +47,17 @@ describe('Proofs e2e', () => {
   });
 
   afterAll(async () => {
-    await resetDatabase(prisma);
-    await rm(getUploadsRoot(), { recursive: true, force: true });
-    await app?.close();
+    try {
+      await resetDatabase(prisma);
+      await rm(getUploadsRoot(), { recursive: true, force: true });
+      await app?.close();
+    } finally {
+      if (originalProofUploadMaxBytes === undefined) {
+        delete process.env['PROOF_UPLOAD_MAX_BYTES'];
+      } else {
+        process.env['PROOF_UPLOAD_MAX_BYTES'] = originalProofUploadMaxBytes;
+      }
+    }
   });
 
   async function createVendor() {
@@ -80,12 +93,11 @@ describe('Proofs e2e', () => {
 
     return response.body as { id: string };
   }
-  const content = 'invoice content';
   async function createProof(expense: { id: string }) {
     const response = await request(http)
       .post(`/expenses/${expense.id}/proofs`)
       .set(authHeaders)
-      .attach('file', Buffer.from(content), 'invoice.txt')
+      .attach('file', proofContent, 'invoice.pdf')
       .expect(HttpStatus.CREATED);
 
     return response.body as ProofResponse;
@@ -95,20 +107,18 @@ describe('Proofs e2e', () => {
     it('uploads a proof file for an active expense', async () => {
       const expense = await createExpense();
 
-      const content = 'invoice content';
-
       const response = await request(http)
         .post(`/expenses/${expense.id}/proofs`)
         .set(authHeaders)
-        .attach('file', Buffer.from(content), 'invoice.txt')
+        .attach('file', proofContent, 'invoice.pdf')
         .expect(HttpStatus.CREATED);
       const createdProof = response.body as ProofResponse;
 
       expect(createdProof).toMatchObject({
         expenseId: expense.id,
-        originalName: 'invoice.txt',
-        mimeType: 'text/plain',
-        sizeBytes: Buffer.byteLength(content),
+        originalName: 'invoice.pdf',
+        mimeType: 'application/pdf',
+        sizeBytes: proofContent.length,
       });
 
       expect(createdProof).not.toHaveProperty('storagePath');
@@ -121,16 +131,48 @@ describe('Proofs e2e', () => {
       expect(storedProof).toMatchObject({
         id: createdProof.id,
         expenseId: expense.id,
-        originalName: 'invoice.txt',
-        mimeType: 'text/plain',
+        originalName: 'invoice.pdf',
+        mimeType: 'application/pdf',
       });
+    });
+
+    it('returns 400 for unsupported file content', async () => {
+      const expense = await createExpense();
+
+      const response = await request(http)
+        .post(`/expenses/${expense.id}/proofs`)
+        .set(authHeaders)
+        .attach('file', Buffer.from('plain text'), 'invoice.pdf')
+        .expect(HttpStatus.BAD_REQUEST);
+
+      expect(response.body).toEqual({
+        message: 'Validation failed',
+        errors: [
+          {
+            field: 'file',
+            constraints: {
+              isFileType: 'Proof file must be a PDF, JPEG, or PNG',
+            },
+          },
+        ],
+      });
+    });
+
+    it('returns 413 when the file exceeds the configured size limit', async () => {
+      const expense = await createExpense();
+
+      await request(http)
+        .post(`/expenses/${expense.id}/proofs`)
+        .set(authHeaders)
+        .attach('file', Buffer.alloc(proofUploadMaxBytes + 1), 'invoice.pdf')
+        .expect(HttpStatus.PAYLOAD_TOO_LARGE);
     });
 
     it('returns 400 when the expense ID is not a valid UUID', async () => {
       const response = await request(http)
         .post('/expenses/not-a-uuid/proofs')
         .set(authHeaders)
-        .attach('file', Buffer.from('invoice content'), 'invoice.txt')
+        .attach('file', proofContent, 'invoice.pdf')
         .expect(HttpStatus.BAD_REQUEST);
 
       const error = response.body as ErrorResponse;
@@ -162,7 +204,7 @@ describe('Proofs e2e', () => {
       const response = await request(http)
         .post(`/expenses/${randomUUID()}/proofs`)
         .set(authHeaders)
-        .attach('file', Buffer.from('invoice content'), 'invoice.txt')
+        .attach('file', proofContent, 'invoice.pdf')
         .expect(HttpStatus.NOT_FOUND);
 
       const error = response.body as ErrorResponse;
@@ -186,11 +228,11 @@ describe('Proofs e2e', () => {
         .get(`/expenses/${expense.id}/proofs/${createdProof.id}`)
         .set(authHeaders)
         .expect(HttpStatus.OK)
-        .expect('Content-Type', /^text\/plain/);
+        .expect('Content-Type', /^application\/pdf/);
 
-      expect(response.text).toBe(content);
+      expect(response.body).toEqual(proofContent);
       expect(response.headers['content-length']).toBe(
-        String(Buffer.byteLength(content)),
+        String(proofContent.length),
       );
     });
 
@@ -224,7 +266,7 @@ describe('Proofs e2e', () => {
       const createdProof = await createProof(expense);
       expect(createdProof).toMatchObject({
         expenseId: expense.id,
-        originalName: 'invoice.txt',
+        originalName: 'invoice.pdf',
       });
 
       await request(http)
@@ -243,7 +285,7 @@ describe('Proofs e2e', () => {
       const createdProof = await createProof(expense);
       expect(createdProof).toMatchObject({
         expenseId: expense.id,
-        originalName: 'invoice.txt',
+        originalName: 'invoice.pdf',
       });
 
       const response = await request(http)
@@ -272,7 +314,7 @@ describe('Proofs e2e', () => {
       const createdProof = await createProof(expense);
       expect(createdProof).toMatchObject({
         expenseId: expense.id,
-        originalName: 'invoice.txt',
+        originalName: 'invoice.pdf',
       });
 
       const response = await request(http)
