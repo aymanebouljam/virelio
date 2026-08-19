@@ -215,6 +215,15 @@ describe('recurring expense management', () => {
     expect(wrapper.text()).toContain('Atlas Workspace')
     expect(wrapper.text()).toContain('Software')
     expect(wrapper.text()).toContain('Due')
+    expect(wrapper.text()).toContain('1 recurring expense planned')
+    expect(wrapper.text()).toContain('45.50 USD')
+  })
+
+  it('offers a useful empty-state action', async () => {
+    const { wrapper } = await mountActive()
+
+    expect(wrapper.text()).toContain('No recurring expenses yet')
+    expect(wrapper.text()).toContain('Create first schedule')
   })
 
   it('loads URL page queries and navigates between pages', async () => {
