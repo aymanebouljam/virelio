@@ -227,29 +227,6 @@ watch(
         aria-hidden="true"
       />
 
-      <header class="relative flex items-center justify-between">
-        <RouterLink to="/login" class="group flex items-center gap-3">
-          <span
-            class="flex size-10 items-center justify-center rounded-xl bg-brand-strong text-lg font-bold text-white shadow-card"
-            aria-hidden="true"
-          >
-            V
-          </span>
-          <span>
-            <span
-              class="block text-[10px] font-semibold uppercase tracking-[0.24em] text-ink-muted"
-            >
-              Expense tracker
-            </span>
-            <span
-              class="mt-0.5 block text-xl font-semibold tracking-tight text-ink transition group-hover:text-brand"
-            >
-              Virelio
-            </span>
-          </span>
-        </RouterLink>
-      </header>
-
       <main id="main-content" tabindex="-1" class="relative flex flex-1 items-center py-8">
         <RouterView />
       </main>
