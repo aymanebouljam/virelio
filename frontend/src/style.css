@@ -5,20 +5,20 @@
     'Aptos', 'Segoe UI Variable', 'Segoe UI', ui-sans-serif, system-ui, -apple-system,
     BlinkMacSystemFont, sans-serif;
 
-  --color-canvas: #f3f0e8;
-  --color-surface: #fffdf8;
-  --color-surface-muted: #e9e8df;
-  --color-ink: #17231e;
-  --color-ink-muted: #667069;
-  --color-line: #dcd9ce;
-  --color-brand: #245540;
-  --color-brand-strong: #183e2e;
-  --color-brand-soft: #dce9df;
-  --color-accent: #b96f3d;
-  --color-accent-soft: #f3e2d4;
+  --color-canvas: #f4f2ed;
+  --color-surface: #fffdf9;
+  --color-surface-muted: #ebe9e4;
+  --color-ink: #202733;
+  --color-ink-muted: #68707c;
+  --color-line: #ddd9d1;
+  --color-brand: #33466a;
+  --color-brand-strong: #1f2b42;
+  --color-brand-soft: #e0e5ee;
+  --color-accent: #a84f2a;
+  --color-accent-soft: #f3ded3;
 
-  --shadow-card: 0 1px 2px rgb(23 35 30 / 0.04), 0 12px 30px rgb(23 35 30 / 0.06);
-  --shadow-lifted: 0 2px 4px rgb(23 35 30 / 0.06), 0 20px 45px rgb(23 35 30 / 0.1);
+  --shadow-card: 0 1px 2px rgb(32 39 51 / 0.04), 0 12px 30px rgb(32 39 51 / 0.06);
+  --shadow-lifted: 0 2px 4px rgb(32 39 51 / 0.06), 0 20px 45px rgb(32 39 51 / 0.1);
 }
 
 @layer base {

@@ -79,12 +79,11 @@ watch(
           class="flex items-center justify-between gap-4 px-5 py-4 lg:block lg:px-7 lg:pb-7 lg:pt-8"
         >
           <div class="flex items-center gap-3">
-            <div
-              class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent text-lg font-bold text-white shadow-lg shadow-black/15"
-              aria-hidden="true"
+            <span
+              class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface shadow-lg shadow-black/15"
             >
-              V
-            </div>
+              <img src="/logo-mark.svg" alt="" class="size-10" />
+            </span>
             <div>
               <p class="text-[10px] font-semibold uppercase tracking-[0.24em] text-white/45">
                 Expense tracker

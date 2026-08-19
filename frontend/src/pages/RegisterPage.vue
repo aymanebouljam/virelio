@@ -81,10 +81,9 @@ async function submit() {
       <div class="relative">
         <div aria-label="Virelio brand" class="flex items-center gap-3">
           <span
-            class="flex size-10 items-center justify-center rounded-xl bg-accent text-lg font-bold text-white shadow-lg shadow-black/15"
-            aria-hidden="true"
+            class="flex size-10 items-center justify-center rounded-xl bg-surface shadow-lg shadow-black/15"
           >
-            V
+            <img src="/logo-mark.svg" alt="" class="size-10" />
           </span>
           <span>
             <span class="block text-[10px] font-semibold uppercase tracking-[0.24em] text-white/45">
