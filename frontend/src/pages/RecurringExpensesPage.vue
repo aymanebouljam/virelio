@@ -2,6 +2,20 @@
 import { onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ZodError } from 'zod'
+import {
+  Archive,
+  CalendarClock,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  CircleDollarSign,
+  Pencil,
+  Play,
+  Plus,
+  Repeat2,
+  Store,
+  Tags,
+} from '@lucide/vue'
 import { ApiError } from '@/lib/api'
 import { fetchExpenseCategories } from '@/lib/expense-categories/api'
 import { expenseCategorySchema, type ExpenseCategory } from '@/lib/expense-categories/schema'
@@ -299,28 +313,26 @@ onMounted(loadPage)
 </script>
 
 <template>
-  <section class="space-y-8">
-    <header class="space-y-3">
-      <p class="text-xs font-semibold uppercase tracking-[0.24em] text-stone-400">
-        Recurring expenses
-      </p>
-
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <section class="space-y-7">
+    <header class="space-y-4">
+      <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 class="text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">
+          <p class="text-xs font-semibold uppercase tracking-[0.24em] text-accent">Planning</p>
+          <h2 class="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
             Recurring expenses
           </h2>
-          <p class="mt-2 max-w-2xl text-sm leading-6 text-stone-500 sm:text-base">
-            Schedule repeatable expenses and generate each due occurrence when it is ready.
+          <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-base">
+            Stay ahead of repeat costs and turn due schedules into expenses when ready.
           </p>
         </div>
 
         <button
           v-if="!showForm"
           type="button"
-          class="inline-flex items-center justify-center rounded-2xl bg-stone-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-stone-700"
+          class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white shadow-card transition hover:bg-brand-strong"
           @click="openCreateForm"
         >
+          <Plus :size="17" aria-hidden="true" />
           Add recurring expense
         </button>
       </div>
@@ -334,21 +346,39 @@ onMounted(loadPage)
       </div>
     </header>
 
-    <section v-if="showForm" class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-      <h3 class="text-lg font-semibold tracking-tight text-stone-900">
-        {{ editingId ? 'Edit recurring expense' : 'Create recurring expense' }}
-      </h3>
+    <section
+      v-if="showForm"
+      class="overflow-hidden rounded-2xl border border-line bg-surface shadow-lifted"
+    >
+      <header
+        class="flex items-center gap-3 border-b border-line bg-brand-soft/55 px-5 py-4 sm:px-6"
+      >
+        <span class="flex size-10 items-center justify-center rounded-xl bg-brand text-white">
+          <Pencil v-if="editingId" :size="18" aria-hidden="true" />
+          <Plus v-else :size="18" aria-hidden="true" />
+        </span>
+        <div>
+          <h3 class="text-lg font-semibold tracking-tight text-ink">
+            {{ editingId ? 'Edit recurring expense' : 'Create recurring expense' }}
+          </h3>
+          <p class="text-xs text-ink-muted">Define the cost, cadence, and next expected date.</p>
+        </div>
+      </header>
 
-      <form aria-label="Recurring expense form" class="mt-6 space-y-5" @submit.prevent="submitForm">
+      <form
+        aria-label="Recurring expense form"
+        class="space-y-5 p-5 sm:p-6"
+        @submit.prevent="submitForm"
+      >
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="block">
-            <span class="mb-2 block text-sm font-medium text-stone-700">Vendor</span>
+            <span class="mb-1.5 block text-sm font-medium text-ink">Vendor</span>
             <select
               id="recurring-vendor"
               v-model="form.vendorId"
               :aria-describedby="formErrors.vendorId ? 'recurring-vendor-error' : undefined"
               :aria-invalid="Boolean(formErrors.vendorId)"
-              class="w-full rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-stone-900"
+              class="min-h-11 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
             >
               <option value="">Select vendor</option>
               <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
@@ -365,13 +395,13 @@ onMounted(loadPage)
           </label>
 
           <label class="block">
-            <span class="mb-2 block text-sm font-medium text-stone-700">Category</span>
+            <span class="mb-1.5 block text-sm font-medium text-ink">Category</span>
             <select
               id="recurring-category"
               v-model="form.categoryId"
               :aria-describedby="formErrors.categoryId ? 'recurring-category-error' : undefined"
               :aria-invalid="Boolean(formErrors.categoryId)"
-              class="w-full rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-stone-900"
+              class="min-h-11 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
             >
               <option value="">No category</option>
               <option v-for="category in categories" :key="category.id" :value="category.id">
@@ -388,7 +418,7 @@ onMounted(loadPage)
           </label>
 
           <label class="block sm:col-span-2">
-            <span class="mb-2 block text-sm font-medium text-stone-700">Description</span>
+            <span class="mb-1.5 block text-sm font-medium text-ink">Description</span>
             <input
               id="recurring-description"
               v-model="form.description"
@@ -396,7 +426,7 @@ onMounted(loadPage)
               maxlength="240"
               :aria-describedby="formErrors.description ? 'recurring-description-error' : undefined"
               :aria-invalid="Boolean(formErrors.description)"
-              class="w-full rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-stone-900"
+              class="min-h-11 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
             />
             <p
               v-if="formErrors.description"
@@ -408,7 +438,7 @@ onMounted(loadPage)
           </label>
 
           <label class="block">
-            <span class="mb-2 block text-sm font-medium text-stone-700">Amount</span>
+            <span class="mb-1.5 block text-sm font-medium text-ink">Amount</span>
             <input
               id="recurring-amount"
               v-model.number="form.amount"
@@ -417,7 +447,7 @@ onMounted(loadPage)
               step="0.01"
               :aria-describedby="formErrors.amount ? 'recurring-amount-error' : undefined"
               :aria-invalid="Boolean(formErrors.amount)"
-              class="w-full rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-stone-900"
+              class="min-h-11 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
             />
             <p
               v-if="formErrors.amount"
@@ -429,13 +459,13 @@ onMounted(loadPage)
           </label>
 
           <label class="block">
-            <span class="mb-2 block text-sm font-medium text-stone-700">Frequency</span>
+            <span class="mb-1.5 block text-sm font-medium text-ink">Frequency</span>
             <select
               id="recurring-frequency"
               v-model="form.frequency"
               :aria-describedby="formErrors.frequency ? 'recurring-frequency-error' : undefined"
               :aria-invalid="Boolean(formErrors.frequency)"
-              class="w-full rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-stone-900"
+              class="min-h-11 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
             >
               <option value="WEEKLY">Weekly</option>
               <option value="MONTHLY">Monthly</option>
@@ -451,7 +481,7 @@ onMounted(loadPage)
           </label>
 
           <label class="block">
-            <span class="mb-2 block text-sm font-medium text-stone-700">Next due date</span>
+            <span class="mb-1.5 block text-sm font-medium text-ink">Next due date</span>
             <input
               id="recurring-next-due-date"
               v-model="form.nextDueDate"
@@ -460,7 +490,7 @@ onMounted(loadPage)
                 formErrors.nextDueDate ? 'recurring-next-due-date-error' : undefined
               "
               :aria-invalid="Boolean(formErrors.nextDueDate)"
-              class="w-full rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-stone-900"
+              class="min-h-11 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
             />
             <p
               v-if="formErrors.nextDueDate"
@@ -472,7 +502,7 @@ onMounted(loadPage)
           </label>
 
           <label class="block sm:col-span-2">
-            <span class="mb-2 block text-sm font-medium text-stone-700">Notes</span>
+            <span class="mb-1.5 block text-sm font-medium text-ink">Notes</span>
             <textarea
               id="recurring-notes"
               v-model="form.notes"
@@ -480,7 +510,7 @@ onMounted(loadPage)
               maxlength="1000"
               :aria-describedby="formErrors.notes ? 'recurring-notes-error' : undefined"
               :aria-invalid="Boolean(formErrors.notes)"
-              class="w-full rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-stone-900"
+              class="w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
             />
             <p
               v-if="formErrors.notes"
@@ -503,7 +533,7 @@ onMounted(loadPage)
         <div class="flex items-center justify-end gap-3">
           <button
             type="button"
-            class="rounded-2xl px-4 py-3 text-sm font-medium text-stone-600 hover:bg-stone-100"
+            class="min-h-11 rounded-xl px-4 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
             @click="resetForm"
           >
             Cancel
@@ -511,7 +541,7 @@ onMounted(loadPage)
           <button
             type="submit"
             :disabled="submitting"
-            class="rounded-2xl bg-stone-900 px-4 py-3 text-sm font-medium text-white hover:bg-stone-700 disabled:cursor-not-allowed disabled:bg-stone-400"
+            class="min-h-11 rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-stone-400"
           >
             {{ submitting ? 'Saving...' : 'Save recurring expense' }}
           </button>
@@ -519,91 +549,149 @@ onMounted(loadPage)
       </form>
     </section>
 
-    <section class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-      <div v-if="loading" role="status" aria-label="Loading recurring expenses" class="space-y-3">
-        <div class="h-16 animate-pulse rounded-2xl bg-stone-100"></div>
-        <div class="h-16 animate-pulse rounded-2xl bg-stone-100"></div>
+    <section class="overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
+      <header class="border-b border-line px-5 py-4 sm:px-6">
+        <h3 class="text-base font-semibold text-ink">Active schedules</h3>
+        <p class="mt-0.5 text-xs text-ink-muted">
+          {{ pagination.totalItems }} recurring expense{{ pagination.totalItems === 1 ? '' : 's' }}
+          planned
+        </p>
+      </header>
+
+      <div
+        v-if="loading"
+        role="status"
+        aria-label="Loading recurring expenses"
+        class="space-y-3 p-5 sm:p-6"
+      >
+        <div class="h-28 animate-pulse rounded-2xl bg-surface-muted"></div>
+        <div class="h-28 animate-pulse rounded-2xl bg-surface-muted"></div>
       </div>
 
       <div
         v-else-if="error"
         role="alert"
-        class="rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-700"
+        class="m-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-700 sm:m-6"
       >
         <p class="font-medium">Could not load recurring expenses</p>
         <p class="mt-1">{{ error }}</p>
       </div>
 
-      <div
-        v-else-if="templates.length === 0"
-        class="rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-12 text-center"
-      >
-        <p class="text-base font-medium text-stone-700">No recurring expenses yet</p>
+      <div v-else-if="templates.length === 0" class="px-5 py-14 text-center sm:px-6">
+        <span
+          class="mx-auto flex size-12 items-center justify-center rounded-2xl bg-brand-soft text-brand"
+        >
+          <Repeat2 :size="22" :stroke-width="1.7" aria-hidden="true" />
+        </span>
+        <p class="mt-4 text-base font-semibold text-ink">No recurring expenses yet</p>
+        <p class="mx-auto mt-1 max-w-sm text-sm leading-6 text-ink-muted">
+          Add a repeat cost to keep upcoming obligations visible and predictable.
+        </p>
+        <button
+          type="button"
+          class="mt-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
+          @click="openCreateForm"
+        >
+          <Plus :size="16" aria-hidden="true" />
+          Create first schedule
+        </button>
       </div>
 
-      <div v-else class="space-y-3">
-        <article
-          v-for="template in templates"
-          :key="template.id"
-          class="rounded-2xl border border-stone-200 bg-stone-50 px-5 py-4"
-        >
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div class="min-w-0">
-              <div class="flex flex-wrap items-center gap-2">
-                <h3 class="text-base font-semibold tracking-tight text-stone-900">
-                  {{ template.description }}
-                </h3>
+      <div v-else>
+        <div class="divide-y divide-line">
+          <article
+            v-for="template in templates"
+            :key="template.id"
+            class="px-5 py-5 transition hover:bg-surface-muted/45 sm:px-6"
+          >
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div class="flex min-w-0 items-start gap-3.5">
                 <span
-                  v-if="isDue(template)"
-                  class="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800"
-                  >Due</span
+                  class="flex size-10 shrink-0 items-center justify-center rounded-xl"
+                  :class="
+                    isDue(template) ? 'bg-accent-soft text-accent' : 'bg-brand-soft text-brand'
+                  "
                 >
+                  <CalendarClock :size="18" :stroke-width="1.8" aria-hidden="true" />
+                </span>
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h4 class="truncate text-sm font-semibold text-ink sm:text-base">
+                      {{ template.description }}
+                    </h4>
+                    <span
+                      v-if="isDue(template)"
+                      class="rounded-full bg-accent-soft px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-accent"
+                      >Due</span
+                    >
+                  </div>
+                  <div class="mt-1.5 flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-ink-muted">
+                    <span class="inline-flex items-center gap-1.5">
+                      <Store :size="13" aria-hidden="true" />
+                      {{ template.vendor.name }}
+                    </span>
+                    <span class="inline-flex items-center gap-1.5">
+                      <Tags :size="13" aria-hidden="true" />
+                      {{ template.category?.name ?? 'No category' }}
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 capitalize">
+                      <Repeat2 :size="13" aria-hidden="true" />
+                      {{ template.frequency.toLowerCase() }}
+                    </span>
+                    <span class="inline-flex items-center gap-1.5">
+                      <CalendarDays :size="13" aria-hidden="true" />
+                      Next {{ formatDate(template.nextDueDate) }}
+                    </span>
+                  </div>
+                  <p v-if="template.notes" class="mt-2 line-clamp-2 text-sm text-ink-muted">
+                    {{ template.notes }}
+                  </p>
+                </div>
               </div>
-              <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-stone-500">
-                <span>{{ template.vendor.name }}</span>
-                <span>{{ template.category?.name ?? 'No category' }}</span>
-                <span>{{ template.frequency.toLowerCase() }}</span>
-                <span>Next {{ formatDate(template.nextDueDate) }}</span>
-              </div>
-              <p v-if="template.notes" class="mt-2 text-sm text-stone-500">{{ template.notes }}</p>
-            </div>
 
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="mr-1 text-sm font-semibold text-stone-900"
-                >{{ formatAmount(template.amount) }} {{ template.currency }}</span
-              >
-              <button
-                type="button"
-                :disabled="!isDue(template) || generatingId === template.id"
-                class="rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm font-medium text-emerald-700 hover:border-emerald-300 disabled:cursor-not-allowed disabled:text-stone-300"
-                @click="generate(template)"
-              >
-                {{ generatingId === template.id ? 'Generating...' : 'Generate' }}
-              </button>
-              <button
-                type="button"
-                class="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 hover:border-stone-300"
-                @click="openEditForm(template)"
-              >
-                Edit
-              </button>
-              <button
-                type="button"
-                class="rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 hover:border-red-300"
-                @click="archive(template)"
-              >
-                Archive
-              </button>
+              <div class="flex flex-wrap items-center gap-2 lg:justify-end">
+                <span
+                  class="mr-1 inline-flex items-center gap-1.5 text-base font-semibold text-ink"
+                >
+                  <CircleDollarSign :size="16" aria-hidden="true" class="text-ink-muted" />
+                  {{ formatAmount(template.amount) }} {{ template.currency }}
+                </span>
+                <button
+                  type="button"
+                  :disabled="!isDue(template) || generatingId === template.id"
+                  class="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-brand px-3 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-stone-400"
+                  @click="generate(template)"
+                >
+                  <Play :size="14" aria-hidden="true" />
+                  {{ generatingId === template.id ? 'Generating...' : 'Generate' }}
+                </button>
+                <button
+                  type="button"
+                  class="inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
+                  @click="openEditForm(template)"
+                >
+                  <Pencil :size="14" aria-hidden="true" />
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  class="inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-red-50 hover:text-red-700"
+                  @click="archive(template)"
+                >
+                  <Archive :size="14" aria-hidden="true" />
+                  Archive
+                </button>
+              </div>
             </div>
-          </div>
-        </article>
+          </article>
+        </div>
 
         <nav
           v-if="pagination.totalPages > 1"
           aria-label="Recurring expense pagination"
-          class="flex flex-col gap-3 border-t border-stone-200 pt-4 sm:flex-row sm:items-center sm:justify-between"
+          class="flex flex-col gap-3 border-t border-line px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"
         >
-          <p class="text-sm text-stone-500">
+          <p class="text-sm text-ink-muted">
             Page {{ pagination.page }} of {{ pagination.totalPages }} ·
             {{ pagination.totalItems }} recurring expenses
           </p>
@@ -611,18 +699,20 @@ onMounted(loadPage)
             <button
               type="button"
               :disabled="pagination.page === 1"
-              class="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 disabled:cursor-not-allowed disabled:text-stone-300"
+              class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink-muted transition hover:border-stone-300 hover:text-ink disabled:cursor-not-allowed disabled:text-stone-300"
               @click="changePage(pagination.page - 1)"
             >
+              <ChevronLeft :size="15" aria-hidden="true" />
               Previous
             </button>
             <button
               type="button"
               :disabled="pagination.page === pagination.totalPages"
-              class="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 disabled:cursor-not-allowed disabled:text-stone-300"
+              class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink-muted transition hover:border-stone-300 hover:text-ink disabled:cursor-not-allowed disabled:text-stone-300"
               @click="changePage(pagination.page + 1)"
             >
               Next
+              <ChevronRight :size="15" aria-hidden="true" />
             </button>
           </div>
         </nav>
