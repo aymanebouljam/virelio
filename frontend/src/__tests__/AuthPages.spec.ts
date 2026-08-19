@@ -76,11 +76,28 @@ afterEach(() => {
 })
 
 describe('login workflow', () => {
-  it('provides sign-in autocomplete hints', async () => {
+  it('presents account context and sign-in affordances', async () => {
     const { wrapper } = await mountPage(LoginPage, '/login')
 
+    expect(wrapper.get('[aria-label="Account benefits"]').text()).toContain(
+      'Keep every expense in context',
+    )
+    expect(wrapper.get('[aria-label="Virelio brand"]').text()).toContain('Virelio')
     expect(wrapper.get('#login-email').attributes('autocomplete')).toBe('email')
     expect(wrapper.get('#login-password').attributes('autocomplete')).toBe('current-password')
+    expect(wrapper.get('[aria-label="Show password"]').attributes('aria-label')).toBe(
+      'Show password',
+    )
+  })
+
+  it('reveals and hides the login password', async () => {
+    const { wrapper } = await mountPage(LoginPage, '/login')
+
+    expect(wrapper.get('#login-password').attributes('type')).toBe('password')
+    await wrapper.get('[aria-label="Show password"]').trigger('click')
+    expect(wrapper.get('#login-password').attributes('type')).toBe('text')
+    await wrapper.get('[aria-label="Hide password"]').trigger('click')
+    expect(wrapper.get('#login-password').attributes('type')).toBe('password')
   })
 
   it('stores the session and opens the dashboard after login', async () => {
@@ -144,15 +161,34 @@ describe('login workflow', () => {
 })
 
 describe('registration workflow', () => {
-  it('provides account-registration autocomplete hints', async () => {
+  it('presents account context and registration affordances', async () => {
     const { wrapper } = await mountPage(RegisterPage, '/register')
 
+    expect(wrapper.get('[aria-label="Account benefits"]').text()).toContain(
+      'Build a better expense routine',
+    )
+    expect(wrapper.get('[aria-label="Virelio brand"]').text()).toContain('Virelio')
     expect(wrapper.get('#register-full-name').attributes('autocomplete')).toBe('name')
     expect(wrapper.get('#register-email').attributes('autocomplete')).toBe('email')
     expect(wrapper.get('#register-password').attributes('autocomplete')).toBe('new-password')
     expect(wrapper.get('#register-password-confirmation').attributes('autocomplete')).toBe(
       'new-password',
     )
+    expect(wrapper.get('[aria-label="Show passwords"]').attributes('aria-label')).toBe(
+      'Show passwords',
+    )
+  })
+
+  it('reveals and hides both registration passwords', async () => {
+    const { wrapper } = await mountPage(RegisterPage, '/register')
+
+    await wrapper.get('[aria-label="Show passwords"]').trigger('click')
+    expect(wrapper.get('#register-password').attributes('type')).toBe('text')
+    expect(wrapper.get('#register-password-confirmation').attributes('type')).toBe('text')
+
+    await wrapper.get('[aria-label="Hide passwords"]').trigger('click')
+    expect(wrapper.get('#register-password').attributes('type')).toBe('password')
+    expect(wrapper.get('#register-password-confirmation').attributes('type')).toBe('password')
   })
 
   it('registers an account and opens the login page', async () => {
