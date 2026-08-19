@@ -198,9 +198,10 @@ function getMetric(wrapper: VueWrapper, label: string) {
 }
 
 function getSection(wrapper: VueWrapper, label: string) {
-  const section = wrapper
-    .findAll('section')
-    .find((candidate) => candidate.find('h3').text() === label)
+  const section = wrapper.findAll('section').find((candidate) => {
+    const heading = candidate.find('h3')
+    return heading.exists() && heading.text() === label
+  })
   if (!section) throw new Error(`${label} section not found`)
   return section
 }
@@ -250,6 +251,7 @@ describe('report workflows', () => {
     expect(getMetric(wrapper, 'Total amount').text()).toContain('$425.50')
     expect(getMetric(wrapper, 'Expense count').text()).toContain('3')
     expect(getMetric(wrapper, 'Categories').text()).toContain('2')
+    expect(wrapper.get('[aria-label="Report overview"]').findAll('article')).toHaveLength(3)
     expect(wrapper.text()).toContain('Travel')
     expect(wrapper.text()).toContain('Uncategorized')
     expect(wrapper.text()).toContain('Client-site flight')
@@ -338,6 +340,8 @@ describe('report workflows', () => {
     expect(reportsApi.fetchReportInsights).toHaveBeenCalledWith(filters)
     expect(reportsApi.fetchCategoryComparison).toHaveBeenCalledWith(filters)
     expect(wrapper.get('fieldset legend').text()).toBe('Report date range')
+    expect(wrapper.text()).toContain('Reporting period')
+    expect(wrapper.text()).toContain('Custom date range')
     expect(wrapper.get('#report-date-from').element).toHaveProperty('value', filters.dateFrom)
     expect(wrapper.get('#report-date-to').element).toHaveProperty('value', filters.dateTo)
   })
