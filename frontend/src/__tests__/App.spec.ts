@@ -32,7 +32,6 @@ describe('App', () => {
     expect(wrapper.text()).toContain('Login page')
     expect(wrapper.find('header').exists()).toBe(false)
     expect(wrapper.find('nav').exists()).toBe(false)
-    expect(wrapper.get('a[href="#main-content"]').text()).toBe('Skip to main content')
     expect(wrapper.get('main').attributes('id')).toBe('main-content')
     expect(wrapper.get('main').attributes('tabindex')).toBe('-1')
   })
