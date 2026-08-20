@@ -64,13 +64,6 @@ watch(
 
 <template>
   <div class="min-h-screen bg-canvas text-ink">
-    <a
-      href="#main-content"
-      class="sr-only fixed left-4 top-4 z-50 rounded-xl bg-brand-strong px-4 py-3 text-sm font-semibold text-surface focus:not-sr-only"
-    >
-      Skip to main content
-    </a>
-
     <div v-if="isAuthenticated" class="mx-auto min-h-screen max-w-[1600px] lg:flex">
       <aside
         class="border-b border-white/10 bg-brand-strong text-white shadow-lifted lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-72 lg:shrink-0 lg:flex-col lg:border-b-0"
