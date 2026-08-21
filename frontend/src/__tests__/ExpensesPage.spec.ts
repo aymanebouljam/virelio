@@ -300,6 +300,7 @@ describe('expense listing and filters', () => {
     const { router, wrapper } = await mountPage('/expenses?search=client')
 
     await getButton(wrapper, 'Add expense').trigger('click')
+    expect(wrapper.get('[data-expense-form-panel] h2').text()).toBe('Create expense')
     expect(getExpenseField(wrapper, 'Vendor').text()).toContain('Atlas Supplies')
     expect(getExpenseField(wrapper, 'Category').text()).toContain('Travel')
 
@@ -335,6 +336,7 @@ describe('expense listing and filters', () => {
     const { wrapper } = await mountPage()
 
     await getButton(wrapper, 'Edit').trigger('click')
+    expect(wrapper.get('[data-expense-form-panel] h2').text()).toBe('Edit expense')
     await getExpenseField(wrapper, 'Description').setValue('Rescheduled client-site flight')
     await getExpenseForm(wrapper).trigger('submit')
     await flushPromises()
