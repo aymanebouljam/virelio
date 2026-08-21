@@ -174,6 +174,8 @@ describe('expense listing and filters', () => {
 
     const { wrapper } = await mountPage()
 
+    expect(wrapper.get('h1').text()).toBe('Every purchase, on the record.')
+    expect(wrapper.findAll('[data-expense-record]')).toHaveLength(1)
     expect(wrapper.text()).toContain('Client-site flight')
     expect(wrapper.text()).toContain('Atlas Supplies')
     expect(wrapper.text()).toContain('Travel')
