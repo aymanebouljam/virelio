@@ -108,21 +108,27 @@ onMounted(loadSummary)
 </script>
 
 <template>
-  <section class="space-y-7">
-    <header class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+  <section class="space-y-6">
+    <header
+      class="flex flex-col gap-5 border-b border-line pb-6 lg:flex-row lg:items-end lg:justify-between"
+    >
       <div>
-        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-accent">Overview</p>
-        <h2 class="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-          Your spending, clearly.
-        </h2>
-        <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-base">
-          See where your money is going and what needs your attention.
+        <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
+          Ledger snapshot
+        </p>
+        <h1
+          class="font-display mt-2 text-[2rem] font-semibold leading-tight tracking-[-0.035em] text-ink sm:text-[2.5rem]"
+        >
+          Follow the record, not the noise.
+        </h1>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-[15px]">
+          Review spend, supporting proof, and the entries that need attention.
         </p>
       </div>
 
       <RouterLink
         to="/expenses"
-        class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white shadow-card transition hover:bg-brand-strong"
+        class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
       >
         <Plus :size="17" aria-hidden="true" />
         Manage expenses
@@ -130,12 +136,12 @@ onMounted(loadSummary)
     </header>
 
     <fieldset
-      class="rounded-2xl border border-line bg-surface px-4 py-3 shadow-card sm:flex sm:items-end sm:gap-3"
+      class="grid gap-4 rounded-xl border border-line bg-surface px-4 py-4 shadow-card lg:grid-cols-[1fr_auto] lg:items-end"
     >
       <legend class="sr-only">Dashboard date range</legend>
 
-      <div class="mb-3 flex items-center gap-2 sm:mb-0 sm:mr-auto sm:self-center">
-        <span class="flex size-9 items-center justify-center rounded-xl bg-brand-soft text-brand">
+      <div class="flex items-center gap-3 lg:self-center">
+        <span class="flex size-9 items-center justify-center rounded-lg bg-brand-soft text-brand">
           <CalendarDays :size="17" aria-hidden="true" />
         </span>
         <div>
@@ -146,7 +152,7 @@ onMounted(loadSummary)
         </div>
       </div>
 
-      <div class="grid gap-3 sm:flex sm:items-end">
+      <div class="grid grid-cols-2 gap-3 sm:flex sm:items-end">
         <div class="flex flex-col gap-1.5">
           <label for="dashboard-date-from" class="text-xs font-medium text-ink-muted">From</label>
           <input
@@ -155,7 +161,7 @@ onMounted(loadSummary)
             type="date"
             :aria-describedby="dateRangeError ? 'dashboard-date-range-error' : undefined"
             :aria-invalid="Boolean(dateRangeError)"
-            class="min-h-10 rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+            class="min-h-10 rounded-lg border border-line bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand focus:bg-surface"
             @change="
               updateDateRange({
                 dateFrom: ($event.target as HTMLInputElement).value,
@@ -173,7 +179,7 @@ onMounted(loadSummary)
             type="date"
             :aria-describedby="dateRangeError ? 'dashboard-date-range-error' : undefined"
             :aria-invalid="Boolean(dateRangeError)"
-            class="min-h-10 rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+            class="min-h-10 rounded-lg border border-line bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand focus:bg-surface"
             @change="
               updateDateRange({
                 dateFrom: dateFrom,
@@ -186,7 +192,7 @@ onMounted(loadSummary)
         <button
           v-if="hasDateRange"
           type="button"
-          class="min-h-10 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
+          class="col-span-2 min-h-10 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink sm:col-span-1"
           @click="updateDateRange({ dateFrom: undefined, dateTo: undefined })"
         >
           Clear
@@ -196,21 +202,17 @@ onMounted(loadSummary)
 
     <div
       v-if="loading"
-      class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      class="grid gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-2 xl:grid-cols-4"
       role="status"
       aria-label="Loading dashboard"
     >
-      <div
-        v-for="index in 4"
-        :key="index"
-        class="h-40 animate-pulse rounded-2xl border border-line bg-surface-muted"
-      />
+      <div v-for="index in 4" :key="index" class="h-36 animate-pulse bg-surface-muted/70" />
     </div>
 
     <section
       v-else-if="error"
       role="alert"
-      class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+      class="rounded-xl border border-danger/25 bg-danger-soft px-5 py-4 text-sm text-danger"
     >
       <p class="font-medium">Could not load dashboard</p>
       <p :id="dateRangeError ? 'dashboard-date-range-error' : undefined" class="mt-1">
@@ -219,94 +221,108 @@ onMounted(loadSummary)
     </section>
 
     <template v-else-if="summary">
-      <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Spending overview">
+      <section
+        class="grid overflow-hidden rounded-xl border border-line bg-surface shadow-card sm:grid-cols-2 xl:grid-cols-4"
+        aria-label="Spending overview"
+      >
         <article
-          class="relative overflow-hidden rounded-2xl bg-brand-strong p-5 text-white shadow-lifted sm:col-span-2 xl:col-span-1"
+          data-summary-metric="total-spend"
+          class="relative border-b border-line p-5 sm:border-r xl:border-b-0"
         >
-          <div
-            class="absolute -right-10 -top-12 size-36 rounded-full border-[24px] border-white/5"
-            aria-hidden="true"
-          />
-          <div class="relative">
-            <span class="flex size-10 items-center justify-center rounded-xl bg-white/10">
-              <CircleDollarSign :size="20" :stroke-width="1.8" aria-hidden="true" />
+          <span class="absolute inset-y-0 left-0 w-1 bg-accent" aria-hidden="true" />
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+                Total spend
+              </p>
+              <p class="font-figure mt-3 text-[1.75rem] font-semibold tracking-[-0.04em] text-ink">
+                ${{ formatAmount(summary.totalSpend) }}
+              </p>
+            </div>
+            <span
+              class="flex size-9 items-center justify-center rounded-lg bg-accent-soft text-accent"
+            >
+              <CircleDollarSign :size="18" :stroke-width="1.8" aria-hidden="true" />
             </span>
-            <p class="mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-white/55">
-              Total spend
-            </p>
-            <p class="mt-1 text-3xl font-semibold tracking-tight">
-              ${{ formatAmount(summary.totalSpend) }}
-            </p>
-            <p class="mt-2 text-xs text-white/55">
-              {{ hasDateRange ? 'Within the selected period' : 'Across active expenses' }}
-            </p>
           </div>
+          <p class="mt-4 text-xs text-ink-muted">
+            {{ hasDateRange ? 'Within the selected period' : 'Across active expenses' }}
+          </p>
         </article>
 
-        <article class="rounded-2xl border border-line bg-surface p-5 shadow-card">
-          <span
-            class="flex size-10 items-center justify-center rounded-xl bg-brand-soft text-brand"
-          >
-            <Building2 :size="20" :stroke-width="1.8" aria-hidden="true" />
-          </span>
-          <div class="mt-5 flex items-end justify-between gap-3">
+        <article
+          data-summary-metric="active-vendors"
+          class="border-b border-line p-5 xl:border-b-0 xl:border-r"
+        >
+          <div class="flex items-start justify-between gap-4">
             <div>
-              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-ink-muted">
+              <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
                 Active vendors
               </p>
-              <p class="mt-1 text-3xl font-semibold tracking-tight text-ink">
+              <p class="font-figure mt-3 text-[1.75rem] font-semibold tracking-[-0.04em] text-ink">
                 {{ summary.activeVendors }}
               </p>
             </div>
-            <RouterLink
-              to="/vendors"
-              aria-label="View active vendors"
-              class="flex size-9 items-center justify-center rounded-full text-ink-muted transition hover:bg-surface-muted hover:text-brand"
+            <span
+              class="flex size-9 items-center justify-center rounded-lg bg-brand-soft text-brand"
             >
-              <ArrowRight :size="17" aria-hidden="true" />
-            </RouterLink>
+              <Building2 :size="18" :stroke-width="1.8" aria-hidden="true" />
+            </span>
           </div>
+          <RouterLink
+            to="/vendors"
+            class="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-brand hover:text-brand-strong"
+          >
+            View vendor ledger
+            <ArrowRight :size="14" aria-hidden="true" />
+          </RouterLink>
         </article>
 
-        <article class="rounded-2xl border border-line bg-surface p-5 shadow-card">
-          <span
-            class="flex size-10 items-center justify-center rounded-xl bg-accent-soft text-accent"
-          >
-            <Tags :size="20" :stroke-width="1.8" aria-hidden="true" />
-          </span>
-          <div class="mt-5 flex items-end justify-between gap-3">
+        <article
+          data-summary-metric="uncategorized"
+          class="border-b border-line p-5 sm:border-b-0 sm:border-r"
+        >
+          <div class="flex items-start justify-between gap-4">
             <div>
-              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-ink-muted">
+              <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
                 Uncategorized
               </p>
-              <p class="mt-1 text-3xl font-semibold tracking-tight text-ink">
+              <p class="font-figure mt-3 text-[1.75rem] font-semibold tracking-[-0.04em] text-ink">
                 {{ summary.uncategorizedExpenses }}
               </p>
             </div>
-            <RouterLink
-              to="/expenses"
-              aria-label="Review uncategorized expenses"
-              class="flex size-9 items-center justify-center rounded-full text-ink-muted transition hover:bg-surface-muted hover:text-brand"
+            <span
+              class="flex size-9 items-center justify-center rounded-lg bg-warning-soft text-warning"
             >
-              <ArrowRight :size="17" aria-hidden="true" />
-            </RouterLink>
+              <Tags :size="18" :stroke-width="1.8" aria-hidden="true" />
+            </span>
           </div>
+          <RouterLink
+            to="/expenses"
+            class="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-brand hover:text-brand-strong"
+          >
+            Review entries
+            <ArrowRight :size="14" aria-hidden="true" />
+          </RouterLink>
         </article>
 
-        <article class="rounded-2xl border border-line bg-surface p-5 shadow-card">
-          <span
-            class="flex size-10 items-center justify-center rounded-xl bg-surface-muted text-ink-muted"
-          >
-            <FileText :size="20" :stroke-width="1.8" aria-hidden="true" />
-          </span>
-          <div class="mt-5">
-            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-ink-muted">
-              Proof documents
-            </p>
-            <p class="mt-1 text-3xl font-semibold tracking-tight text-ink">
-              {{ summary.proofDocuments }}
-            </p>
+        <article data-summary-metric="proof-documents" class="p-5">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+                Proof documents
+              </p>
+              <p class="font-figure mt-3 text-[1.75rem] font-semibold tracking-[-0.04em] text-ink">
+                {{ summary.proofDocuments }}
+              </p>
+            </div>
+            <span
+              class="flex size-9 items-center justify-center rounded-lg bg-surface-muted text-ink-muted"
+            >
+              <FileText :size="18" :stroke-width="1.8" aria-hidden="true" />
+            </span>
           </div>
+          <p class="mt-4 text-xs text-ink-muted">Files attached to expense records</p>
         </article>
       </section>
 
