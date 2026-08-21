@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import {
   ArrowRight,
@@ -18,6 +18,9 @@ import { dashboardSummarySchema, type DashboardSummary } from '@/lib/dashboard/s
 
 const route = useRoute()
 const router = useRouter()
+const CategorySpendChart = defineAsyncComponent(
+  () => import('@/components/dashboard/CategorySpendChart.vue'),
+)
 
 const summary = ref<DashboardSummary | null>(null)
 const loading = ref(true)
@@ -37,13 +40,6 @@ const dateTo = computed(() => {
 const hasDateRange = computed(() => Boolean(dateFrom.value || dateTo.value))
 const hasCategoryBreakdown = computed(() => (summary.value?.categoryBreakdown.length ?? 0) > 0)
 const hasRecentActivity = computed(() => (summary.value?.recentActivity.length ?? 0) > 0)
-
-function categoryShare(totalAmount: string) {
-  const totalSpend = Number(summary.value?.totalSpend ?? 0)
-  if (totalSpend <= 0) return 0
-
-  return Math.min(100, Math.round((Number(totalAmount) / totalSpend) * 100))
-}
 
 async function loadSummary() {
   try {
@@ -326,14 +322,19 @@ onMounted(loadSummary)
         </article>
       </section>
 
-      <div class="grid gap-5 xl:grid-cols-[1.35fr_0.9fr]">
-        <section class="overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
+      <div class="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
+        <section class="overflow-hidden rounded-xl border border-line bg-surface shadow-card">
           <header
-            class="flex items-start justify-between gap-4 border-b border-line px-5 py-5 sm:px-6"
+            class="flex items-start justify-between gap-4 border-b border-line px-5 py-4 sm:px-6"
           >
             <div>
-              <h3 class="text-lg font-semibold tracking-tight text-ink">Recent activity</h3>
-              <p class="mt-1 text-sm text-ink-muted">Your latest expense and document updates.</p>
+              <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-accent">
+                Evidence trail
+              </p>
+              <h2 class="font-display mt-1 text-lg font-semibold tracking-[-0.02em] text-ink">
+                Recent activity
+              </h2>
+              <p class="mt-1 text-sm text-ink-muted">Latest changes to expenses and proof.</p>
             </div>
             <RouterLink
               to="/expenses"
@@ -346,7 +347,7 @@ onMounted(loadSummary)
 
           <div v-if="!hasRecentActivity" class="px-5 py-12 text-center sm:px-6">
             <span
-              class="mx-auto flex size-12 items-center justify-center rounded-2xl bg-brand-soft text-brand"
+              class="mx-auto flex size-11 items-center justify-center rounded-lg bg-brand-soft text-brand"
             >
               <ReceiptText :size="22" :stroke-width="1.7" aria-hidden="true" />
             </span>
@@ -356,14 +357,14 @@ onMounted(loadSummary)
             </p>
             <RouterLink
               to="/expenses"
-              class="mt-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white hover:bg-brand-strong"
+              class="mt-5 inline-flex min-h-10 items-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white hover:bg-brand-strong"
             >
               <Plus :size="16" aria-hidden="true" />
               Add an expense
             </RouterLink>
           </div>
 
-          <div v-else class="divide-y divide-line">
+          <div v-else class="relative divide-y divide-line border-l-2 border-l-accent/70">
             <RouterLink
               v-for="item in summary.recentActivity"
               :key="`${item.type}-${item.id}`"
@@ -371,7 +372,7 @@ onMounted(loadSummary)
               class="group flex items-center gap-4 px-5 py-4 transition hover:bg-surface-muted/55 sm:px-6"
             >
               <span
-                class="flex size-10 shrink-0 items-center justify-center rounded-xl"
+                class="flex size-9 shrink-0 items-center justify-center rounded-lg"
                 :class="
                   item.type === 'proof' ? 'bg-accent-soft text-accent' : 'bg-brand-soft text-brand'
                 "
@@ -384,7 +385,7 @@ onMounted(loadSummary)
                 <div class="flex items-center gap-2">
                   <p class="truncate text-sm font-semibold text-ink">{{ item.title }}</p>
                   <span
-                    class="shrink-0 rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-muted"
+                    class="shrink-0 border-l border-line-strong pl-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-muted"
                   >
                     {{ item.type === 'proof' ? 'Proof' : 'Expense' }}
                   </span>
@@ -397,21 +398,26 @@ onMounted(loadSummary)
               <ArrowRight
                 :size="17"
                 aria-hidden="true"
-                class="shrink-0 text-stone-300 transition group-hover:translate-x-0.5 group-hover:text-brand"
+                class="shrink-0 text-line-strong transition group-hover:translate-x-0.5 group-hover:text-brand"
               />
             </RouterLink>
           </div>
         </section>
 
-        <section class="rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6">
-          <div>
-            <h3 class="text-lg font-semibold tracking-tight text-ink">Spend by category</h3>
-            <p class="mt-1 text-sm text-ink-muted">How your total is distributed.</p>
+        <section class="rounded-xl border border-line bg-surface p-5 shadow-card sm:p-6">
+          <div class="border-b border-line pb-4">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-accent">
+              Distribution
+            </p>
+            <h2 class="font-display mt-1 text-lg font-semibold tracking-[-0.02em] text-ink">
+              Spend by category
+            </h2>
+            <p class="mt-1 text-sm text-ink-muted">Where recorded spend is concentrated.</p>
           </div>
 
           <div v-if="!hasCategoryBreakdown" class="py-12 text-center">
             <span
-              class="mx-auto flex size-12 items-center justify-center rounded-2xl bg-accent-soft text-accent"
+              class="mx-auto flex size-11 items-center justify-center rounded-lg bg-accent-soft text-accent"
             >
               <Tags :size="22" :stroke-width="1.7" aria-hidden="true" />
             </span>
@@ -421,42 +427,12 @@ onMounted(loadSummary)
             </p>
           </div>
 
-          <div v-else class="mt-7 space-y-6">
-            <div
-              v-for="category in summary.categoryBreakdown"
-              :key="category.categoryId ?? category.categoryName"
-            >
-              <div class="flex items-end justify-between gap-4">
-                <div class="min-w-0">
-                  <p class="truncate text-sm font-semibold text-ink">{{ category.categoryName }}</p>
-                  <p class="mt-0.5 text-xs text-ink-muted">
-                    {{ category.expenseCount }} expense{{ category.expenseCount === 1 ? '' : 's' }}
-                  </p>
-                </div>
-                <div class="shrink-0 text-right">
-                  <p class="text-sm font-semibold text-ink">
-                    ${{ formatAmount(category.totalAmount) }}
-                  </p>
-                  <p class="mt-0.5 text-xs text-ink-muted">
-                    {{ categoryShare(category.totalAmount) }}%
-                  </p>
-                </div>
-              </div>
-              <div
-                class="mt-3 h-2 overflow-hidden rounded-full bg-surface-muted"
-                role="progressbar"
-                :aria-label="`${category.categoryName} share of total spend`"
-                :aria-valuenow="categoryShare(category.totalAmount)"
-                aria-valuemin="0"
-                aria-valuemax="100"
-              >
-                <div
-                  class="h-full rounded-full bg-brand"
-                  :style="{ width: `${categoryShare(category.totalAmount)}%` }"
-                />
-              </div>
-            </div>
-          </div>
+          <CategorySpendChart
+            v-else
+            class="mt-5"
+            :categories="summary.categoryBreakdown"
+            :total-spend="summary.totalSpend"
+          />
         </section>
       </div>
     </template>

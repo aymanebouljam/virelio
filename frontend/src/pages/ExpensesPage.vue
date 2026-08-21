@@ -387,21 +387,27 @@ onMounted(loadExpensesPage)
 </script>
 
 <template>
-  <section class="space-y-7">
-    <header class="space-y-4">
+  <section class="space-y-6">
+    <header class="space-y-4 border-b border-line pb-6">
       <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.24em] text-accent">Spending</p>
-          <h2 class="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">Expenses</h2>
-          <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-base">
-            Keep every purchase organized, categorized, and easy to revisit.
+          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
+            Expense register
+          </p>
+          <h1
+            class="font-display mt-2 text-[2rem] font-semibold leading-tight tracking-[-0.035em] text-ink sm:text-[2.5rem]"
+          >
+            Every purchase, on the record.
+          </h1>
+          <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-[15px]">
+            Find, review, and maintain the entries behind your spending totals.
           </p>
         </div>
 
         <button
           v-if="!showForm"
           type="button"
-          class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white shadow-card transition hover:bg-brand-strong"
+          class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
           @click="openCreateForm"
         >
           <Plus :size="17" aria-hidden="true" />
@@ -412,20 +418,21 @@ onMounted(loadExpensesPage)
       <div
         v-if="actionError"
         role="alert"
-        class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        class="rounded-xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
       >
         {{ actionError }}
       </div>
     </header>
 
     <form
-      class="rounded-2xl border border-line bg-surface p-4 shadow-card"
+      class="rounded-xl border border-line border-l-2 bg-surface p-4 shadow-card"
+      :class="hasFilters ? 'border-l-accent' : 'border-l-line-strong'"
       role="search"
       @submit.prevent="applyFilters"
     >
       <div class="mb-4 flex items-center justify-between gap-3">
         <div class="flex items-center gap-2">
-          <span class="flex size-9 items-center justify-center rounded-xl bg-brand-soft text-brand">
+          <span class="flex size-9 items-center justify-center rounded-lg bg-brand-soft text-brand">
             <Filter :size="17" aria-hidden="true" />
           </span>
           <div>
@@ -439,7 +446,7 @@ onMounted(loadExpensesPage)
         <button
           v-if="hasFilters"
           type="button"
-          class="min-h-10 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
+          class="min-h-10 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
           @click="clearFilters"
         >
           Clear
@@ -453,14 +460,14 @@ onMounted(loadExpensesPage)
             <Search
               :size="16"
               aria-hidden="true"
-              class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"
+              class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted/65"
             />
             <input
               v-model="filters.search"
               type="search"
               maxlength="240"
               placeholder="Description, notes, vendor..."
-              class="min-h-10 w-full rounded-xl border border-line bg-white py-2 pl-9 pr-3 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+              class="min-h-10 w-full rounded-lg border border-line bg-surface-raised py-2 pl-9 pr-3 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand focus:bg-surface"
             />
           </span>
         </label>
@@ -469,7 +476,7 @@ onMounted(loadExpensesPage)
           <span class="mb-1.5 block text-xs font-medium text-ink-muted">Vendor</span>
           <select
             v-model="filters.vendorId"
-            class="min-h-10 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+            class="min-h-10 w-full rounded-lg border border-line bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand focus:bg-surface"
           >
             <option value="">All vendors</option>
             <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
@@ -482,7 +489,7 @@ onMounted(loadExpensesPage)
           <span class="mb-1.5 block text-xs font-medium text-ink-muted">Category</span>
           <select
             v-model="filters.categoryId"
-            class="min-h-10 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+            class="min-h-10 w-full rounded-lg border border-line bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand focus:bg-surface"
           >
             <option value="">All categories</option>
             <option v-for="category in categories" :key="category.id" :value="category.id">
@@ -496,7 +503,7 @@ onMounted(loadExpensesPage)
           <input
             v-model="filters.dateFrom"
             type="date"
-            class="min-h-10 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+            class="min-h-10 w-full rounded-lg border border-line bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand focus:bg-surface"
           />
         </label>
 
@@ -505,7 +512,7 @@ onMounted(loadExpensesPage)
           <input
             v-model="filters.dateTo"
             type="date"
-            class="min-h-10 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+            class="min-h-10 w-full rounded-lg border border-line bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand focus:bg-surface"
           />
         </label>
       </div>
@@ -513,7 +520,7 @@ onMounted(loadExpensesPage)
       <div class="mt-4 flex justify-end border-t border-line pt-4">
         <button
           type="submit"
-          class="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
+          class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
         >
           <Search :size="16" aria-hidden="true" />
           Apply filters
@@ -726,19 +733,24 @@ onMounted(loadExpensesPage)
       </form>
     </section>
 
-    <section class="overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
+    <section class="overflow-hidden rounded-xl border border-line bg-surface shadow-card">
       <header
         class="flex items-center justify-between gap-4 border-b border-line px-5 py-4 sm:px-6"
       >
         <div>
-          <h3 class="text-base font-semibold text-ink">Expense ledger</h3>
+          <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-accent">
+            Recorded entries
+          </p>
+          <h2 class="font-display mt-1 text-lg font-semibold tracking-[-0.02em] text-ink">
+            Expense ledger
+          </h2>
           <p class="mt-0.5 text-xs text-ink-muted">
             {{ pagination.totalItems }} recorded expense{{ pagination.totalItems === 1 ? '' : 's' }}
           </p>
         </div>
         <span
           v-if="hasFilters"
-          class="rounded-full bg-accent-soft px-2.5 py-1 text-xs font-semibold text-accent"
+          class="border-l-2 border-accent pl-2 text-xs font-semibold text-accent"
         >
           Filtered
         </span>
@@ -747,15 +759,15 @@ onMounted(loadExpensesPage)
       <div v-if="loading" class="space-y-3 p-5 sm:p-6" role="status" aria-label="Loading expenses">
         <div class="h-4 w-36 animate-pulse rounded bg-surface-muted"></div>
         <div class="space-y-3">
-          <div class="h-24 animate-pulse rounded-2xl bg-surface-muted"></div>
-          <div class="h-24 animate-pulse rounded-2xl bg-surface-muted"></div>
+          <div class="h-24 animate-pulse rounded-lg bg-surface-muted"></div>
+          <div class="h-24 animate-pulse rounded-lg bg-surface-muted"></div>
         </div>
       </div>
 
       <div
         v-else-if="error"
         role="alert"
-        class="m-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-700 sm:m-6"
+        class="m-5 rounded-lg border border-danger/25 bg-danger-soft px-4 py-5 text-sm text-danger sm:m-6"
       >
         <p class="font-medium">Could not load expenses</p>
         <p class="mt-1">{{ error }}</p>
@@ -763,7 +775,7 @@ onMounted(loadExpensesPage)
 
       <div v-else-if="expenses.length === 0" class="px-5 py-14 text-center sm:px-6">
         <span
-          class="mx-auto flex size-12 items-center justify-center rounded-2xl bg-brand-soft text-brand"
+          class="mx-auto flex size-11 items-center justify-center rounded-lg bg-brand-soft text-brand"
         >
           <ReceiptText :size="22" :stroke-width="1.7" aria-hidden="true" />
         </span>
@@ -780,7 +792,7 @@ onMounted(loadExpensesPage)
         <button
           v-if="hasFilters"
           type="button"
-          class="mt-5 min-h-10 rounded-xl border border-line bg-white px-4 text-sm font-semibold text-ink transition hover:bg-surface-muted"
+          class="mt-5 min-h-10 rounded-lg border border-line bg-surface px-4 text-sm font-semibold text-ink transition hover:bg-surface-muted"
           @click="clearFilters"
         >
           Clear filters
@@ -788,7 +800,7 @@ onMounted(loadExpensesPage)
         <button
           v-else
           type="button"
-          class="mt-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
+          class="mt-5 inline-flex min-h-10 items-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
           @click="openCreateForm"
         >
           <Plus :size="16" aria-hidden="true" />
@@ -801,12 +813,17 @@ onMounted(loadExpensesPage)
           <article
             v-for="expense in expenses"
             :key="expense.id"
-            class="group px-5 py-5 transition hover:bg-surface-muted/45 sm:px-6"
+            data-expense-record
+            class="group relative px-5 py-5 transition hover:bg-surface-muted/45 sm:px-6"
           >
+            <span
+              class="absolute inset-y-0 left-0 w-0.5 bg-transparent transition group-hover:bg-accent"
+              aria-hidden="true"
+            />
             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div class="flex min-w-0 items-start gap-3.5">
                 <span
-                  class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand"
+                  class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand"
                 >
                   <ReceiptText :size="18" :stroke-width="1.8" aria-hidden="true" />
                 </span>
@@ -837,13 +854,15 @@ onMounted(loadExpensesPage)
               <div
                 class="flex flex-wrap items-center justify-between gap-3 sm:flex-nowrap lg:justify-end"
               >
-                <span class="mr-auto text-lg font-semibold tracking-tight text-ink sm:mr-2">
+                <span
+                  class="font-figure mr-auto text-lg font-semibold tracking-[-0.025em] text-ink sm:mr-2"
+                >
                   ${{ formatAmount(expense.amount) }}
                 </span>
 
                 <button
                   type="button"
-                  class="inline-flex min-h-10 items-center rounded-xl bg-brand-soft px-3 text-sm font-semibold text-brand transition hover:bg-brand hover:text-white"
+                  class="inline-flex min-h-10 items-center rounded-lg bg-brand-soft px-3 text-sm font-semibold text-brand transition hover:bg-brand hover:text-white"
                   @click="openExpense(expense)"
                 >
                   View
@@ -851,7 +870,7 @@ onMounted(loadExpensesPage)
 
                 <button
                   type="button"
-                  class="inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
+                  class="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
                   @click="openEditForm(expense)"
                 >
                   <Pencil :size="14" aria-hidden="true" />
@@ -860,7 +879,7 @@ onMounted(loadExpensesPage)
 
                 <button
                   type="button"
-                  class="inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-red-50 hover:text-red-700"
+                  class="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-danger-soft hover:text-danger"
                   @click="archive(expense)"
                 >
                   <Archive :size="14" aria-hidden="true" />
@@ -885,7 +904,7 @@ onMounted(loadExpensesPage)
             <button
               type="button"
               :disabled="pagination.page === 1"
-              class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink-muted transition hover:border-stone-300 hover:text-ink disabled:cursor-not-allowed disabled:text-stone-300"
+              class="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-sm font-medium text-ink-muted transition hover:border-line-strong hover:text-ink disabled:cursor-not-allowed disabled:text-line-strong"
               @click="changePage(pagination.page - 1)"
             >
               <ChevronLeft :size="15" aria-hidden="true" />
@@ -894,7 +913,7 @@ onMounted(loadExpensesPage)
             <button
               type="button"
               :disabled="pagination.page === pagination.totalPages"
-              class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink-muted transition hover:border-stone-300 hover:text-ink disabled:cursor-not-allowed disabled:text-stone-300"
+              class="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-sm font-medium text-ink-muted transition hover:border-line-strong hover:text-ink disabled:cursor-not-allowed disabled:text-line-strong"
               @click="changePage(pagination.page + 1)"
             >
               Next

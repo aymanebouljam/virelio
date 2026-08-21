@@ -13,6 +13,10 @@ const dashboardApi = vi.hoisted(() => ({
 
 vi.mock('@/lib/dashboard/api', () => dashboardApi)
 
+vi.mock('vue-chartjs', () => ({
+  Bar: { template: '<div data-chart-renderer></div>' },
+}))
+
 const routes: RouteRecordRaw[] = [
   { path: '/', name: 'dashboard', component: DashboardPage },
   {
@@ -89,6 +93,8 @@ function emptySummary(): DashboardSummary {
 async function mountPage(initialRoute = '/') {
   const result = await mountWithRouter(DashboardPage, routes, initialRoute)
   await flushPromises()
+  await vi.dynamicImportSettled()
+  await flushPromises()
   return result
 }
 
@@ -112,6 +118,8 @@ describe('dashboard workflows', () => {
 
     resolveSummary(summary)
     await flushPromises()
+    await vi.dynamicImportSettled()
+    await flushPromises()
 
     expect(wrapper.get('h1').text()).toBe('Follow the record, not the noise.')
     expect(wrapper.findAll('[data-summary-metric]')).toHaveLength(4)
@@ -124,9 +132,10 @@ describe('dashboard workflows', () => {
     expect(wrapper.text()).toContain('Client-site flight')
     expect(wrapper.text()).toContain('receipt.pdf')
     expect(wrapper.findAll('a[href="/expenses/expense-1"]')).toHaveLength(2)
-    expect(
-      wrapper.get('[aria-label="Travel share of total spend"]').attributes('aria-valuenow'),
-    ).toBe('71')
+    expect(wrapper.find('[data-chart-renderer]').exists()).toBe(true)
+    expect(wrapper.get('[aria-label="Category spending values"]').element.tagName).toBe('OL')
+    expect(wrapper.get('[data-category-value="Travel"]').text()).toContain('$300.00')
+    expect(wrapper.get('[data-category-value="Travel"]').text()).toContain('71%')
   })
 
   it('renders empty dashboard sections', async () => {
@@ -161,7 +170,7 @@ describe('dashboard workflows', () => {
     expect(categorySection?.text()).toContain('Other')
     expect(categorySection?.text()).toContain('2 expenses')
     expect(categorySection?.text()).toContain('$300.00')
-    expect(categorySection?.get('[role="progressbar"]').attributes('aria-valuenow')).toBe('0')
+    expect(categorySection?.get('[data-category-value="Other"]').text()).toContain('0%')
   })
 
   it('shows API loading failures', async () => {
