@@ -153,6 +153,9 @@ describe('expense details and proofs', () => {
     await flushPromises()
 
     expect(expensesApi.fetchExpense).toHaveBeenCalledExactlyOnceWith('expense-1')
+    expect(wrapper.get('h1').text()).toBe('Client-site flight')
+    expect(wrapper.find('[data-expense-record-summary]').exists()).toBe(true)
+    expect(wrapper.findAll('[data-proof-record]')).toHaveLength(1)
     expect(wrapper.text()).toContain('Client-site flight')
     expect(wrapper.text()).toContain('Atlas Supplies')
     expect(wrapper.text()).toContain('Travel')
@@ -307,6 +310,8 @@ describe('archived expense management', () => {
 
     const wrapper = await mountArchivedExpenses()
 
+    expect(wrapper.get('h1').text()).toBe('Records held outside the ledger.')
+    expect(wrapper.findAll('[data-archived-expense-record]')).toHaveLength(1)
     expect(wrapper.text()).toContain('Client-site flight')
     expect(wrapper.text()).toContain('Atlas Supplies')
     expect(wrapper.text()).toContain('Travel')
