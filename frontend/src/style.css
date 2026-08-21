@@ -1,24 +1,41 @@
 @import 'tailwindcss';
 
 @theme {
+  --font-display:
+    'Aptos Display', 'Segoe UI Variable Display', 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
   --font-sans:
     'Aptos', 'Segoe UI Variable', 'Segoe UI', ui-sans-serif, system-ui, -apple-system,
     BlinkMacSystemFont, sans-serif;
+  --font-figure: ui-monospace, 'SFMono-Regular', 'Cascadia Code', 'Consolas', monospace;
 
-  --color-canvas: #f4f2ed;
-  --color-surface: #fffdf9;
-  --color-surface-muted: #ebe9e4;
+  --color-canvas: #f3f5f6;
+  --color-surface: #ffffff;
+  --color-surface-muted: #e9eef2;
+  --color-surface-raised: #f9fafb;
   --color-ink: #202733;
-  --color-ink-muted: #68707c;
-  --color-line: #ddd9d1;
+  --color-ink-muted: #667181;
+  --color-line: #d7dee6;
+  --color-line-strong: #b8c2ce;
   --color-brand: #33466a;
   --color-brand-strong: #1f2b42;
-  --color-brand-soft: #e0e5ee;
+  --color-brand-soft: #e7ecf3;
   --color-accent: #a84f2a;
-  --color-accent-soft: #f3ded3;
+  --color-accent-soft: #f6e7df;
+  --color-success: #176044;
+  --color-success-soft: #e8f5ef;
+  --color-warning: #805619;
+  --color-warning-soft: #fbf2de;
+  --color-danger: #a03333;
+  --color-danger-soft: #fbecec;
+  --color-info: #31547c;
+  --color-info-soft: #eaf1f8;
 
-  --shadow-card: 0 1px 2px rgb(32 39 51 / 0.04), 0 12px 30px rgb(32 39 51 / 0.06);
-  --shadow-lifted: 0 2px 4px rgb(32 39 51 / 0.06), 0 20px 45px rgb(32 39 51 / 0.1);
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.75rem;
+  --radius-3xl: 1.125rem;
+
+  --shadow-card: 0 1px 2px rgb(31 43 66 / 0.05);
+  --shadow-lifted: 0 16px 40px rgb(31 43 66 / 0.12);
 }
 
 @layer base {
@@ -39,6 +56,7 @@
     margin: 0;
     background: var(--color-canvas);
     color: var(--color-ink);
+    font-feature-settings: 'kern' 1;
   }
 
   button,
@@ -48,8 +66,24 @@
     font: inherit;
   }
 
+  :focus-visible {
+    outline: 2px solid var(--color-brand) !important;
+    outline-offset: 2px;
+  }
+
   ::selection {
     background: var(--color-brand-soft);
     color: var(--color-brand-strong);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

@@ -23,13 +23,26 @@ const router = useRouter()
 const mobileNavigationOpen = ref(false)
 const archiveNavigationOpen = ref(route.path.endsWith('/archived'))
 
-const primaryNavigation = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/expenses', label: 'Expenses', icon: ReceiptText },
-  { to: '/recurring-expenses', label: 'Recurring expenses', icon: Repeat2 },
-  { to: '/vendors', label: 'Vendors', icon: Building2 },
-  { to: '/expense-categories', label: 'Categories', icon: Tags },
-  { to: '/reports', label: 'Reports', icon: ChartNoAxesCombined },
+const primaryNavigationGroups = [
+  {
+    label: 'Daily ledger',
+    items: [
+      { to: '/', label: 'Dashboard', icon: LayoutDashboard },
+      { to: '/expenses', label: 'Expenses', icon: ReceiptText },
+      { to: '/recurring-expenses', label: 'Recurring expenses', icon: Repeat2 },
+    ],
+  },
+  {
+    label: 'Organization',
+    items: [
+      { to: '/vendors', label: 'Vendors', icon: Building2 },
+      { to: '/expense-categories', label: 'Categories', icon: Tags },
+    ],
+  },
+  {
+    label: 'Analysis',
+    items: [{ to: '/reports', label: 'Reports', icon: ChartNoAxesCombined }],
+  },
 ]
 
 const archiveNavigation = [
@@ -64,30 +77,32 @@ watch(
 
 <template>
   <div class="min-h-screen bg-canvas text-ink">
-    <div v-if="isAuthenticated" class="mx-auto min-h-screen max-w-[1600px] lg:flex">
+    <div v-if="isAuthenticated" class="min-h-screen lg:flex">
       <aside
-        class="border-b border-white/10 bg-brand-strong text-white shadow-lifted lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-72 lg:shrink-0 lg:flex-col lg:border-b-0"
+        class="border-b border-white/10 bg-brand-strong text-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-[248px] lg:shrink-0 lg:flex-col lg:border-b-0 lg:border-r"
       >
         <div
-          class="flex items-center justify-between gap-4 px-5 py-4 lg:block lg:px-7 lg:pb-7 lg:pt-8"
+          class="flex items-center justify-between gap-4 border-b border-white/10 px-5 py-4 lg:px-6 lg:py-6"
         >
           <div class="flex items-center gap-3">
             <span
-              class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface shadow-lg shadow-black/15"
+              class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface shadow-card"
             >
-              <img src="/logo-mark.svg" alt="" class="size-10" />
+              <img src="/logo-mark.svg" alt="" class="size-9" />
             </span>
             <div>
-              <p class="text-[10px] font-semibold uppercase tracking-[0.24em] text-white/45">
-                Expense tracker
+              <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/45">
+                Evidence ledger
               </p>
-              <p class="mt-0.5 text-xl font-semibold tracking-tight text-white">Virelio</p>
+              <p class="font-display mt-0.5 text-xl font-semibold tracking-[-0.025em] text-white">
+                Virelio
+              </p>
             </div>
           </div>
 
           <button
             type="button"
-            class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/8 px-3.5 text-sm font-medium text-white transition hover:bg-white/14 lg:hidden"
+            class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/15 bg-white/8 px-3.5 text-sm font-medium text-white transition hover:bg-white/14 lg:hidden"
             aria-controls="app-navigation"
             :aria-expanded="mobileNavigationOpen"
             @click="mobileNavigationOpen = !mobileNavigationOpen"
@@ -100,24 +115,36 @@ watch(
 
         <div
           id="app-navigation"
-          class="flex-1 flex-col px-4 pb-5 lg:min-h-0 lg:overflow-y-auto lg:px-5 lg:pb-6"
+          class="flex-1 flex-col px-4 py-5 lg:min-h-0 lg:overflow-y-auto lg:px-4 lg:py-5"
           :class="mobileNavigationOpen ? 'flex' : 'hidden lg:flex'"
         >
-          <nav aria-label="Primary navigation" class="space-y-1">
-            <RouterLink
-              v-for="item in primaryNavigation"
-              :key="item.to"
-              :to="item.to"
-              class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition"
-              :class="
-                isSectionActive(item.to)
-                  ? 'bg-white text-brand-strong shadow-card'
-                  : 'text-white/65 hover:bg-white/8 hover:text-white'
-              "
-            >
-              <component :is="item.icon" :size="18" :stroke-width="1.8" aria-hidden="true" />
-              <span>{{ item.label }}</span>
-            </RouterLink>
+          <nav aria-label="Primary navigation" class="space-y-5">
+            <section v-for="group in primaryNavigationGroups" :key="group.label">
+              <p class="px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/35">
+                {{ group.label }}
+              </p>
+              <div class="mt-1.5 space-y-0.5">
+                <RouterLink
+                  v-for="item in group.items"
+                  :key="item.to"
+                  :to="item.to"
+                  class="relative flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition"
+                  :class="
+                    isSectionActive(item.to)
+                      ? 'bg-white/10 text-white'
+                      : 'text-white/60 hover:bg-white/8 hover:text-white'
+                  "
+                >
+                  <span
+                    class="absolute inset-y-2 left-0 w-0.5 rounded-full transition-colors"
+                    :class="isSectionActive(item.to) ? 'bg-accent' : 'bg-transparent'"
+                    aria-hidden="true"
+                  />
+                  <component :is="item.icon" :size="18" :stroke-width="1.8" aria-hidden="true" />
+                  <span>{{ item.label }}</span>
+                </RouterLink>
+              </div>
+            </section>
           </nav>
 
           <CollapsibleRoot
@@ -126,7 +153,7 @@ watch(
           >
             <CollapsibleTrigger
               aria-label="Archived records"
-              class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-white/60 transition hover:bg-white/8 hover:text-white"
+              class="flex min-h-10 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-white/55 transition hover:bg-white/8 hover:text-white"
             >
               <Archive :size="18" :stroke-width="1.8" aria-hidden="true" />
               <span class="flex-1">Archived records</span>
@@ -144,13 +171,18 @@ watch(
                   v-for="item in archiveNavigation"
                   :key="item.to"
                   :to="item.to"
-                  class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition"
+                  class="relative flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-sm transition"
                   :class="
                     route.path === item.to
-                      ? 'bg-accent-soft font-semibold text-brand-strong'
+                      ? 'bg-white/10 font-semibold text-white'
                       : 'text-white/50 hover:bg-white/8 hover:text-white'
                   "
                 >
+                  <span
+                    class="absolute inset-y-2 left-0 w-0.5 rounded-full"
+                    :class="route.path === item.to ? 'bg-accent' : 'bg-transparent'"
+                    aria-hidden="true"
+                  />
                   <component :is="item.icon" :size="16" :stroke-width="1.8" aria-hidden="true" />
                   <span>{{ item.label }}</span>
                 </RouterLink>
@@ -161,7 +193,7 @@ watch(
           <div class="mt-6 border-t border-white/10 pt-5 lg:mt-auto">
             <div v-if="currentUser" class="flex items-center gap-3 px-3">
               <div
-                class="flex size-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-white/70"
+                class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/70"
               >
                 <UserRound :size="17" aria-hidden="true" />
               </div>
@@ -175,18 +207,18 @@ watch(
               </div>
             </div>
 
-            <div class="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-1">
+            <div class="mt-3 grid grid-cols-2 gap-1 lg:grid-cols-1">
               <RouterLink
                 to="/profile"
-                class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/60 transition hover:bg-white/8 hover:text-white"
-                active-class="bg-white text-brand-strong hover:bg-white hover:text-brand-strong"
+                class="flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-white/60 transition hover:bg-white/8 hover:text-white"
+                active-class="bg-white/10 text-white hover:bg-white/10 hover:text-white"
               >
                 <UserRound :size="17" aria-hidden="true" />
                 Profile
               </RouterLink>
               <button
                 type="button"
-                class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-white/60 transition hover:bg-white/8 hover:text-white"
+                class="flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-white/60 transition hover:bg-white/8 hover:text-white"
                 @click="logout"
               >
                 <LogOut :size="17" aria-hidden="true" />
@@ -200,9 +232,11 @@ watch(
       <main
         id="main-content"
         tabindex="-1"
-        class="min-w-0 flex-1 bg-canvas px-5 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-10"
+        class="min-w-0 flex-1 bg-canvas px-5 py-6 sm:px-7 sm:py-8 lg:px-10 lg:py-10"
       >
-        <RouterView />
+        <div class="mx-auto w-full max-w-[1280px]">
+          <RouterView />
+        </div>
       </main>
     </div>
 
@@ -210,12 +244,9 @@ watch(
       v-else
       class="relative mx-auto flex min-h-screen max-w-6xl flex-col overflow-hidden px-5 py-6 sm:px-8 sm:py-8"
     >
+      <div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-line" aria-hidden="true" />
       <div
-        class="pointer-events-none absolute -right-32 -top-32 size-96 rounded-full bg-brand-soft/70 blur-3xl"
-        aria-hidden="true"
-      />
-      <div
-        class="pointer-events-none absolute -bottom-40 -left-40 size-96 rounded-full bg-accent-soft/60 blur-3xl"
+        class="pointer-events-none absolute bottom-0 left-1/2 h-32 w-px bg-line"
         aria-hidden="true"
       />
 
