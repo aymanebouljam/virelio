@@ -352,19 +352,24 @@ onMounted(loadPage)
 
     <section
       v-if="showForm"
-      class="overflow-hidden rounded-2xl border border-line bg-surface shadow-lifted"
+      data-recurring-expense-form-panel
+      class="relative overflow-hidden rounded-xl border border-line bg-surface shadow-card"
     >
+      <span class="absolute inset-y-0 left-0 w-1 bg-accent" aria-hidden="true" />
       <header
-        class="flex items-center gap-3 border-b border-line bg-brand-soft/55 px-5 py-4 sm:px-6"
+        class="flex items-center gap-3 border-b border-line bg-surface-raised px-5 py-4 sm:px-6"
       >
-        <span class="flex size-10 items-center justify-center rounded-xl bg-brand text-white">
+        <span class="flex size-9 items-center justify-center rounded-lg bg-brand-soft text-brand">
           <Pencil v-if="editingId" :size="18" aria-hidden="true" />
           <Plus v-else :size="18" aria-hidden="true" />
         </span>
         <div>
-          <h3 class="text-lg font-semibold tracking-tight text-ink">
+          <p class="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
+            {{ editingId ? 'Revise schedule' : 'New schedule' }}
+          </p>
+          <h2 class="font-display mt-0.5 text-lg font-semibold tracking-[-0.02em] text-ink">
             {{ editingId ? 'Edit recurring expense' : 'Create recurring expense' }}
-          </h3>
+          </h2>
           <p class="text-xs text-ink-muted">Define the cost, cadence, and next expected date.</p>
         </div>
       </header>
@@ -382,7 +387,12 @@ onMounted(loadPage)
               v-model="form.vendorId"
               :aria-describedby="formErrors.vendorId ? 'recurring-vendor-error' : undefined"
               :aria-invalid="Boolean(formErrors.vendorId)"
-              class="min-h-11 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+              :class="[
+                'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                formErrors.vendorId
+                  ? 'border-danger/45 focus:border-danger'
+                  : 'border-line hover:border-line-strong focus:border-brand',
+              ]"
             >
               <option value="">Select vendor</option>
               <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
@@ -392,7 +402,7 @@ onMounted(loadPage)
             <p
               v-if="formErrors.vendorId"
               id="recurring-vendor-error"
-              class="ml-3 mt-2 text-sm text-red-600"
+              class="mt-1.5 text-sm text-danger"
             >
               {{ formErrors.vendorId }}
             </p>
@@ -405,7 +415,12 @@ onMounted(loadPage)
               v-model="form.categoryId"
               :aria-describedby="formErrors.categoryId ? 'recurring-category-error' : undefined"
               :aria-invalid="Boolean(formErrors.categoryId)"
-              class="min-h-11 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+              :class="[
+                'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                formErrors.categoryId
+                  ? 'border-danger/45 focus:border-danger'
+                  : 'border-line hover:border-line-strong focus:border-brand',
+              ]"
             >
               <option value="">No category</option>
               <option v-for="category in categories" :key="category.id" :value="category.id">
@@ -415,7 +430,7 @@ onMounted(loadPage)
             <p
               v-if="formErrors.categoryId"
               id="recurring-category-error"
-              class="ml-3 mt-2 text-sm text-red-600"
+              class="mt-1.5 text-sm text-danger"
             >
               {{ formErrors.categoryId }}
             </p>
@@ -430,12 +445,17 @@ onMounted(loadPage)
               maxlength="240"
               :aria-describedby="formErrors.description ? 'recurring-description-error' : undefined"
               :aria-invalid="Boolean(formErrors.description)"
-              class="min-h-11 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+              :class="[
+                'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                formErrors.description
+                  ? 'border-danger/45 focus:border-danger'
+                  : 'border-line hover:border-line-strong focus:border-brand',
+              ]"
             />
             <p
               v-if="formErrors.description"
               id="recurring-description-error"
-              class="ml-3 mt-2 text-sm text-red-600"
+              class="mt-1.5 text-sm text-danger"
             >
               {{ formErrors.description }}
             </p>
@@ -451,12 +471,17 @@ onMounted(loadPage)
               step="0.01"
               :aria-describedby="formErrors.amount ? 'recurring-amount-error' : undefined"
               :aria-invalid="Boolean(formErrors.amount)"
-              class="min-h-11 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+              :class="[
+                'font-figure min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                formErrors.amount
+                  ? 'border-danger/45 focus:border-danger'
+                  : 'border-line hover:border-line-strong focus:border-brand',
+              ]"
             />
             <p
               v-if="formErrors.amount"
               id="recurring-amount-error"
-              class="ml-3 mt-2 text-sm text-red-600"
+              class="mt-1.5 text-sm text-danger"
             >
               {{ formErrors.amount }}
             </p>
@@ -469,7 +494,12 @@ onMounted(loadPage)
               v-model="form.frequency"
               :aria-describedby="formErrors.frequency ? 'recurring-frequency-error' : undefined"
               :aria-invalid="Boolean(formErrors.frequency)"
-              class="min-h-11 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+              :class="[
+                'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                formErrors.frequency
+                  ? 'border-danger/45 focus:border-danger'
+                  : 'border-line hover:border-line-strong focus:border-brand',
+              ]"
             >
               <option value="WEEKLY">Weekly</option>
               <option value="MONTHLY">Monthly</option>
@@ -478,7 +508,7 @@ onMounted(loadPage)
             <p
               v-if="formErrors.frequency"
               id="recurring-frequency-error"
-              class="ml-3 mt-2 text-sm text-red-600"
+              class="mt-1.5 text-sm text-danger"
             >
               {{ formErrors.frequency }}
             </p>
@@ -494,12 +524,17 @@ onMounted(loadPage)
                 formErrors.nextDueDate ? 'recurring-next-due-date-error' : undefined
               "
               :aria-invalid="Boolean(formErrors.nextDueDate)"
-              class="min-h-11 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+              :class="[
+                'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                formErrors.nextDueDate
+                  ? 'border-danger/45 focus:border-danger'
+                  : 'border-line hover:border-line-strong focus:border-brand',
+              ]"
             />
             <p
               v-if="formErrors.nextDueDate"
               id="recurring-next-due-date-error"
-              class="ml-3 mt-2 text-sm text-red-600"
+              class="mt-1.5 text-sm text-danger"
             >
               {{ formErrors.nextDueDate }}
             </p>
@@ -514,12 +549,17 @@ onMounted(loadPage)
               maxlength="1000"
               :aria-describedby="formErrors.notes ? 'recurring-notes-error' : undefined"
               :aria-invalid="Boolean(formErrors.notes)"
-              class="w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+              :class="[
+                'w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                formErrors.notes
+                  ? 'border-danger/45 focus:border-danger'
+                  : 'border-line hover:border-line-strong focus:border-brand',
+              ]"
             />
             <p
               v-if="formErrors.notes"
               id="recurring-notes-error"
-              class="ml-3 mt-2 text-sm text-red-600"
+              class="mt-1.5 text-sm text-danger"
             >
               {{ formErrors.notes }}
             </p>
@@ -529,15 +569,15 @@ onMounted(loadPage)
         <div
           v-if="submitError"
           role="alert"
-          class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          class="rounded-lg border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
         >
           {{ submitError }}
         </div>
 
-        <div class="flex items-center justify-end gap-3">
+        <div class="flex items-center justify-end gap-3 border-t border-line pt-5">
           <button
             type="button"
-            class="min-h-11 rounded-xl px-4 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
+            class="min-h-11 rounded-lg px-4 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
             @click="resetForm"
           >
             Cancel
@@ -545,7 +585,7 @@ onMounted(loadPage)
           <button
             type="submit"
             :disabled="submitting"
-            class="min-h-11 rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-stone-400"
+            class="min-h-11 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-line-strong"
           >
             {{ submitting ? 'Saving...' : 'Save recurring expense' }}
           </button>
