@@ -113,6 +113,8 @@ describe('dashboard workflows', () => {
     resolveSummary(summary)
     await flushPromises()
 
+    expect(wrapper.get('h1').text()).toBe('Follow the record, not the noise.')
+    expect(wrapper.findAll('[data-summary-metric]')).toHaveLength(4)
     expect(wrapper.text()).toContain('$425.50')
     expect(wrapper.text()).toContain('Active vendors 3')
     expect(wrapper.text()).toContain('Uncategorized 1')
