@@ -79,9 +79,12 @@ describe('login workflow', () => {
   it('presents account context and sign-in affordances', async () => {
     const { wrapper } = await mountPage(LoginPage, '/login')
 
-    expect(wrapper.get('[aria-label="Account benefits"]').text()).toContain(
-      'Keep every expense in context',
-    )
+    const accountContext = wrapper.get('[aria-label="Account benefits"]')
+
+    expect(wrapper.get('h1').text()).toBe('Keep every expense in context.')
+    expect(wrapper.get('h2').text()).toBe('Sign in to Virelio')
+    expect(accountContext.text()).toContain('Proof stays attached to each expense')
+    expect(accountContext.findAll('li')).toHaveLength(3)
     expect(wrapper.get('[aria-label="Virelio brand"]').text()).toContain('Virelio')
     expect(wrapper.get('#login-email').attributes('autocomplete')).toBe('email')
     expect(wrapper.get('#login-password').attributes('autocomplete')).toBe('current-password')
@@ -164,9 +167,12 @@ describe('registration workflow', () => {
   it('presents account context and registration affordances', async () => {
     const { wrapper } = await mountPage(RegisterPage, '/register')
 
-    expect(wrapper.get('[aria-label="Account benefits"]').text()).toContain(
-      'Build a better expense routine',
-    )
+    const accountContext = wrapper.get('[aria-label="Account benefits"]')
+
+    expect(wrapper.get('h1').text()).toBe('Give every expense a reliable home.')
+    expect(wrapper.get('h2').text()).toBe('Create your account')
+    expect(accountContext.text()).toContain('Expense proof stays with the original record')
+    expect(accountContext.findAll('li')).toHaveLength(3)
     expect(wrapper.get('[aria-label="Virelio brand"]').text()).toContain('Virelio')
     expect(wrapper.get('#register-full-name').attributes('autocomplete')).toBe('name')
     expect(wrapper.get('#register-email').attributes('autocomplete')).toBe('email')
