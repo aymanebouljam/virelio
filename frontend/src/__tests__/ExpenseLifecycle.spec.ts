@@ -153,6 +153,9 @@ describe('expense details and proofs', () => {
     await flushPromises()
 
     expect(expensesApi.fetchExpense).toHaveBeenCalledExactlyOnceWith('expense-1')
+    expect(wrapper.get('h1').text()).toBe('Client-site flight')
+    expect(wrapper.find('[data-expense-record-summary]').exists()).toBe(true)
+    expect(wrapper.findAll('[data-proof-record]')).toHaveLength(1)
     expect(wrapper.text()).toContain('Client-site flight')
     expect(wrapper.text()).toContain('Atlas Supplies')
     expect(wrapper.text()).toContain('Travel')
