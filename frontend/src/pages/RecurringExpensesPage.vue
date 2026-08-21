@@ -8,7 +8,6 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
-  CircleDollarSign,
   Pencil,
   Play,
   Plus,
@@ -313,23 +312,28 @@ onMounted(loadPage)
 </script>
 
 <template>
-  <section class="space-y-7">
-    <header class="space-y-4">
+  <section class="space-y-6">
+    <header class="space-y-4 border-b border-line pb-6">
       <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.24em] text-accent">Planning</p>
-          <h2 class="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-            Recurring expenses
-          </h2>
-          <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-base">
-            Stay ahead of repeat costs and turn due schedules into expenses when ready.
+          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
+            Repeat-cost schedule
+          </p>
+          <h1
+            class="font-display mt-2 text-[2rem] font-semibold leading-tight tracking-[-0.035em] text-ink sm:text-[2.5rem]"
+          >
+            Know what comes due next.
+          </h1>
+          <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-[15px]">
+            Maintain repeat costs and turn each due schedule into an expense when the record is
+            ready.
           </p>
         </div>
 
         <button
           v-if="!showForm"
           type="button"
-          class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white shadow-card transition hover:bg-brand-strong"
+          class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
           @click="openCreateForm"
         >
           <Plus :size="17" aria-hidden="true" />
@@ -340,7 +344,7 @@ onMounted(loadPage)
       <div
         v-if="actionError"
         role="alert"
-        class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        class="rounded-xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
       >
         {{ actionError }}
       </div>
@@ -348,19 +352,24 @@ onMounted(loadPage)
 
     <section
       v-if="showForm"
-      class="overflow-hidden rounded-2xl border border-line bg-surface shadow-lifted"
+      data-recurring-expense-form-panel
+      class="relative overflow-hidden rounded-xl border border-line bg-surface shadow-card"
     >
+      <span class="absolute inset-y-0 left-0 w-1 bg-accent" aria-hidden="true" />
       <header
-        class="flex items-center gap-3 border-b border-line bg-brand-soft/55 px-5 py-4 sm:px-6"
+        class="flex items-center gap-3 border-b border-line bg-surface-raised px-5 py-4 sm:px-6"
       >
-        <span class="flex size-10 items-center justify-center rounded-xl bg-brand text-white">
+        <span class="flex size-9 items-center justify-center rounded-lg bg-brand-soft text-brand">
           <Pencil v-if="editingId" :size="18" aria-hidden="true" />
           <Plus v-else :size="18" aria-hidden="true" />
         </span>
         <div>
-          <h3 class="text-lg font-semibold tracking-tight text-ink">
+          <p class="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
+            {{ editingId ? 'Revise schedule' : 'New schedule' }}
+          </p>
+          <h2 class="font-display mt-0.5 text-lg font-semibold tracking-[-0.02em] text-ink">
             {{ editingId ? 'Edit recurring expense' : 'Create recurring expense' }}
-          </h3>
+          </h2>
           <p class="text-xs text-ink-muted">Define the cost, cadence, and next expected date.</p>
         </div>
       </header>
@@ -378,7 +387,12 @@ onMounted(loadPage)
               v-model="form.vendorId"
               :aria-describedby="formErrors.vendorId ? 'recurring-vendor-error' : undefined"
               :aria-invalid="Boolean(formErrors.vendorId)"
-              class="min-h-11 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+              :class="[
+                'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                formErrors.vendorId
+                  ? 'border-danger/45 focus:border-danger'
+                  : 'border-line hover:border-line-strong focus:border-brand',
+              ]"
             >
               <option value="">Select vendor</option>
               <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
@@ -388,7 +402,7 @@ onMounted(loadPage)
             <p
               v-if="formErrors.vendorId"
               id="recurring-vendor-error"
-              class="ml-3 mt-2 text-sm text-red-600"
+              class="mt-1.5 text-sm text-danger"
             >
               {{ formErrors.vendorId }}
             </p>
@@ -401,7 +415,12 @@ onMounted(loadPage)
               v-model="form.categoryId"
               :aria-describedby="formErrors.categoryId ? 'recurring-category-error' : undefined"
               :aria-invalid="Boolean(formErrors.categoryId)"
-              class="min-h-11 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+              :class="[
+                'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                formErrors.categoryId
+                  ? 'border-danger/45 focus:border-danger'
+                  : 'border-line hover:border-line-strong focus:border-brand',
+              ]"
             >
               <option value="">No category</option>
               <option v-for="category in categories" :key="category.id" :value="category.id">
@@ -411,7 +430,7 @@ onMounted(loadPage)
             <p
               v-if="formErrors.categoryId"
               id="recurring-category-error"
-              class="ml-3 mt-2 text-sm text-red-600"
+              class="mt-1.5 text-sm text-danger"
             >
               {{ formErrors.categoryId }}
             </p>
@@ -426,12 +445,17 @@ onMounted(loadPage)
               maxlength="240"
               :aria-describedby="formErrors.description ? 'recurring-description-error' : undefined"
               :aria-invalid="Boolean(formErrors.description)"
-              class="min-h-11 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+              :class="[
+                'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                formErrors.description
+                  ? 'border-danger/45 focus:border-danger'
+                  : 'border-line hover:border-line-strong focus:border-brand',
+              ]"
             />
             <p
               v-if="formErrors.description"
               id="recurring-description-error"
-              class="ml-3 mt-2 text-sm text-red-600"
+              class="mt-1.5 text-sm text-danger"
             >
               {{ formErrors.description }}
             </p>
@@ -447,12 +471,17 @@ onMounted(loadPage)
               step="0.01"
               :aria-describedby="formErrors.amount ? 'recurring-amount-error' : undefined"
               :aria-invalid="Boolean(formErrors.amount)"
-              class="min-h-11 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+              :class="[
+                'font-figure min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                formErrors.amount
+                  ? 'border-danger/45 focus:border-danger'
+                  : 'border-line hover:border-line-strong focus:border-brand',
+              ]"
             />
             <p
               v-if="formErrors.amount"
               id="recurring-amount-error"
-              class="ml-3 mt-2 text-sm text-red-600"
+              class="mt-1.5 text-sm text-danger"
             >
               {{ formErrors.amount }}
             </p>
@@ -465,7 +494,12 @@ onMounted(loadPage)
               v-model="form.frequency"
               :aria-describedby="formErrors.frequency ? 'recurring-frequency-error' : undefined"
               :aria-invalid="Boolean(formErrors.frequency)"
-              class="min-h-11 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+              :class="[
+                'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                formErrors.frequency
+                  ? 'border-danger/45 focus:border-danger'
+                  : 'border-line hover:border-line-strong focus:border-brand',
+              ]"
             >
               <option value="WEEKLY">Weekly</option>
               <option value="MONTHLY">Monthly</option>
@@ -474,7 +508,7 @@ onMounted(loadPage)
             <p
               v-if="formErrors.frequency"
               id="recurring-frequency-error"
-              class="ml-3 mt-2 text-sm text-red-600"
+              class="mt-1.5 text-sm text-danger"
             >
               {{ formErrors.frequency }}
             </p>
@@ -490,12 +524,17 @@ onMounted(loadPage)
                 formErrors.nextDueDate ? 'recurring-next-due-date-error' : undefined
               "
               :aria-invalid="Boolean(formErrors.nextDueDate)"
-              class="min-h-11 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+              :class="[
+                'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                formErrors.nextDueDate
+                  ? 'border-danger/45 focus:border-danger'
+                  : 'border-line hover:border-line-strong focus:border-brand',
+              ]"
             />
             <p
               v-if="formErrors.nextDueDate"
               id="recurring-next-due-date-error"
-              class="ml-3 mt-2 text-sm text-red-600"
+              class="mt-1.5 text-sm text-danger"
             >
               {{ formErrors.nextDueDate }}
             </p>
@@ -510,12 +549,17 @@ onMounted(loadPage)
               maxlength="1000"
               :aria-describedby="formErrors.notes ? 'recurring-notes-error' : undefined"
               :aria-invalid="Boolean(formErrors.notes)"
-              class="w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+              :class="[
+                'w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                formErrors.notes
+                  ? 'border-danger/45 focus:border-danger'
+                  : 'border-line hover:border-line-strong focus:border-brand',
+              ]"
             />
             <p
               v-if="formErrors.notes"
               id="recurring-notes-error"
-              class="ml-3 mt-2 text-sm text-red-600"
+              class="mt-1.5 text-sm text-danger"
             >
               {{ formErrors.notes }}
             </p>
@@ -525,15 +569,15 @@ onMounted(loadPage)
         <div
           v-if="submitError"
           role="alert"
-          class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          class="rounded-lg border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
         >
           {{ submitError }}
         </div>
 
-        <div class="flex items-center justify-end gap-3">
+        <div class="flex items-center justify-end gap-3 border-t border-line pt-5">
           <button
             type="button"
-            class="min-h-11 rounded-xl px-4 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
+            class="min-h-11 rounded-lg px-4 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
             @click="resetForm"
           >
             Cancel
@@ -541,7 +585,7 @@ onMounted(loadPage)
           <button
             type="submit"
             :disabled="submitting"
-            class="min-h-11 rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-stone-400"
+            class="min-h-11 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-line-strong"
           >
             {{ submitting ? 'Saving...' : 'Save recurring expense' }}
           </button>
@@ -549,9 +593,14 @@ onMounted(loadPage)
       </form>
     </section>
 
-    <section class="overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
+    <section class="overflow-hidden rounded-xl border border-line bg-surface shadow-card">
       <header class="border-b border-line px-5 py-4 sm:px-6">
-        <h3 class="text-base font-semibold text-ink">Active schedules</h3>
+        <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-accent">
+          Scheduled records
+        </p>
+        <h2 class="font-display mt-1 text-lg font-semibold tracking-[-0.02em] text-ink">
+          Active schedules
+        </h2>
         <p class="mt-0.5 text-xs text-ink-muted">
           {{ pagination.totalItems }} recurring expense{{ pagination.totalItems === 1 ? '' : 's' }}
           planned
@@ -564,14 +613,14 @@ onMounted(loadPage)
         aria-label="Loading recurring expenses"
         class="space-y-3 p-5 sm:p-6"
       >
-        <div class="h-28 animate-pulse rounded-2xl bg-surface-muted"></div>
-        <div class="h-28 animate-pulse rounded-2xl bg-surface-muted"></div>
+        <div class="h-28 animate-pulse rounded-lg bg-surface-muted/70"></div>
+        <div class="h-28 animate-pulse rounded-lg bg-surface-muted/70"></div>
       </div>
 
       <div
         v-else-if="error"
         role="alert"
-        class="m-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-700 sm:m-6"
+        class="m-5 rounded-lg border border-danger/25 bg-danger-soft px-4 py-5 text-sm text-danger sm:m-6"
       >
         <p class="font-medium">Could not load recurring expenses</p>
         <p class="mt-1">{{ error }}</p>
@@ -579,7 +628,7 @@ onMounted(loadPage)
 
       <div v-else-if="templates.length === 0" class="px-5 py-14 text-center sm:px-6">
         <span
-          class="mx-auto flex size-12 items-center justify-center rounded-2xl bg-brand-soft text-brand"
+          class="mx-auto flex size-11 items-center justify-center rounded-lg bg-brand-soft text-brand"
         >
           <Repeat2 :size="22" :stroke-width="1.7" aria-hidden="true" />
         </span>
@@ -589,7 +638,7 @@ onMounted(loadPage)
         </p>
         <button
           type="button"
-          class="mt-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
+          class="mt-5 inline-flex min-h-10 items-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
           @click="openCreateForm"
         >
           <Plus :size="16" aria-hidden="true" />
@@ -602,12 +651,18 @@ onMounted(loadPage)
           <article
             v-for="template in templates"
             :key="template.id"
-            class="px-5 py-5 transition hover:bg-surface-muted/45 sm:px-6"
+            data-recurring-expense-record
+            class="relative px-5 py-5 transition hover:bg-surface-muted/45 sm:px-6"
           >
+            <span
+              class="absolute inset-y-0 left-0 w-0.5"
+              :class="isDue(template) ? 'bg-accent' : 'bg-line-strong'"
+              aria-hidden="true"
+            />
             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div class="flex min-w-0 items-start gap-3.5">
                 <span
-                  class="flex size-10 shrink-0 items-center justify-center rounded-xl"
+                  class="flex size-9 shrink-0 items-center justify-center rounded-lg"
                   :class="
                     isDue(template) ? 'bg-accent-soft text-accent' : 'bg-brand-soft text-brand'
                   "
@@ -621,7 +676,7 @@ onMounted(loadPage)
                     </h4>
                     <span
                       v-if="isDue(template)"
-                      class="rounded-full bg-accent-soft px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-accent"
+                      class="border-l-2 border-accent bg-accent-soft/60 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-accent"
                       >Due</span
                     >
                   </div>
@@ -650,16 +705,13 @@ onMounted(loadPage)
               </div>
 
               <div class="flex flex-wrap items-center gap-2 lg:justify-end">
-                <span
-                  class="mr-1 inline-flex items-center gap-1.5 text-base font-semibold text-ink"
-                >
-                  <CircleDollarSign :size="16" aria-hidden="true" class="text-ink-muted" />
+                <span class="font-figure mr-1 text-base font-semibold text-ink">
                   {{ formatAmount(template.amount) }} {{ template.currency }}
                 </span>
                 <button
                   type="button"
                   :disabled="!isDue(template) || generatingId === template.id"
-                  class="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-brand px-3 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-stone-400"
+                  class="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-brand px-3 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-line-strong"
                   @click="generate(template)"
                 >
                   <Play :size="14" aria-hidden="true" />
@@ -667,7 +719,7 @@ onMounted(loadPage)
                 </button>
                 <button
                   type="button"
-                  class="inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
+                  class="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
                   @click="openEditForm(template)"
                 >
                   <Pencil :size="14" aria-hidden="true" />
@@ -675,7 +727,7 @@ onMounted(loadPage)
                 </button>
                 <button
                   type="button"
-                  class="inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-red-50 hover:text-red-700"
+                  class="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-danger-soft hover:text-danger"
                   @click="archive(template)"
                 >
                   <Archive :size="14" aria-hidden="true" />
@@ -699,7 +751,7 @@ onMounted(loadPage)
             <button
               type="button"
               :disabled="pagination.page === 1"
-              class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink-muted transition hover:border-stone-300 hover:text-ink disabled:cursor-not-allowed disabled:text-stone-300"
+              class="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-sm font-medium text-ink-muted transition hover:border-line-strong hover:text-ink disabled:cursor-not-allowed disabled:text-line-strong"
               @click="changePage(pagination.page - 1)"
             >
               <ChevronLeft :size="15" aria-hidden="true" />
@@ -708,7 +760,7 @@ onMounted(loadPage)
             <button
               type="button"
               :disabled="pagination.page === pagination.totalPages"
-              class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink-muted transition hover:border-stone-300 hover:text-ink disabled:cursor-not-allowed disabled:text-stone-300"
+              class="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-sm font-medium text-ink-muted transition hover:border-line-strong hover:text-ink disabled:cursor-not-allowed disabled:text-line-strong"
               @click="changePage(pagination.page + 1)"
             >
               Next

@@ -211,6 +211,8 @@ describe('recurring expense management', () => {
     resolveTemplates(templatePage([monthlyTemplate]))
     await flushPromises()
 
+    expect(wrapper.get('h1').text()).toBe('Know what comes due next.')
+    expect(wrapper.findAll('[data-recurring-expense-record]')).toHaveLength(1)
     expect(wrapper.text()).toContain('Workspace subscription')
     expect(wrapper.text()).toContain('Atlas Workspace')
     expect(wrapper.text()).toContain('Software')
@@ -253,6 +255,9 @@ describe('recurring expense management', () => {
     const { wrapper } = await mountActive()
 
     await getButton(wrapper, 'Add recurring expense').trigger('click')
+    expect(wrapper.get('[data-recurring-expense-form-panel] h2').text()).toBe(
+      'Create recurring expense',
+    )
     await fillForm(wrapper)
     await wrapper.get('form[aria-label="Recurring expense form"]').trigger('submit')
     await flushPromises()
@@ -283,6 +288,9 @@ describe('recurring expense management', () => {
     const { wrapper } = await mountActive()
 
     await getButton(wrapper, 'Edit').trigger('click')
+    expect(wrapper.get('[data-recurring-expense-form-panel] h2').text()).toBe(
+      'Edit recurring expense',
+    )
     await getFormField(wrapper, 'Description').setValue(updated.description)
     await getFormField(wrapper, 'Frequency').setValue('YEARLY')
     await wrapper.get('form[aria-label="Recurring expense form"]').trigger('submit')
