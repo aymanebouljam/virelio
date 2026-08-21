@@ -211,6 +211,8 @@ describe('recurring expense management', () => {
     resolveTemplates(templatePage([monthlyTemplate]))
     await flushPromises()
 
+    expect(wrapper.get('h1').text()).toBe('Know what comes due next.')
+    expect(wrapper.findAll('[data-recurring-expense-record]')).toHaveLength(1)
     expect(wrapper.text()).toContain('Workspace subscription')
     expect(wrapper.text()).toContain('Atlas Workspace')
     expect(wrapper.text()).toContain('Software')

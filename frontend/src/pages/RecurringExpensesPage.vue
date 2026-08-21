@@ -8,7 +8,6 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
-  CircleDollarSign,
   Pencil,
   Play,
   Plus,
@@ -313,23 +312,28 @@ onMounted(loadPage)
 </script>
 
 <template>
-  <section class="space-y-7">
-    <header class="space-y-4">
+  <section class="space-y-6">
+    <header class="space-y-4 border-b border-line pb-6">
       <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.24em] text-accent">Planning</p>
-          <h2 class="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-            Recurring expenses
-          </h2>
-          <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-base">
-            Stay ahead of repeat costs and turn due schedules into expenses when ready.
+          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
+            Repeat-cost schedule
+          </p>
+          <h1
+            class="font-display mt-2 text-[2rem] font-semibold leading-tight tracking-[-0.035em] text-ink sm:text-[2.5rem]"
+          >
+            Know what comes due next.
+          </h1>
+          <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-[15px]">
+            Maintain repeat costs and turn each due schedule into an expense when the record is
+            ready.
           </p>
         </div>
 
         <button
           v-if="!showForm"
           type="button"
-          class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white shadow-card transition hover:bg-brand-strong"
+          class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
           @click="openCreateForm"
         >
           <Plus :size="17" aria-hidden="true" />
@@ -340,7 +344,7 @@ onMounted(loadPage)
       <div
         v-if="actionError"
         role="alert"
-        class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        class="rounded-xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
       >
         {{ actionError }}
       </div>
@@ -549,9 +553,14 @@ onMounted(loadPage)
       </form>
     </section>
 
-    <section class="overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
+    <section class="overflow-hidden rounded-xl border border-line bg-surface shadow-card">
       <header class="border-b border-line px-5 py-4 sm:px-6">
-        <h3 class="text-base font-semibold text-ink">Active schedules</h3>
+        <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-accent">
+          Scheduled records
+        </p>
+        <h2 class="font-display mt-1 text-lg font-semibold tracking-[-0.02em] text-ink">
+          Active schedules
+        </h2>
         <p class="mt-0.5 text-xs text-ink-muted">
           {{ pagination.totalItems }} recurring expense{{ pagination.totalItems === 1 ? '' : 's' }}
           planned
@@ -564,14 +573,14 @@ onMounted(loadPage)
         aria-label="Loading recurring expenses"
         class="space-y-3 p-5 sm:p-6"
       >
-        <div class="h-28 animate-pulse rounded-2xl bg-surface-muted"></div>
-        <div class="h-28 animate-pulse rounded-2xl bg-surface-muted"></div>
+        <div class="h-28 animate-pulse rounded-lg bg-surface-muted/70"></div>
+        <div class="h-28 animate-pulse rounded-lg bg-surface-muted/70"></div>
       </div>
 
       <div
         v-else-if="error"
         role="alert"
-        class="m-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-700 sm:m-6"
+        class="m-5 rounded-lg border border-danger/25 bg-danger-soft px-4 py-5 text-sm text-danger sm:m-6"
       >
         <p class="font-medium">Could not load recurring expenses</p>
         <p class="mt-1">{{ error }}</p>
@@ -579,7 +588,7 @@ onMounted(loadPage)
 
       <div v-else-if="templates.length === 0" class="px-5 py-14 text-center sm:px-6">
         <span
-          class="mx-auto flex size-12 items-center justify-center rounded-2xl bg-brand-soft text-brand"
+          class="mx-auto flex size-11 items-center justify-center rounded-lg bg-brand-soft text-brand"
         >
           <Repeat2 :size="22" :stroke-width="1.7" aria-hidden="true" />
         </span>
@@ -589,7 +598,7 @@ onMounted(loadPage)
         </p>
         <button
           type="button"
-          class="mt-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
+          class="mt-5 inline-flex min-h-10 items-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
           @click="openCreateForm"
         >
           <Plus :size="16" aria-hidden="true" />
@@ -602,12 +611,18 @@ onMounted(loadPage)
           <article
             v-for="template in templates"
             :key="template.id"
-            class="px-5 py-5 transition hover:bg-surface-muted/45 sm:px-6"
+            data-recurring-expense-record
+            class="relative px-5 py-5 transition hover:bg-surface-muted/45 sm:px-6"
           >
+            <span
+              class="absolute inset-y-0 left-0 w-0.5"
+              :class="isDue(template) ? 'bg-accent' : 'bg-line-strong'"
+              aria-hidden="true"
+            />
             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div class="flex min-w-0 items-start gap-3.5">
                 <span
-                  class="flex size-10 shrink-0 items-center justify-center rounded-xl"
+                  class="flex size-9 shrink-0 items-center justify-center rounded-lg"
                   :class="
                     isDue(template) ? 'bg-accent-soft text-accent' : 'bg-brand-soft text-brand'
                   "
@@ -621,7 +636,7 @@ onMounted(loadPage)
                     </h4>
                     <span
                       v-if="isDue(template)"
-                      class="rounded-full bg-accent-soft px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-accent"
+                      class="border-l-2 border-accent bg-accent-soft/60 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-accent"
                       >Due</span
                     >
                   </div>
@@ -650,16 +665,13 @@ onMounted(loadPage)
               </div>
 
               <div class="flex flex-wrap items-center gap-2 lg:justify-end">
-                <span
-                  class="mr-1 inline-flex items-center gap-1.5 text-base font-semibold text-ink"
-                >
-                  <CircleDollarSign :size="16" aria-hidden="true" class="text-ink-muted" />
+                <span class="font-figure mr-1 text-base font-semibold text-ink">
                   {{ formatAmount(template.amount) }} {{ template.currency }}
                 </span>
                 <button
                   type="button"
                   :disabled="!isDue(template) || generatingId === template.id"
-                  class="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-brand px-3 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-stone-400"
+                  class="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-brand px-3 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-line-strong"
                   @click="generate(template)"
                 >
                   <Play :size="14" aria-hidden="true" />
@@ -667,7 +679,7 @@ onMounted(loadPage)
                 </button>
                 <button
                   type="button"
-                  class="inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
+                  class="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
                   @click="openEditForm(template)"
                 >
                   <Pencil :size="14" aria-hidden="true" />
@@ -675,7 +687,7 @@ onMounted(loadPage)
                 </button>
                 <button
                   type="button"
-                  class="inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-red-50 hover:text-red-700"
+                  class="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-danger-soft hover:text-danger"
                   @click="archive(template)"
                 >
                   <Archive :size="14" aria-hidden="true" />
@@ -699,7 +711,7 @@ onMounted(loadPage)
             <button
               type="button"
               :disabled="pagination.page === 1"
-              class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink-muted transition hover:border-stone-300 hover:text-ink disabled:cursor-not-allowed disabled:text-stone-300"
+              class="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-sm font-medium text-ink-muted transition hover:border-line-strong hover:text-ink disabled:cursor-not-allowed disabled:text-line-strong"
               @click="changePage(pagination.page - 1)"
             >
               <ChevronLeft :size="15" aria-hidden="true" />
@@ -708,7 +720,7 @@ onMounted(loadPage)
             <button
               type="button"
               :disabled="pagination.page === pagination.totalPages"
-              class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink-muted transition hover:border-stone-300 hover:text-ink disabled:cursor-not-allowed disabled:text-stone-300"
+              class="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-sm font-medium text-ink-muted transition hover:border-line-strong hover:text-ink disabled:cursor-not-allowed disabled:text-line-strong"
               @click="changePage(pagination.page + 1)"
             >
               Next
