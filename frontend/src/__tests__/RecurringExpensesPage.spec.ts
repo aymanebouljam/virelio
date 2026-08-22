@@ -375,6 +375,8 @@ describe('archived recurring expense management', () => {
     recurringApi.fetchArchivedRecurringExpenses.mockResolvedValue([archivedTemplate])
     const wrapper = await mountArchived()
 
+    expect(wrapper.get('h1').text()).toBe('Schedules held outside the cycle.')
+    expect(wrapper.findAll('[data-archived-recurring-record]')).toHaveLength(1)
     expect(wrapper.text()).toContain(archivedTemplate.description)
     expect(wrapper.text()).toContain(atlas.name)
     expect(getButton(wrapper, 'Restore').attributes('aria-label')).toBe(
