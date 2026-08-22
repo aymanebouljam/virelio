@@ -120,7 +120,7 @@ watch(
         >
           <div
             data-sidebar-scroll-region
-            class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-2 pt-5 overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            class="px-4 pb-2 pt-5 lg:min-h-0 lg:flex-1 lg:overflow-x-hidden lg:overflow-y-auto lg:overscroll-contain lg:[scrollbar-width:none] lg:[&::-webkit-scrollbar]:hidden"
           >
             <nav aria-label="Primary navigation" class="space-y-5">
               <section v-for="group in primaryNavigationGroups" :key="group.label">
