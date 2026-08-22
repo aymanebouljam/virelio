@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { ZodError } from 'zod'
+import { Check, Clock3, Save, UserRound } from '@lucide/vue'
 import { ApiError } from '@/lib/api'
 import { updateProfile } from '@/lib/auth/api'
 import { profileFormSchema, type ProfileFormValues } from '@/lib/auth/schema'
@@ -63,100 +64,166 @@ async function submit() {
 </script>
 
 <template>
-  <section class="mx-auto w-full max-w-2xl space-y-8">
-    <header class="space-y-2">
-      <p class="text-xs font-semibold uppercase tracking-[0.24em] text-stone-400">Account</p>
-      <h1 class="text-3xl font-semibold tracking-tight text-stone-900">Profile settings</h1>
-      <p class="text-sm leading-6 text-stone-500">
-        Update the name and email address associated with your account.
+  <section class="space-y-6">
+    <header class="space-y-3 border-b border-line pb-6">
+      <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
+        Account record
+      </p>
+      <h1
+        class="font-display text-[2rem] font-semibold leading-tight tracking-[-0.035em] text-ink sm:text-[2.5rem]"
+      >
+        Keep your account record current.
+      </h1>
+      <p class="max-w-2xl text-sm leading-6 text-ink-muted sm:text-[15px]">
+        Maintain the identity details attached to your private Virelio workspace.
       </p>
     </header>
 
-    <form
-      aria-label="Profile settings form"
-      class="space-y-5 rounded-3xl border border-stone-200 bg-white p-6 shadow-sm"
-      @submit.prevent="submit"
-    >
-      <div class="space-y-2">
-        <label for="profile-full-name" class="text-sm font-medium text-stone-700">Full name</label>
-        <input
-          id="profile-full-name"
-          v-model="form.fullName"
-          type="text"
-          autocomplete="name"
-          maxlength="120"
-          :aria-describedby="formErrors.fullName ? 'profile-full-name-error' : undefined"
-          :aria-invalid="Boolean(formErrors.fullName)"
-          class="min-h-11 w-full rounded-2xl border border-stone-200 px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-stone-400"
-        />
-        <p v-if="formErrors.fullName" id="profile-full-name-error" class="text-sm text-red-600">
-          {{ formErrors.fullName }}
-        </p>
-      </div>
-
-      <div class="space-y-2">
-        <label for="profile-email" class="text-sm font-medium text-stone-700">Email</label>
-        <input
-          id="profile-email"
-          v-model="form.email"
-          type="email"
-          autocomplete="email"
-          maxlength="254"
-          :aria-describedby="formErrors.email ? 'profile-email-error' : undefined"
-          :aria-invalid="Boolean(formErrors.email)"
-          class="min-h-11 w-full rounded-2xl border border-stone-200 px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-stone-400"
-        />
-        <p v-if="formErrors.email" id="profile-email-error" class="text-sm text-red-600">
-          {{ formErrors.email }}
-        </p>
-      </div>
-
-      <dl
-        v-if="currentUser"
-        class="grid gap-4 border-t border-stone-100 pt-5 text-sm sm:grid-cols-2"
+    <div class="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
+      <form
+        aria-label="Profile settings form"
+        data-profile-record
+        class="overflow-hidden rounded-xl border border-line bg-surface shadow-card"
+        @submit.prevent="submit"
       >
-        <div>
-          <dt class="text-stone-500">Member since</dt>
-          <dd class="mt-1 font-medium text-stone-700">
-            <time :datetime="currentUser.createdAt">
-              {{ formatDateTime(currentUser.createdAt) }}
-            </time>
-          </dd>
-        </div>
-        <div>
-          <dt class="text-stone-500">Last updated</dt>
-          <dd class="mt-1 font-medium text-stone-700">
-            <time :datetime="currentUser.updatedAt">
-              {{ formatDateTime(currentUser.updatedAt) }}
-            </time>
-          </dd>
-        </div>
-      </dl>
-
-      <p
-        v-if="submitError"
-        role="alert"
-        class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-      >
-        {{ submitError }}
-      </p>
-      <p
-        v-if="successMessage"
-        role="status"
-        class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
-      >
-        {{ successMessage }}
-      </p>
-
-      <div class="flex justify-end">
-        <button
-          type="submit"
-          :disabled="submitting || unchanged"
-          class="inline-flex min-h-11 items-center justify-center rounded-2xl bg-stone-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-60"
+        <header
+          class="flex items-center gap-3 border-b border-line bg-brand-soft/55 px-5 py-4 sm:px-6"
         >
-          {{ submitting ? 'Saving...' : 'Save changes' }}
-        </button>
-      </div>
-    </form>
+          <span class="flex size-10 items-center justify-center rounded-xl bg-brand text-white">
+            <UserRound :size="18" aria-hidden="true" />
+          </span>
+          <div>
+            <h2 class="font-display text-lg font-semibold tracking-[-0.02em] text-ink">
+              Identity details
+            </h2>
+            <p class="text-xs text-ink-muted">Used to identify you throughout your workspace.</p>
+          </div>
+        </header>
+
+        <div class="space-y-5 p-5 sm:p-6">
+          <div class="space-y-1.5">
+            <label for="profile-full-name" class="text-sm font-medium text-ink">Full name</label>
+            <input
+              id="profile-full-name"
+              v-model="form.fullName"
+              type="text"
+              autocomplete="name"
+              maxlength="120"
+              :aria-describedby="formErrors.fullName ? 'profile-full-name-error' : undefined"
+              :aria-invalid="Boolean(formErrors.fullName)"
+              :class="[
+                'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:bg-surface',
+                formErrors.fullName
+                  ? 'border-danger focus:border-danger'
+                  : 'border-line focus:border-brand',
+              ]"
+            />
+            <p v-if="formErrors.fullName" id="profile-full-name-error" class="text-sm text-danger">
+              {{ formErrors.fullName }}
+            </p>
+          </div>
+
+          <div class="space-y-1.5">
+            <label for="profile-email" class="text-sm font-medium text-ink">Email address</label>
+            <input
+              id="profile-email"
+              v-model="form.email"
+              type="email"
+              autocomplete="email"
+              maxlength="254"
+              :aria-describedby="formErrors.email ? 'profile-email-error' : undefined"
+              :aria-invalid="Boolean(formErrors.email)"
+              :class="[
+                'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:bg-surface',
+                formErrors.email
+                  ? 'border-danger focus:border-danger'
+                  : 'border-line focus:border-brand',
+              ]"
+            />
+            <p v-if="formErrors.email" id="profile-email-error" class="text-sm text-danger">
+              {{ formErrors.email }}
+            </p>
+          </div>
+
+          <p
+            v-if="submitError"
+            role="alert"
+            class="rounded-lg border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
+          >
+            {{ submitError }}
+          </p>
+          <p
+            v-if="successMessage"
+            role="status"
+            class="flex items-center gap-2 rounded-lg border border-success/25 bg-success-soft px-4 py-3 text-sm text-success"
+          >
+            <Check :size="16" aria-hidden="true" />
+            {{ successMessage }}
+          </p>
+        </div>
+
+        <footer class="flex justify-end border-t border-line bg-surface-raised px-5 py-4 sm:px-6">
+          <button
+            type="submit"
+            :disabled="submitting || unchanged"
+            class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            <Save :size="15" aria-hidden="true" />
+            {{ submitting ? 'Saving...' : 'Save changes' }}
+          </button>
+        </footer>
+      </form>
+
+      <aside
+        v-if="currentUser"
+        class="relative overflow-hidden rounded-xl border border-line bg-surface p-5 shadow-card sm:p-6"
+      >
+        <span class="absolute inset-y-0 left-0 w-1 bg-accent" aria-hidden="true" />
+        <header class="border-b border-line pb-5">
+          <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-accent">
+            Membership ledger
+          </p>
+          <h2 class="font-display mt-1 text-lg font-semibold tracking-[-0.02em] text-ink">
+            Account history
+          </h2>
+        </header>
+
+        <div class="border-b border-line py-5">
+          <p class="text-xs font-medium text-ink-muted">Current identity</p>
+          <p class="mt-2 text-sm font-semibold text-ink">{{ currentUser.fullName }}</p>
+          <p class="mt-1 break-words text-sm text-ink-muted">{{ currentUser.email }}</p>
+          <span
+            class="mt-3 inline-flex border-l-2 border-success pl-2 text-xs font-semibold text-success"
+          >
+            Active account
+          </span>
+        </div>
+
+        <dl class="divide-y divide-line text-sm">
+          <div class="py-4">
+            <dt class="flex items-center gap-2 text-xs font-medium text-ink-muted">
+              <Clock3 :size="14" aria-hidden="true" />
+              Member since
+            </dt>
+            <dd class="font-figure mt-1.5 text-ink">
+              <time :datetime="currentUser.createdAt">
+                {{ formatDateTime(currentUser.createdAt) }}
+              </time>
+            </dd>
+          </div>
+          <div class="pt-4">
+            <dt class="flex items-center gap-2 text-xs font-medium text-ink-muted">
+              <Clock3 :size="14" aria-hidden="true" />
+              Last updated
+            </dt>
+            <dd class="font-figure mt-1.5 text-ink">
+              <time :datetime="currentUser.updatedAt">
+                {{ formatDateTime(currentUser.updatedAt) }}
+              </time>
+            </dd>
+          </div>
+        </dl>
+      </aside>
+    </div>
   </section>
 </template>

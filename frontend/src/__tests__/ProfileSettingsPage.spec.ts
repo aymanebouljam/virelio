@@ -48,6 +48,8 @@ describe('profile settings workflow', () => {
   it('loads the current profile and disables unchanged submissions', () => {
     const wrapper = mount(ProfileSettingsPage)
 
+    expect(wrapper.get('h1').text()).toBe('Keep your account record current.')
+    expect(wrapper.findAll('[data-profile-record]')).toHaveLength(1)
     expect(wrapper.get('#profile-full-name').element).toHaveProperty('value', 'Local Owner')
     expect(wrapper.get('#profile-email').element).toHaveProperty('value', 'owner@example.test')
     expect(wrapper.get('#profile-full-name').attributes('autocomplete')).toBe('name')
