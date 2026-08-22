@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { ArchiveRestore, Building2, Trash2 } from '@lucide/vue'
 import { fetchArchivedVendors, removeVendor, restoreVendor } from '@/lib/vendors/api'
 import { ApiError } from '@/lib/api'
 import { formatDateTime } from '@/lib/helpers'
@@ -74,17 +75,21 @@ onMounted(loadArchivedVendors)
 </script>
 
 <template>
-  <section class="space-y-8">
-    <header class="space-y-3">
-      <p class="text-xs font-semibold uppercase tracking-[0.24em] text-stone-400">Vendors</p>
+  <section class="space-y-6">
+    <header class="space-y-4 border-b border-line pb-6">
+      <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
+        Vendor archive
+      </p>
 
       <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 class="text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">
-            Archived vendors
-          </h2>
-          <p class="mt-2 max-w-2xl text-sm leading-6 text-stone-500 sm:text-base">
-            Review archived vendors and restore them when they should be active again.
+          <h1
+            class="font-display text-[2rem] font-semibold leading-tight tracking-[-0.035em] text-ink sm:text-[2.5rem]"
+          >
+            Vendors held outside active records.
+          </h1>
+          <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-[15px]">
+            Restore a vendor to active records, or permanently remove one that is no longer needed.
           </p>
         </div>
       </div>
@@ -92,100 +97,129 @@ onMounted(loadArchivedVendors)
       <div
         v-if="actionError"
         role="alert"
-        class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        class="rounded-xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
       >
         {{ actionError }}
       </div>
     </header>
 
-    <section class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-      <div v-if="loading" class="space-y-3" role="status" aria-label="Loading archived vendors">
-        <div class="h-5 w-48 animate-pulse rounded bg-stone-200"></div>
+    <section class="overflow-hidden rounded-xl border border-line bg-surface shadow-card">
+      <header class="border-b border-line px-5 py-4 sm:px-6">
+        <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+          Inactive vendors
+        </p>
+        <h2 class="font-display mt-1 text-lg font-semibold tracking-[-0.02em] text-ink">
+          Archived vendor ledger
+        </h2>
+        <p class="mt-1 text-xs text-ink-muted">
+          {{ vendors.length }} archived vendor{{ vendors.length === 1 ? '' : 's' }}
+        </p>
+      </header>
+
+      <div
+        v-if="loading"
+        class="space-y-3 p-5 sm:p-6"
+        role="status"
+        aria-label="Loading archived vendors"
+      >
+        <div class="h-5 w-48 animate-pulse rounded bg-surface-muted"></div>
         <div class="space-y-2">
-          <div class="h-16 animate-pulse rounded-2xl bg-stone-100"></div>
-          <div class="h-16 animate-pulse rounded-2xl bg-stone-100"></div>
-          <div class="h-16 animate-pulse rounded-2xl bg-stone-100"></div>
+          <div class="h-20 animate-pulse rounded-lg bg-surface-muted/70"></div>
+          <div class="h-20 animate-pulse rounded-lg bg-surface-muted/70"></div>
         </div>
       </div>
 
       <div
         v-else-if="error"
         role="alert"
-        class="rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-700"
+        class="m-5 rounded-lg border border-danger/25 bg-danger-soft px-4 py-5 text-sm text-danger sm:m-6"
       >
         <p class="font-medium">Could not load archived vendors</p>
         <p class="mt-1">{{ error }}</p>
       </div>
 
-      <div
-        v-else-if="vendors.length === 0"
-        class="rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-12 text-center"
-      >
-        <p class="text-base font-medium text-stone-700">No archived vendors</p>
-        <p class="mt-2 text-sm text-stone-500">
+      <div v-else-if="vendors.length === 0" class="px-5 py-14 text-center sm:px-6">
+        <span
+          class="mx-auto flex size-11 items-center justify-center rounded-lg bg-surface-muted text-ink-muted"
+        >
+          <ArchiveRestore :size="20" aria-hidden="true" />
+        </span>
+        <p class="mt-3 text-sm font-semibold text-ink">No archived vendors</p>
+        <p class="mt-1 text-sm text-ink-muted">
           Archived vendors will appear here when removed from the active list.
         </p>
       </div>
 
-      <div v-else class="space-y-3">
+      <div v-else class="divide-y divide-line">
         <article
           v-for="vendor in vendors"
           :key="vendor.id"
-          class="rounded-2xl border border-stone-200 bg-stone-50 px-5 py-4 transition hover:border-stone-300 hover:bg-stone-100"
+          data-archived-vendor-record
+          class="relative px-5 py-5 transition hover:bg-surface-muted/45 sm:px-6"
         >
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div class="min-w-0">
-              <h3 class="text-base font-semibold tracking-tight text-stone-900">
-                {{ vendor.name }}
-              </h3>
+          <span class="absolute inset-y-0 left-0 w-0.5 bg-line-strong" aria-hidden="true" />
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div class="flex min-w-0 items-start gap-3.5">
+              <span
+                class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-ink-muted"
+              >
+                <Building2 :size="17" aria-hidden="true" />
+              </span>
+              <div class="min-w-0">
+                <h3 class="text-base font-semibold tracking-[-0.015em] text-ink">
+                  {{ vendor.name }}
+                </h3>
 
-              <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-stone-500">
-                <span v-if="vendor.email">{{ vendor.email }}</span>
-                <span v-if="vendor.phone">{{ vendor.phone }}</span>
-                <a
-                  v-if="vendor.website"
-                  :href="vendor.website"
-                  target="_blank"
-                  rel="noopener"
-                  class="font-medium text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-stone-900"
-                >
-                  Website
-                </a>
+                <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-muted">
+                  <span v-if="vendor.email">{{ vendor.email }}</span>
+                  <span v-if="vendor.phone">{{ vendor.phone }}</span>
+                  <a
+                    v-if="vendor.website"
+                    :href="vendor.website"
+                    target="_blank"
+                    rel="noopener"
+                    class="font-medium text-brand underline decoration-line-strong underline-offset-4 hover:text-brand-strong"
+                  >
+                    Website
+                  </a>
+                </div>
+
+                <p v-if="vendor.notes" class="mt-2 text-sm leading-6 text-ink-muted">
+                  {{ vendor.notes }}
+                </p>
+
+                <p v-if="vendor.archivedAt" class="mt-2 text-xs text-ink-muted">
+                  Archived
+                  <time :datetime="vendor.archivedAt" class="font-figure">
+                    {{ formatDateTime(vendor.archivedAt) }}
+                  </time>
+                </p>
               </div>
-
-              <p v-if="vendor.notes" class="mt-3 text-sm leading-6 text-stone-600">
-                {{ vendor.notes }}
-              </p>
-
-              <p v-if="vendor.archivedAt" class="mt-3 text-xs text-stone-500">
-                Archived
-                <time :datetime="vendor.archivedAt">{{ formatDateTime(vendor.archivedAt) }}</time>
-              </p>
             </div>
 
-            <div class="flex shrink-0 items-center gap-3">
+            <div class="flex flex-wrap items-center gap-2 sm:flex-nowrap lg:justify-end">
               <button
                 type="button"
                 :aria-label="`Restore ${vendor.name}`"
                 :disabled="restoringId === vendor.id"
-                class="inline-flex items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-60"
+                class="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-brand-soft px-3 text-sm font-semibold text-brand transition hover:bg-brand hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
                 @click="restore(vendor)"
               >
+                <ArchiveRestore :size="14" aria-hidden="true" />
                 {{ restoringId === vendor.id ? 'Restoring...' : 'Restore' }}
               </button>
               <button
                 type="button"
                 :aria-label="`Remove ${vendor.name}`"
                 :disabled="removingId === vendor.id"
-                class="inline-flex items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-60"
+                class="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-danger-soft hover:text-danger disabled:cursor-not-allowed disabled:opacity-60"
                 @click="remove(vendor)"
               >
+                <Trash2 :size="14" aria-hidden="true" />
                 {{ removingId === vendor.id ? 'Removing...' : 'Remove' }}
               </button>
 
-              <span
-                class="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-medium text-stone-500 ring-1 ring-stone-200"
-              >
+              <span class="border-l-2 border-line-strong pl-2 text-xs font-semibold text-ink-muted">
                 Archived
               </span>
             </div>

@@ -102,6 +102,8 @@ describe('archived vendor management', () => {
     const wrapper = await mountPage(ArchivedVendorsPage)
     const archiveTime = wrapper.get('time')
 
+    expect(wrapper.get('h1').text()).toBe('Vendors held outside active records.')
+    expect(wrapper.findAll('[data-archived-vendor-record]')).toHaveLength(1)
     expect(archiveTime.attributes('datetime')).toBe(archivedAt)
     expect(archiveTime.text()).toBe(formatDateTime(archivedAt))
   })
