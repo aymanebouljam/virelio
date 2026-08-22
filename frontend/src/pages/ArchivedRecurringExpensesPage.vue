@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { ArchiveRestore, CalendarClock, Trash2 } from '@lucide/vue'
 import { ApiError } from '@/lib/api'
 import { formatAmount, formatDate, formatDateTime } from '@/lib/helpers'
 import {
@@ -68,101 +69,130 @@ onMounted(loadArchivedTemplates)
 </script>
 
 <template>
-  <section class="space-y-8">
-    <header class="space-y-3">
-      <p class="text-xs font-semibold uppercase tracking-[0.24em] text-stone-400">
-        Recurring expenses
+  <section class="space-y-6">
+    <header class="space-y-4 border-b border-line pb-6">
+      <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
+        Schedule archive
       </p>
       <div>
-        <h2 class="text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">
-          Archived recurring expenses
-        </h2>
-        <p class="mt-2 max-w-2xl text-sm leading-6 text-stone-500 sm:text-base">
-          Restore schedules for future use or permanently remove templates you no longer need.
+        <h1
+          class="font-display text-[2rem] font-semibold leading-tight tracking-[-0.035em] text-ink sm:text-[2.5rem]"
+        >
+          Schedules held outside the cycle.
+        </h1>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-[15px]">
+          Restore a repeat cost to active planning, or permanently remove a schedule you no longer
+          need.
         </p>
       </div>
 
       <div
         v-if="actionError"
         role="alert"
-        class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        class="rounded-xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
       >
         {{ actionError }}
       </div>
     </header>
 
-    <section class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
+    <section class="overflow-hidden rounded-xl border border-line bg-surface shadow-card">
+      <header class="border-b border-line px-5 py-4 sm:px-6">
+        <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+          Inactive schedules
+        </p>
+        <h2 class="font-display mt-1 text-lg font-semibold tracking-[-0.02em] text-ink">
+          Archived recurring ledger
+        </h2>
+        <p class="mt-1 text-xs text-ink-muted">
+          {{ templates.length }} archived schedule{{ templates.length === 1 ? '' : 's' }}
+        </p>
+      </header>
+
       <div
         v-if="loading"
         role="status"
         aria-label="Loading archived recurring expenses"
-        class="space-y-3"
+        class="space-y-3 p-5 sm:p-6"
       >
-        <div class="h-16 animate-pulse rounded-2xl bg-stone-100"></div>
-        <div class="h-16 animate-pulse rounded-2xl bg-stone-100"></div>
+        <div class="h-20 animate-pulse rounded-lg bg-surface-muted/70"></div>
+        <div class="h-20 animate-pulse rounded-lg bg-surface-muted/70"></div>
       </div>
 
       <div
         v-else-if="error"
         role="alert"
-        class="rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-700"
+        class="m-5 rounded-lg border border-danger/25 bg-danger-soft px-4 py-5 text-sm text-danger sm:m-6"
       >
         <p class="font-medium">Could not load archived recurring expenses</p>
         <p class="mt-1">{{ error }}</p>
       </div>
 
-      <div
-        v-else-if="templates.length === 0"
-        class="rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-12 text-center"
-      >
-        <p class="text-base font-medium text-stone-700">No archived recurring expenses</p>
+      <div v-else-if="templates.length === 0" class="px-5 py-14 text-center sm:px-6">
+        <span
+          class="mx-auto flex size-11 items-center justify-center rounded-lg bg-surface-muted text-ink-muted"
+        >
+          <ArchiveRestore :size="20" aria-hidden="true" />
+        </span>
+        <p class="mt-3 text-sm font-semibold text-ink">No archived recurring expenses</p>
+        <p class="mt-1 text-sm text-ink-muted">Archived schedules will appear here for review.</p>
       </div>
 
-      <div v-else class="space-y-3">
+      <div v-else class="divide-y divide-line">
         <article
           v-for="template in templates"
           :key="template.id"
-          class="rounded-2xl border border-stone-200 bg-stone-50 px-5 py-4"
+          data-archived-recurring-record
+          class="relative px-5 py-5 transition hover:bg-surface-muted/45 sm:px-6"
         >
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div class="min-w-0">
-              <h3 class="text-base font-semibold tracking-tight text-stone-900">
-                {{ template.description }}
-              </h3>
-              <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-stone-500">
-                <span>{{ template.vendor.name }}</span>
-                <span>{{ template.category?.name ?? 'No category' }}</span>
-                <span>{{ template.frequency.toLowerCase() }}</span>
-                <span>Next {{ formatDate(template.nextDueDate) }}</span>
+          <span class="absolute inset-y-0 left-0 w-0.5 bg-line-strong" aria-hidden="true" />
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div class="flex min-w-0 items-start gap-3.5">
+              <span
+                class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-ink-muted"
+              >
+                <CalendarClock :size="17" aria-hidden="true" />
+              </span>
+              <div class="min-w-0">
+                <h3 class="text-base font-semibold tracking-[-0.015em] text-ink">
+                  {{ template.description }}
+                </h3>
+                <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-muted">
+                  <span>{{ template.vendor.name }}</span>
+                  <span>{{ template.category?.name ?? 'No category' }}</span>
+                  <span class="capitalize">{{ template.frequency.toLowerCase() }}</span>
+                  <span>Next {{ formatDate(template.nextDueDate) }}</span>
+                </div>
+                <p v-if="template.archivedAt" class="mt-2 text-xs text-ink-muted">
+                  Archived
+                  <time :datetime="template.archivedAt" class="font-figure">
+                    {{ formatDateTime(template.archivedAt) }}
+                  </time>
+                </p>
               </div>
-              <p v-if="template.archivedAt" class="mt-2 text-xs text-stone-500">
-                Archived
-                <time :datetime="template.archivedAt">
-                  {{ formatDateTime(template.archivedAt) }}
-                </time>
-              </p>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="mr-1 text-sm font-semibold text-stone-900">
+            <div class="flex flex-wrap items-center gap-2 sm:flex-nowrap lg:justify-end">
+              <span class="font-figure mr-auto text-base font-semibold text-ink sm:mr-2">
                 {{ formatAmount(template.amount) }} {{ template.currency }}
               </span>
               <button
                 type="button"
                 :aria-label="`Restore ${template.description}`"
                 :disabled="restoringId === template.id"
-                class="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 hover:border-stone-300 disabled:cursor-not-allowed disabled:opacity-60"
+                class="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-brand-soft px-3 text-sm font-semibold text-brand transition hover:bg-brand hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
                 @click="restore(template)"
               >
+                <ArchiveRestore :size="14" aria-hidden="true" />
                 {{ restoringId === template.id ? 'Restoring...' : 'Restore' }}
               </button>
               <button
                 type="button"
                 :aria-label="`Remove ${template.description}`"
                 :disabled="removingId === template.id"
-                class="rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 hover:border-red-300 disabled:cursor-not-allowed disabled:opacity-60"
+                class="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-danger-soft hover:text-danger disabled:cursor-not-allowed disabled:opacity-60"
                 @click="remove(template)"
               >
+                <Trash2 :size="14" aria-hidden="true" />
                 {{ removingId === template.id ? 'Removing...' : 'Remove' }}
               </button>
             </div>

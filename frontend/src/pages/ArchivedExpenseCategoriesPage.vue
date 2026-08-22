@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { ArchiveRestore, Tags, Trash2 } from '@lucide/vue'
 import { ApiError } from '@/lib/api'
 import { formatDateTime } from '@/lib/helpers'
 import {
@@ -81,86 +82,122 @@ onMounted(loadArchivedCategories)
 </script>
 
 <template>
-  <section class="space-y-8">
-    <header class="space-y-3">
-      <p class="text-xs font-semibold uppercase tracking-[0.24em] text-stone-400">Categories</p>
+  <section class="space-y-6">
+    <header class="space-y-4 border-b border-line pb-6">
+      <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
+        Category archive
+      </p>
 
       <div>
-        <h2 class="text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">
-          Archived categories
-        </h2>
-        <p class="mt-2 max-w-2xl text-sm leading-6 text-stone-500 sm:text-base">
-          Restore categories when they should become available for future expenses again.
+        <h1
+          class="font-display text-[2rem] font-semibold leading-tight tracking-[-0.035em] text-ink sm:text-[2.5rem]"
+        >
+          Categories held outside active records.
+        </h1>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-[15px]">
+          Restore a category for future expenses, or permanently remove one that is no longer
+          needed.
         </p>
       </div>
 
       <div
         v-if="actionError"
         role="alert"
-        class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        class="rounded-xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
       >
         {{ actionError }}
       </div>
     </header>
 
-    <section class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-      <div v-if="loading" class="space-y-3" role="status" aria-label="Loading archived categories">
-        <div class="h-5 w-48 animate-pulse rounded bg-stone-200"></div>
+    <section class="overflow-hidden rounded-xl border border-line bg-surface shadow-card">
+      <header class="border-b border-line px-5 py-4 sm:px-6">
+        <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+          Inactive categories
+        </p>
+        <h2 class="font-display mt-1 text-lg font-semibold tracking-[-0.02em] text-ink">
+          Archived category ledger
+        </h2>
+        <p class="mt-1 text-xs text-ink-muted">
+          {{ categories.length }} archived categor{{ categories.length === 1 ? 'y' : 'ies' }}
+        </p>
+      </header>
+
+      <div
+        v-if="loading"
+        class="space-y-3 p-5 sm:p-6"
+        role="status"
+        aria-label="Loading archived categories"
+      >
+        <div class="h-5 w-48 animate-pulse rounded bg-surface-muted"></div>
         <div class="space-y-2">
-          <div class="h-16 animate-pulse rounded-2xl bg-stone-100"></div>
-          <div class="h-16 animate-pulse rounded-2xl bg-stone-100"></div>
+          <div class="h-20 animate-pulse rounded-lg bg-surface-muted/70"></div>
+          <div class="h-20 animate-pulse rounded-lg bg-surface-muted/70"></div>
         </div>
       </div>
 
       <div
         v-else-if="error"
         role="alert"
-        class="rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-700"
+        class="m-5 rounded-lg border border-danger/25 bg-danger-soft px-4 py-5 text-sm text-danger sm:m-6"
       >
         <p class="font-medium">Could not load archived categories</p>
         <p class="mt-1">{{ error }}</p>
       </div>
 
-      <div
-        v-else-if="categories.length === 0"
-        class="rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-12 text-center"
-      >
-        <p class="text-base font-medium text-stone-700">No archived categories</p>
+      <div v-else-if="categories.length === 0" class="px-5 py-14 text-center sm:px-6">
+        <span
+          class="mx-auto flex size-11 items-center justify-center rounded-lg bg-surface-muted text-ink-muted"
+        >
+          <ArchiveRestore :size="20" aria-hidden="true" />
+        </span>
+        <p class="mt-3 text-sm font-semibold text-ink">No archived categories</p>
+        <p class="mt-1 text-sm text-ink-muted">
+          Archived categories will appear here when removed from the active list.
+        </p>
       </div>
 
-      <div v-else class="space-y-3">
+      <div v-else class="divide-y divide-line">
         <article
           v-for="category in categories"
           :key="category.id"
-          class="rounded-2xl border border-stone-200 bg-stone-50 px-5 py-4 transition hover:border-stone-300 hover:bg-stone-100"
+          data-archived-category-record
+          class="relative px-5 py-5 transition hover:bg-surface-muted/45 sm:px-6"
         >
-          <div class="flex items-center justify-between gap-3">
-            <div class="flex min-w-0 items-center gap-3">
+          <span class="absolute inset-y-0 left-0 w-0.5 bg-line-strong" aria-hidden="true" />
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex min-w-0 items-start gap-3.5">
               <span
-                class="h-4 w-4 shrink-0 rounded-full ring-1 ring-black/5"
-                :style="{ backgroundColor: category.color ?? '#94a3b8' }"
-              />
+                class="relative flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-ink-muted"
+              >
+                <Tags :size="17" aria-hidden="true" />
+                <span
+                  class="absolute -bottom-1 -right-1 size-3 rounded-full border-2 border-surface"
+                  :style="{ backgroundColor: category.color ?? '#94a3b8' }"
+                  aria-hidden="true"
+                />
+              </span>
               <div class="min-w-0">
-                <h3 class="text-base font-semibold tracking-tight text-stone-900">
+                <h3 class="text-base font-semibold tracking-[-0.015em] text-ink">
                   {{ category.name }}
                 </h3>
-                <p v-if="category.archivedAt" class="mt-1 text-xs text-stone-500">
+                <p v-if="category.archivedAt" class="mt-2 text-xs text-ink-muted">
                   Archived
-                  <time :datetime="category.archivedAt">
+                  <time :datetime="category.archivedAt" class="font-figure">
                     {{ formatDateTime(category.archivedAt) }}
                   </time>
                 </p>
               </div>
             </div>
 
-            <div class="flex shrink-0 items-center gap-3">
+            <div class="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:justify-end">
               <button
                 type="button"
                 :aria-label="`Restore ${category.name}`"
                 :disabled="restoringId === category.id"
-                class="inline-flex items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-60"
+                class="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-brand-soft px-3 text-sm font-semibold text-brand transition hover:bg-brand hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
                 @click="restore(category)"
               >
+                <ArchiveRestore :size="14" aria-hidden="true" />
                 {{ restoringId === category.id ? 'Restoring...' : 'Restore' }}
               </button>
 
@@ -168,15 +205,14 @@ onMounted(loadArchivedCategories)
                 type="button"
                 :aria-label="`Remove ${category.name}`"
                 :disabled="removingId === category.id"
-                class="inline-flex items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-60"
+                class="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-danger-soft hover:text-danger disabled:cursor-not-allowed disabled:opacity-60"
                 @click="remove(category)"
               >
+                <Trash2 :size="14" aria-hidden="true" />
                 {{ removingId === category.id ? 'Removing...' : 'Remove' }}
               </button>
 
-              <span
-                class="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-medium text-stone-500 ring-1 ring-stone-200"
-              >
+              <span class="border-l-2 border-line-strong pl-2 text-xs font-semibold text-ink-muted">
                 Archived
               </span>
             </div>
