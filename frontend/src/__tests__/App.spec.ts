@@ -48,11 +48,14 @@ describe('App', () => {
       'false',
     )
     const accountLink = wrapper.get('[data-account-link]')
+    const scrollRegion = wrapper.get('[data-sidebar-scroll-region]')
     expect(accountLink.text()).toContain(user.fullName)
     expect(accountLink.text()).toContain(user.email)
-    expect(wrapper.get('[data-sidebar-scroll-region]').find('[data-account-link]').exists()).toBe(
-      false,
-    )
+    expect(scrollRegion.find('[data-account-link]').exists()).toBe(false)
+    expect(scrollRegion.classes()).toContain('lg:overflow-y-auto')
+    expect(scrollRegion.classes()).toContain('lg:overscroll-contain')
+    expect(scrollRegion.classes()).not.toContain('overflow-y-auto')
+    expect(scrollRegion.classes()).not.toContain('overscroll-contain')
   })
 
   it('expands archived navigation on demand', async () => {
