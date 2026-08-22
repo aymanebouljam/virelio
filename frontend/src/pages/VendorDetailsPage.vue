@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, RouterLink, useRouter } from 'vue-router'
+import { Archive, ArrowLeft, Building2, ExternalLink, Mail, Phone } from '@lucide/vue'
 import { fetchVendor, archiveVendor } from '@/lib/vendors/api'
 import { ApiError } from '@/lib/api'
+import { formatDateTime } from '@/lib/helpers'
 import { vendorSchema, type Vendor } from '@/lib/vendors/schema'
 
 const route = useRoute()
@@ -64,76 +66,63 @@ watch(vendorId, () => {
 </script>
 
 <template>
-  <section class="space-y-8">
-    <header class="space-y-3">
-      <div class="flex items-center gap-3 text-sm text-stone-500">
-        <RouterLink class="transition hover:text-stone-900" to="/vendors">Vendors</RouterLink>
-        <span>/</span>
-        <span class="text-stone-700">Details</span>
-      </div>
-
-      <div v-if="loading" class="space-y-3">
-        <div class="h-8 w-56 animate-pulse rounded bg-stone-200"></div>
-        <div class="h-4 w-72 animate-pulse rounded bg-stone-100"></div>
-      </div>
-
-      <div
-        v-else-if="vendor"
-        class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+  <section class="space-y-6">
+    <header class="space-y-5 border-b border-line pb-6">
+      <RouterLink
+        to="/vendors"
+        class="inline-flex min-h-10 items-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm font-medium text-ink-muted transition hover:border-line-strong hover:text-ink"
       >
+        <ArrowLeft :size="15" aria-hidden="true" />
+        Back to vendors
+      </RouterLink>
+
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.24em] text-stone-400">Vendor</p>
-          <h2 class="mt-2 text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">
-            {{ vendor.name }}
-          </h2>
-          <p class="mt-2 max-w-2xl text-sm leading-6 text-stone-500 sm:text-base">
-            Review vendor contact information and related notes before linking expenses.
+          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
+            Vendor dossier
+          </p>
+          <h1
+            class="font-display mt-2 text-[2rem] font-semibold leading-tight tracking-[-0.035em] text-ink sm:text-[2.5rem]"
+          >
+            {{ vendor?.name ?? 'Vendor record' }}
+          </h1>
+          <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-[15px]">
+            Contact coordinates, working notes, and lifecycle evidence for this vendor.
           </p>
         </div>
 
-        <div class="flex items-center gap-3">
-          <RouterLink
-            to="/vendors"
-            class="inline-flex items-center rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900"
-          >
-            Back to list
-          </RouterLink>
-
-          <button
-            type="button"
-            :disabled="archiving"
-            class="inline-flex items-center rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 transition hover:border-red-300 hover:text-red-800 disabled:cursor-not-allowed disabled:opacity-60"
-            @click="archiveCurrentVendor"
-          >
-            {{ archiving ? 'Archiving...' : 'Archive' }}
-          </button>
-        </div>
+        <button
+          v-if="vendor"
+          type="button"
+          :disabled="archiving"
+          class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-danger-soft hover:text-danger disabled:cursor-not-allowed disabled:opacity-60"
+          @click="archiveCurrentVendor"
+        >
+          <Archive :size="15" aria-hidden="true" />
+          {{ archiving ? 'Archiving...' : 'Archive vendor' }}
+        </button>
       </div>
     </header>
 
     <div
       v-if="actionError"
-      class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+      role="alert"
+      class="rounded-xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
     >
       {{ actionError }}
     </div>
 
-    <section v-if="loading" class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-      <div class="grid gap-6 sm:grid-cols-2">
-        <div class="space-y-3">
-          <div class="h-4 w-24 animate-pulse rounded bg-stone-200"></div>
-          <div class="h-5 w-48 animate-pulse rounded bg-stone-100"></div>
-        </div>
-        <div class="space-y-3">
-          <div class="h-4 w-24 animate-pulse rounded bg-stone-200"></div>
-          <div class="h-5 w-48 animate-pulse rounded bg-stone-100"></div>
-        </div>
+    <section v-if="loading" class="space-y-3" role="status" aria-label="Loading vendor details">
+      <div class="grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(300px,0.85fr)]">
+        <div class="h-64 animate-pulse rounded-xl bg-surface-muted/70"></div>
+        <div class="h-64 animate-pulse rounded-xl bg-surface-muted/70"></div>
       </div>
     </section>
 
     <div
       v-else-if="error"
-      class="rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-700"
+      role="alert"
+      class="rounded-xl border border-danger/25 bg-danger-soft px-5 py-4 text-sm text-danger"
     >
       <p class="font-medium">Could not load vendor</p>
       <p class="mt-1">{{ error }}</p>
@@ -141,42 +130,72 @@ watch(vendorId, () => {
 
     <div
       v-else-if="!vendor"
-      class="rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-12 text-center"
+      class="rounded-xl border border-line bg-surface px-5 py-14 text-center shadow-card"
     >
-      <p class="text-base font-medium text-stone-700">Vendor not available</p>
-      <p class="mt-2 text-sm text-stone-500">
+      <span
+        class="mx-auto flex size-11 items-center justify-center rounded-lg bg-surface-muted text-ink-muted"
+      >
+        <Building2 :size="20" aria-hidden="true" />
+      </span>
+      <p class="mt-3 text-sm font-semibold text-ink">Vendor not available</p>
+      <p class="mt-1 text-sm text-ink-muted">
         This vendor may have been archived or is no longer available from the active list.
       </p>
     </div>
 
-    <section v-else class="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-      <div class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-        <h3 class="text-lg font-semibold tracking-tight text-stone-900">Contact details</h3>
-
-        <dl class="mt-6 grid gap-5 sm:grid-cols-2">
+    <section v-else class="grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(300px,0.85fr)]">
+      <article
+        data-vendor-record
+        class="relative overflow-hidden rounded-xl border border-line bg-surface p-5 shadow-card sm:p-6"
+      >
+        <span class="absolute inset-y-0 left-0 w-1 bg-accent" aria-hidden="true" />
+        <header class="flex items-start justify-between gap-4 border-b border-line pb-5">
           <div>
-            <dt class="text-xs font-semibold uppercase tracking-[0.2em] text-stone-400">Email</dt>
-            <dd class="mt-2 text-sm text-stone-700">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+              Contact coordinates
+            </p>
+            <h2 class="font-display mt-1 text-lg font-semibold tracking-[-0.02em] text-ink">
+              Vendor directory record
+            </h2>
+          </div>
+          <span class="border-l-2 border-accent pl-2 text-xs font-semibold text-accent">
+            Active
+          </span>
+        </header>
+
+        <dl class="mt-1 divide-y divide-line">
+          <div class="grid gap-2 py-4 sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-center">
+            <dt class="flex items-center gap-2 text-xs font-medium text-ink-muted">
+              <Mail :size="14" aria-hidden="true" />
+              Email
+            </dt>
+            <dd class="break-words text-sm text-ink">
               {{ vendor.email || 'Not provided' }}
             </dd>
           </div>
 
-          <div>
-            <dt class="text-xs font-semibold uppercase tracking-[0.2em] text-stone-400">Phone</dt>
-            <dd class="mt-2 text-sm text-stone-700">
+          <div class="grid gap-2 py-4 sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-center">
+            <dt class="flex items-center gap-2 text-xs font-medium text-ink-muted">
+              <Phone :size="14" aria-hidden="true" />
+              Phone
+            </dt>
+            <dd class="text-sm text-ink">
               {{ vendor.phone || 'Not provided' }}
             </dd>
           </div>
 
-          <div class="sm:col-span-2">
-            <dt class="text-xs font-semibold uppercase tracking-[0.2em] text-stone-400">Website</dt>
-            <dd class="mt-2 text-sm text-stone-700">
+          <div class="grid gap-2 py-4 sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-center">
+            <dt class="flex items-center gap-2 text-xs font-medium text-ink-muted">
+              <ExternalLink :size="14" aria-hidden="true" />
+              Website
+            </dt>
+            <dd class="min-w-0 break-words text-sm text-ink">
               <a
                 v-if="vendor.website"
                 :href="vendor.website"
                 target="_blank"
                 rel="noopener"
-                class="font-medium text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-stone-900"
+                class="font-medium text-brand underline decoration-line-strong underline-offset-4 hover:text-brand-strong"
               >
                 {{ vendor.website }}
               </a>
@@ -184,38 +203,41 @@ watch(vendorId, () => {
             </dd>
           </div>
         </dl>
-      </div>
+      </article>
 
-      <div class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-        <h3 class="text-lg font-semibold tracking-tight text-stone-900">Notes and activity</h3>
+      <aside class="rounded-xl border border-line bg-surface p-5 shadow-card sm:p-6">
+        <header class="border-b border-line pb-5">
+          <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-accent">
+            Record context
+          </p>
+          <h2 class="font-display mt-1 text-lg font-semibold tracking-[-0.02em] text-ink">
+            Notes and history
+          </h2>
+        </header>
 
-        <div class="mt-6 space-y-5">
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-stone-400">Notes</p>
-            <p class="mt-2 text-sm leading-6 text-stone-700">
-              {{ vendor.notes || 'No notes added for this vendor.' }}
-            </p>
-          </div>
-
-          <div class="grid gap-5 sm:grid-cols-2">
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-[0.2em] text-stone-400">Created</p>
-              <p class="mt-2 text-sm text-stone-700">
-                {{ new Date(vendor.createdAt).toLocaleString() }}
-              </p>
-            </div>
-
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-[0.2em] text-stone-400">
-                Last Update
-              </p>
-              <p class="mt-2 text-sm text-stone-700">
-                {{ new Date(vendor.updatedAt).toLocaleString() }}
-              </p>
-            </div>
-          </div>
+        <div class="py-5">
+          <p class="text-xs font-medium text-ink-muted">Working notes</p>
+          <p class="mt-2 whitespace-pre-wrap text-sm leading-6 text-ink">
+            {{ vendor.notes || 'No notes added for this vendor.' }}
+          </p>
         </div>
-      </div>
+
+        <dl class="grid border-t border-line sm:grid-cols-2">
+          <div class="border-b border-line py-4 sm:border-b-0 sm:border-r sm:pr-4">
+            <dt class="text-xs font-medium text-ink-muted">Created</dt>
+            <dd class="font-figure mt-1.5 text-sm text-ink">
+              <time :datetime="vendor.createdAt">{{ formatDateTime(vendor.createdAt) }}</time>
+            </dd>
+          </div>
+
+          <div class="py-4 sm:pl-4">
+            <dt class="text-xs font-medium text-ink-muted">Last updated</dt>
+            <dd class="font-figure mt-1.5 text-sm text-ink">
+              <time :datetime="vendor.updatedAt">{{ formatDateTime(vendor.updatedAt) }}</time>
+            </dd>
+          </div>
+        </dl>
+      </aside>
     </section>
   </section>
 </template>
