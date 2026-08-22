@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-08-22
+
+### Added
+
+- A custom Virelio visual identity with new browser branding and application artwork.
+- An accessible Chart.js category-spending visualization with a semantic data fallback.
+- Shared design tokens for application surfaces, typography, status colors, and data figures.
+
+### Changed
+
+- Redesigned authentication, dashboard, reporting, vendor, category, expense, and recurring-expense workflows around the Evidence Ledger design system.
+- Unified active and archived record pages with responsive layouts, consistent lifecycle actions, and clearer empty, loading, and error states.
+- Expanded frontend component coverage for the redesigned page structure and record summaries.
+
 ## [0.8.0] - 2026-08-18
 
 ### Added
