@@ -47,8 +47,12 @@ describe('App', () => {
     expect(wrapper.get('button[aria-label="Archived records"]').attributes('aria-expanded')).toBe(
       'false',
     )
-    expect(wrapper.text()).toContain(user.fullName)
-    expect(wrapper.text()).toContain(user.email)
+    const accountLink = wrapper.get('[data-account-link]')
+    expect(accountLink.text()).toContain(user.fullName)
+    expect(accountLink.text()).toContain(user.email)
+    expect(wrapper.get('[data-sidebar-scroll-region]').find('[data-account-link]').exists()).toBe(
+      false,
+    )
   })
 
   it('expands archived navigation on demand', async () => {
@@ -62,8 +66,10 @@ describe('App', () => {
     await archiveTrigger.trigger('click')
 
     expect(archiveTrigger.attributes('aria-expanded')).toBe('true')
-    expect(wrapper.get('nav[aria-label="Archived records"]').text()).toContain('Vendors')
-    expect(wrapper.get('nav[aria-label="Archived records"]').text()).toContain('Expenses')
+    const archiveNavigation = wrapper.get('nav[aria-label="Archived records"]')
+    expect(archiveNavigation.text()).toContain('Vendors')
+    expect(archiveNavigation.text()).toContain('Expenses')
+    expect(archiveNavigation.classes()).toContain('pb-2')
   })
 
   it('toggles the mobile navigation control', async () => {
@@ -104,8 +110,11 @@ describe('App', () => {
     currentUser.value = user
     const { router, wrapper } = await mountWithRouter(App, routes)
 
-    const profileLink = wrapper.get('a[href="/profile"]')
-    expect(profileLink.text()).toBe('Profile')
+    const profileLink = wrapper.get('[data-account-link]')
+    expect(profileLink.attributes('href')).toBe('/profile')
+    expect(profileLink.attributes('aria-label')).toBe('Profile settings')
+    expect(profileLink.text()).toContain(user.fullName)
+    expect(profileLink.text()).toContain(user.email)
 
     await profileLink.trigger('click')
     await flushPromises()

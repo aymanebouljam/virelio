@@ -115,116 +115,118 @@ watch(
 
         <div
           id="app-navigation"
-          class="flex-1 flex-col px-4 py-5 lg:min-h-0 lg:overflow-y-auto lg:px-4 lg:py-5"
+          class="flex-1 flex-col lg:min-h-0"
           :class="mobileNavigationOpen ? 'flex' : 'hidden lg:flex'"
         >
-          <nav aria-label="Primary navigation" class="space-y-5">
-            <section v-for="group in primaryNavigationGroups" :key="group.label">
-              <p class="px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/35">
-                {{ group.label }}
-              </p>
-              <div class="mt-1.5 space-y-0.5">
-                <RouterLink
-                  v-for="item in group.items"
-                  :key="item.to"
-                  :to="item.to"
-                  class="relative flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition"
-                  :class="
-                    isSectionActive(item.to)
-                      ? 'bg-white/10 text-white'
-                      : 'text-white/60 hover:bg-white/8 hover:text-white'
-                  "
-                >
-                  <span
-                    class="absolute inset-y-2 left-0 w-0.5 rounded-full transition-colors"
-                    :class="isSectionActive(item.to) ? 'bg-accent' : 'bg-transparent'"
-                    aria-hidden="true"
-                  />
-                  <component :is="item.icon" :size="18" :stroke-width="1.8" aria-hidden="true" />
-                  <span>{{ item.label }}</span>
-                </RouterLink>
-              </div>
-            </section>
-          </nav>
-
-          <CollapsibleRoot
-            v-model:open="archiveNavigationOpen"
-            class="mt-5 border-t border-white/10 pt-4"
+          <div
+            data-sidebar-scroll-region
+            class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-2 pt-5 overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
-            <CollapsibleTrigger
-              aria-label="Archived records"
-              class="flex min-h-10 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-white/55 transition hover:bg-white/8 hover:text-white"
+            <nav aria-label="Primary navigation" class="space-y-5">
+              <section v-for="group in primaryNavigationGroups" :key="group.label">
+                <p class="px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/35">
+                  {{ group.label }}
+                </p>
+                <div class="mt-1.5 space-y-0.5">
+                  <RouterLink
+                    v-for="item in group.items"
+                    :key="item.to"
+                    :to="item.to"
+                    class="relative flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition"
+                    :class="
+                      isSectionActive(item.to)
+                        ? 'bg-white/10 text-white'
+                        : 'text-white/60 hover:bg-white/8 hover:text-white'
+                    "
+                  >
+                    <span
+                      class="absolute inset-y-2 left-0 w-0.5 rounded-full transition-colors"
+                      :class="isSectionActive(item.to) ? 'bg-accent' : 'bg-transparent'"
+                      aria-hidden="true"
+                    />
+                    <component :is="item.icon" :size="18" :stroke-width="1.8" aria-hidden="true" />
+                    <span>{{ item.label }}</span>
+                  </RouterLink>
+                </div>
+              </section>
+            </nav>
+
+            <CollapsibleRoot
+              v-model:open="archiveNavigationOpen"
+              class="mt-4 border-t border-white/10 pt-3"
             >
-              <Archive :size="18" :stroke-width="1.8" aria-hidden="true" />
-              <span class="flex-1">Archived records</span>
-              <ChevronDown
-                :size="16"
-                aria-hidden="true"
-                class="transition-transform duration-200"
-                :class="archiveNavigationOpen ? 'rotate-180' : ''"
-              />
-            </CollapsibleTrigger>
+              <CollapsibleTrigger
+                aria-label="Archived records"
+                class="flex min-h-10 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-white/55 transition hover:bg-white/8 hover:text-white"
+              >
+                <Archive :size="18" :stroke-width="1.8" aria-hidden="true" />
+                <span class="flex-1">Archived records</span>
+                <ChevronDown
+                  :size="16"
+                  aria-hidden="true"
+                  class="transition-transform duration-200"
+                  :class="archiveNavigationOpen ? 'rotate-180' : ''"
+                />
+              </CollapsibleTrigger>
 
-            <CollapsibleContent>
-              <nav aria-label="Archived records" class="mt-1 space-y-1 pl-3">
-                <RouterLink
-                  v-for="item in archiveNavigation"
-                  :key="item.to"
-                  :to="item.to"
-                  class="relative flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-sm transition"
-                  :class="
-                    route.path === item.to
-                      ? 'bg-white/10 font-semibold text-white'
-                      : 'text-white/50 hover:bg-white/8 hover:text-white'
-                  "
-                >
-                  <span
-                    class="absolute inset-y-2 left-0 w-0.5 rounded-full"
-                    :class="route.path === item.to ? 'bg-accent' : 'bg-transparent'"
-                    aria-hidden="true"
-                  />
-                  <component :is="item.icon" :size="16" :stroke-width="1.8" aria-hidden="true" />
-                  <span>{{ item.label }}</span>
-                </RouterLink>
-              </nav>
-            </CollapsibleContent>
-          </CollapsibleRoot>
+              <CollapsibleContent>
+                <nav aria-label="Archived records" class="mt-1 space-y-0.5 pb-2 pl-3">
+                  <RouterLink
+                    v-for="item in archiveNavigation"
+                    :key="item.to"
+                    :to="item.to"
+                    class="relative flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-sm transition"
+                    :class="
+                      route.path === item.to
+                        ? 'bg-white/10 font-semibold text-white'
+                        : 'text-white/50 hover:bg-white/8 hover:text-white'
+                    "
+                  >
+                    <span
+                      class="absolute inset-y-2 left-0 w-0.5 rounded-full"
+                      :class="route.path === item.to ? 'bg-accent' : 'bg-transparent'"
+                      aria-hidden="true"
+                    />
+                    <component :is="item.icon" :size="16" :stroke-width="1.8" aria-hidden="true" />
+                    <span>{{ item.label }}</span>
+                  </RouterLink>
+                </nav>
+              </CollapsibleContent>
+            </CollapsibleRoot>
+          </div>
 
-          <div class="mt-6 border-t border-white/10 pt-5 lg:mt-auto">
-            <div v-if="currentUser" class="flex items-center gap-3 px-3">
-              <div
+          <div class="border-t border-white/10 px-4 py-4">
+            <RouterLink
+              v-if="currentUser"
+              to="/profile"
+              aria-label="Profile settings"
+              data-account-link
+              class="flex items-center gap-3 rounded-lg px-3 py-2 transition hover:bg-white/8"
+              active-class="bg-white/10 hover:bg-white/10"
+            >
+              <span
                 class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/70"
               >
                 <UserRound :size="17" aria-hidden="true" />
-              </div>
-              <div class="min-w-0">
-                <p class="truncate text-sm font-semibold text-white">
+              </span>
+              <span class="min-w-0">
+                <span class="block truncate text-sm font-semibold text-white">
                   {{ currentUser.fullName }}
-                </p>
-                <p class="mt-0.5 truncate text-xs text-white/45">
+                </span>
+                <span class="mt-0.5 block truncate text-xs text-white/45">
                   {{ currentUser.email }}
-                </p>
-              </div>
-            </div>
+                </span>
+              </span>
+            </RouterLink>
 
-            <div class="mt-3 grid grid-cols-2 gap-1 lg:grid-cols-1">
-              <RouterLink
-                to="/profile"
-                class="flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-white/60 transition hover:bg-white/8 hover:text-white"
-                active-class="bg-white/10 text-white hover:bg-white/10 hover:text-white"
-              >
-                <UserRound :size="17" aria-hidden="true" />
-                Profile
-              </RouterLink>
-              <button
-                type="button"
-                class="flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-white/60 transition hover:bg-white/8 hover:text-white"
-                @click="logout"
-              >
-                <LogOut :size="17" aria-hidden="true" />
-                Sign out
-              </button>
-            </div>
+            <button
+              type="button"
+              class="mt-2 flex min-h-10 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-white/60 transition hover:bg-white/8 hover:text-white"
+              @click="logout"
+            >
+              <LogOut :size="17" aria-hidden="true" />
+              Sign out
+            </button>
           </div>
         </div>
       </aside>
