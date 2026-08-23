@@ -39,6 +39,9 @@ const PAGE_SIZE = 4
 const MonthlySpendChart = defineAsyncComponent(
   () => import('@/components/reports/MonthlySpendChart.vue'),
 )
+const VendorSpendChart = defineAsyncComponent(
+  () => import('@/components/reports/VendorSpendChart.vue'),
+)
 
 const report = ref<ExpenseReport | null>(null)
 const insights = ref<ReportInsights | null>(null)
@@ -527,23 +530,7 @@ onMounted(() => loadReport(true))
             <p class="text-sm font-medium text-ink">No vendor totals</p>
           </div>
 
-          <div v-else class="mt-6 space-y-3">
-            <div
-              v-for="vendor in visibleVendorTotals"
-              :key="vendor.vendorId"
-              class="flex items-start justify-between gap-4 border-b border-line px-1 py-4 last:border-b-0"
-            >
-              <div>
-                <p class="text-sm font-semibold text-ink">{{ vendor.vendorName }}</p>
-                <p class="mt-1 text-xs text-ink-muted">
-                  {{ vendor.expenseCount }} expense{{ vendor.expenseCount === 1 ? '' : 's' }}
-                </p>
-              </div>
-              <span class="shrink-0 text-sm font-semibold text-ink">
-                ${{ formatAmount(vendor.totalAmount) }}
-              </span>
-            </div>
-          </div>
+          <VendorSpendChart v-else class="mt-6" :vendor-totals="visibleVendorTotals" />
         </section>
 
         <section class="rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6">
