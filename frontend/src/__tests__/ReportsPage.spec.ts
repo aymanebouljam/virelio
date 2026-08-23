@@ -212,9 +212,15 @@ function getButton(wrapper: VueWrapper, label: string) {
   return button
 }
 
+async function settlePage() {
+  await flushPromises()
+  await vi.dynamicImportSettled()
+  await flushPromises()
+}
+
 async function mountPage(initialRoute = '/reports') {
   const result = await mountWithRouter(ReportsPage, routes, initialRoute)
-  await flushPromises()
+  await settlePage()
   return result
 }
 
@@ -246,7 +252,7 @@ describe('report workflows', () => {
 
     resolveReport(report)
     resolveInsights(insights)
-    await flushPromises()
+    await settlePage()
 
     expect(getMetric(wrapper, 'Total amount').text()).toContain('$425.50')
     expect(getMetric(wrapper, 'Expense count').text()).toContain('3')
@@ -260,6 +266,7 @@ describe('report workflows', () => {
     expect(wrapper.find('a[href="/expenses/expense-1"]').exists()).toBe(true)
     expect(wrapper.find('a[href="/expenses/expense-2"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('Monthly spending')
+    expect(wrapper.findAll('[data-monthly-spend-chart]')).toHaveLength(1)
     expect(wrapper.text()).toContain('2026-07')
     expect(wrapper.text()).toContain('Vendor spending')
     expect(wrapper.text()).toContain('Nova Services')
@@ -306,9 +313,11 @@ describe('report workflows', () => {
     })
 
     const { wrapper } = await mountPage()
-    const monthlyTotals = getSection(wrapper, 'Monthly spending').get('.space-y-3')
+    const monthlyChart = getSection(wrapper, 'Monthly spending').get('[data-monthly-spend-chart]')
+    const monthlyTotals = monthlyChart.get('[data-monthly-values]')
     const vendorSection = getSection(wrapper, 'Vendor spending')
 
+    expect(monthlyChart.get('figcaption').text()).toContain('plotted chronologically')
     expect(monthlyTotals.classes()).toEqual(
       expect.arrayContaining(['max-h-[32rem]', 'overflow-y-auto']),
     )

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import {
   ArrowRight,
@@ -36,6 +36,9 @@ import { formatAmount, formatDate } from '@/lib/helpers'
 const route = useRoute()
 const router = useRouter()
 const PAGE_SIZE = 4
+const MonthlySpendChart = defineAsyncComponent(
+  () => import('@/components/reports/MonthlySpendChart.vue'),
+)
 
 const report = ref<ExpenseReport | null>(null)
 const insights = ref<ReportInsights | null>(null)
@@ -499,23 +502,7 @@ onMounted(() => loadReport(true))
             <p class="text-sm font-medium text-ink">No monthly totals</p>
           </div>
 
-          <div v-else class="mt-6 max-h-[32rem] space-y-3 overflow-y-auto pr-1">
-            <div
-              v-for="month in visibleMonthlyTotals"
-              :key="month.month"
-              class="flex items-start justify-between gap-4 rounded-xl bg-surface-muted px-4 py-4"
-            >
-              <div>
-                <p class="text-sm font-semibold text-ink">{{ month.month }}</p>
-                <p class="mt-1 text-xs text-ink-muted">
-                  {{ month.expenseCount }} expense{{ month.expenseCount === 1 ? '' : 's' }}
-                </p>
-              </div>
-              <span class="shrink-0 text-sm font-semibold text-ink">
-                ${{ formatAmount(month.totalAmount) }}
-              </span>
-            </div>
-          </div>
+          <MonthlySpendChart v-else class="mt-6" :monthly-totals="visibleMonthlyTotals" />
         </section>
 
         <section class="rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6">
