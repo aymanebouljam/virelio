@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { ZodError } from 'zod'
-import { Check, Clock3, Save, UserRound } from '@lucide/vue'
+import { Check, Clock3, Save } from '@lucide/vue'
 import { ApiError } from '@/lib/api'
 import { updateProfile } from '@/lib/auth/api'
 import { profileFormSchema, type ProfileFormValues } from '@/lib/auth/schema'
 import { currentUser } from '@/lib/auth/storage'
-import { formatDateTime } from '@/lib/helpers'
+import { formatDateTime, formatRelativeDate, getInitials } from '@/lib/helpers'
 import { mapZodErrors } from '@/lib/zod'
 
 const initialProfile: ProfileFormValues = {
@@ -22,6 +22,9 @@ const submitting = ref(false)
 const unchanged = computed(
   () =>
     form.value.fullName === baseline.value.fullName && form.value.email === baseline.value.email,
+)
+const profileInitials = computed(() =>
+  getInitials(currentUser.value?.fullName ?? form.value.fullName),
 )
 
 function normalizeError(error: unknown) {
@@ -89,8 +92,12 @@ async function submit() {
         <header
           class="flex items-center gap-3 border-b border-line bg-brand-soft/55 px-5 py-4 sm:px-6"
         >
-          <span class="flex size-10 items-center justify-center rounded-xl bg-brand text-white">
-            <UserRound :size="18" aria-hidden="true" />
+          <span
+            data-profile-initials
+            class="font-figure flex size-10 items-center justify-center rounded-xl bg-accent text-xs font-semibold tracking-[0.08em] text-white shadow-card"
+            aria-hidden="true"
+          >
+            {{ profileInitials }}
           </span>
           <div>
             <h2 class="font-display text-lg font-semibold tracking-[-0.02em] text-ink">
@@ -206,8 +213,11 @@ async function submit() {
               Member since
             </dt>
             <dd class="font-figure mt-1.5 text-ink">
-              <time :datetime="currentUser.createdAt">
-                {{ formatDateTime(currentUser.createdAt) }}
+              <time
+                :datetime="currentUser.createdAt"
+                :title="formatDateTime(currentUser.createdAt)"
+              >
+                {{ formatRelativeDate(currentUser.createdAt) }}
               </time>
             </dd>
           </div>
@@ -217,8 +227,11 @@ async function submit() {
               Last updated
             </dt>
             <dd class="font-figure mt-1.5 text-ink">
-              <time :datetime="currentUser.updatedAt">
-                {{ formatDateTime(currentUser.updatedAt) }}
+              <time
+                :datetime="currentUser.updatedAt"
+                :title="formatDateTime(currentUser.updatedAt)"
+              >
+                {{ formatRelativeDate(currentUser.updatedAt) }}
               </time>
             </dd>
           </div>

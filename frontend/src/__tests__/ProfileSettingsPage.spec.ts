@@ -37,10 +37,12 @@ function expectInvalidField(wrapper: VueWrapper, selector: string, errorId: stri
 
 beforeEach(() => {
   vi.resetAllMocks()
+  vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-09-05T10:00:00.000Z').getTime())
   currentUser.value = user
 })
 
 afterEach(() => {
+  vi.restoreAllMocks()
   currentUser.value = null
 })
 
@@ -55,8 +57,16 @@ describe('profile settings workflow', () => {
     expect(wrapper.get('#profile-full-name').attributes('autocomplete')).toBe('name')
     expect(wrapper.get('#profile-email').attributes('autocomplete')).toBe('email')
     expect(wrapper.get('button[type="submit"]').attributes()).toHaveProperty('disabled')
-    expect(wrapper.get(`time[datetime="${createdAt}"]`).text()).toBe(formatDateTime(createdAt))
-    expect(wrapper.get(`time[datetime="${updatedAt}"]`).text()).toBe(formatDateTime(updatedAt))
+    expect(wrapper.get('[data-profile-initials]').text()).toBe('LO')
+    expect(wrapper.get('[data-profile-initials]').attributes('aria-hidden')).toBe('true')
+    expect(wrapper.get(`time[datetime="${createdAt}"]`).text()).toBe('1 month ago')
+    expect(wrapper.get(`time[datetime="${createdAt}"]`).attributes('title')).toBe(
+      formatDateTime(createdAt),
+    )
+    expect(wrapper.get(`time[datetime="${updatedAt}"]`).text()).toBe('1 month ago')
+    expect(wrapper.get(`time[datetime="${updatedAt}"]`).attributes('title')).toBe(
+      formatDateTime(updatedAt),
+    )
   })
 
   it('updates the profile and current session user', async () => {
@@ -81,7 +91,9 @@ describe('profile settings workflow', () => {
     })
     expect(currentUser.value).toEqual(updatedUser)
     expect(wrapper.get('[role="status"]').text()).toBe('Profile updated')
-    expect(wrapper.get(`time[datetime="${nextUpdatedAt}"]`).text()).toBe(
+    expect(wrapper.get('[data-profile-initials]').text()).toBe('UO')
+    expect(wrapper.get(`time[datetime="${nextUpdatedAt}"]`).text()).toBe('1 month ago')
+    expect(wrapper.get(`time[datetime="${nextUpdatedAt}"]`).attributes('title')).toBe(
       formatDateTime(nextUpdatedAt),
     )
     expect(wrapper.get('button[type="submit"]').attributes()).toHaveProperty('disabled')
