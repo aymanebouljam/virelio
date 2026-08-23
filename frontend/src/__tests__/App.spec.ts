@@ -85,19 +85,39 @@ describe('App', () => {
     expect(archiveNavigation.classes()).toContain('pb-2')
   })
 
-  it('toggles the mobile navigation control', async () => {
+  it('keeps frequent destinations in the mobile navigation', async () => {
     setAccessToken('test-token')
     currentUser.value = user
     const { wrapper } = await mountWithRouter(App, routes)
-    const menuButton = wrapper.get('button[aria-controls="app-navigation"]')
+    const mobileNavigation = wrapper.get('nav[aria-label="Mobile navigation"]')
 
-    expect(menuButton.attributes('aria-expanded')).toBe('false')
-    expect(menuButton.text()).toBe('Menu')
+    expect(mobileNavigation.get('a[href="/"]').text()).toContain('Dashboard')
+    expect(mobileNavigation.get('a[href="/expenses"]').text()).toContain('Expenses')
+    expect(mobileNavigation.get('a[href="/recurring-expenses"]').text()).toContain('Recurring')
+    expect(mobileNavigation.get('a[href="/reports"]').text()).toContain('Reports')
+  })
 
-    await menuButton.trigger('click')
+  it('opens secondary navigation in the mobile more sheet', async () => {
+    setAccessToken('test-token')
+    currentUser.value = user
+    const { wrapper } = await mountWithRouter(App, routes)
+    const moreButton = wrapper.get('nav[aria-label="Mobile navigation"] button')
 
-    expect(menuButton.attributes('aria-expanded')).toBe('true')
-    expect(menuButton.text()).toBe('Close')
+    expect(moreButton.attributes('aria-haspopup')).toBe('dialog')
+    expect(moreButton.attributes('aria-expanded')).toBe('false')
+
+    await moreButton.trigger('click')
+
+    expect(moreButton.attributes('aria-expanded')).toBe('true')
+    expect(wrapper.get('[role="dialog"]').text()).toContain(
+      'Organization, archives, and account settings.',
+    )
+    expect(wrapper.get('nav[aria-label="More navigation"]').text()).toContain('Vendors')
+    expect(wrapper.get('nav[aria-label="More navigation"]').text()).toContain('Categories')
+    expect(wrapper.get('nav[aria-label="Mobile archived records"]').text()).toContain(
+      'Recurring expenses',
+    )
+    expect(wrapper.get('[data-mobile-account-link]').text()).toContain(user.email)
   })
 
   it('clears the session and navigates to login on sign out', async () => {

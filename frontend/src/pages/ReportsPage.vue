@@ -235,7 +235,7 @@ onMounted(() => loadReport(true))
 </script>
 
 <template>
-  <section class="space-y-7">
+  <section class="min-w-0 space-y-7">
     <header>
       <p class="text-xs font-semibold uppercase tracking-[0.24em] text-accent">Analysis</p>
       <div>
@@ -249,7 +249,7 @@ onMounted(() => loadReport(true))
     </header>
 
     <fieldset
-      class="rounded-2xl border border-line bg-surface px-4 py-3 shadow-card sm:flex sm:items-end sm:gap-3"
+      class="min-w-0 max-w-full rounded-2xl border border-line bg-surface px-4 py-3 shadow-card sm:flex sm:items-end sm:gap-3"
     >
       <legend class="sr-only">Report date range</legend>
 
@@ -265,8 +265,8 @@ onMounted(() => loadReport(true))
         </div>
       </div>
 
-      <div class="grid gap-3 sm:flex sm:items-end">
-        <div class="flex flex-col gap-1.5">
+      <div class="grid min-w-0 gap-3 sm:flex sm:w-auto sm:items-end">
+        <div class="flex min-w-0 flex-col gap-1.5">
           <label for="report-date-from" class="text-xs font-medium text-ink-muted">From</label>
           <input
             id="report-date-from"
@@ -274,7 +274,7 @@ onMounted(() => loadReport(true))
             type="date"
             :aria-describedby="dateRangeError ? 'report-date-range-error' : undefined"
             :aria-invalid="Boolean(dateRangeError)"
-            class="min-h-10 rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand"
+            class="min-h-10 w-full min-w-0 max-w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand sm:w-auto"
             @change="
               updateDateRange({
                 dateFrom: ($event.target as HTMLInputElement).value || undefined,
@@ -284,7 +284,7 @@ onMounted(() => loadReport(true))
           />
         </div>
 
-        <div class="flex flex-col gap-1.5">
+        <div class="flex min-w-0 flex-col gap-1.5">
           <label for="report-date-to" class="text-xs font-medium text-ink-muted">To</label>
           <input
             id="report-date-to"
@@ -292,7 +292,7 @@ onMounted(() => loadReport(true))
             type="date"
             :aria-describedby="dateRangeError ? 'report-date-range-error' : undefined"
             :aria-invalid="Boolean(dateRangeError)"
-            class="min-h-10 rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand"
+            class="min-h-10 w-full min-w-0 max-w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand sm:w-auto"
             @change="
               updateDateRange({
                 dateFrom: dateFrom,
