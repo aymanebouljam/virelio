@@ -269,6 +269,7 @@ describe('report workflows', () => {
     expect(wrapper.findAll('[data-monthly-spend-chart]')).toHaveLength(1)
     expect(wrapper.text()).toContain('2026-07')
     expect(wrapper.text()).toContain('Vendor spending')
+    expect(wrapper.findAll('[data-vendor-spend-chart]')).toHaveLength(1)
     expect(wrapper.text()).toContain('Nova Services')
   })
 
@@ -315,7 +316,8 @@ describe('report workflows', () => {
     const { wrapper } = await mountPage()
     const monthlyChart = getSection(wrapper, 'Monthly spending').get('[data-monthly-spend-chart]')
     const monthlyTotals = monthlyChart.get('[data-monthly-values]')
-    const vendorSection = getSection(wrapper, 'Vendor spending')
+    const vendorChart = getSection(wrapper, 'Vendor spending').get('[data-vendor-spend-chart]')
+    const vendorTotals = vendorChart.get('[data-vendor-values]')
 
     expect(monthlyChart.get('figcaption').text()).toContain('plotted chronologically')
     expect(monthlyTotals.classes()).toEqual(
@@ -324,11 +326,13 @@ describe('report workflows', () => {
     expect(monthlyTotals.element.children).toHaveLength(7)
     expect(monthlyTotals.element.firstElementChild?.textContent).toContain('2026-07')
     expect(monthlyTotals.element.lastElementChild?.textContent).toContain('2026-01')
-    expect(vendorSection.text()).toContain('Vendor 5')
-    expect(vendorSection.text()).toContain('Other')
-    expect(vendorSection.text()).toContain('$300.00')
-    expect(vendorSection.text()).not.toContain('Vendor 6')
-    expect(vendorSection.text()).not.toContain('Vendor 7')
+    expect(vendorChart.get('figcaption').text()).toContain('ranked from highest to lowest')
+    expect(vendorTotals.element.children).toHaveLength(6)
+    expect(vendorTotals.text()).toContain('Vendor 5')
+    expect(vendorTotals.text()).toContain('Other')
+    expect(vendorTotals.text()).toContain('$300.00')
+    expect(vendorTotals.text()).not.toContain('Vendor 6')
+    expect(vendorTotals.text()).not.toContain('Vendor 7')
   })
 
   it('shows API loading failures', async () => {
