@@ -42,6 +42,9 @@ const MonthlySpendChart = defineAsyncComponent(
 const VendorSpendChart = defineAsyncComponent(
   () => import('@/components/reports/VendorSpendChart.vue'),
 )
+const CategoryComparisonChart = defineAsyncComponent(
+  () => import('@/components/reports/CategoryComparisonChart.vue'),
+)
 
 const report = ref<ExpenseReport | null>(null)
 const insights = ref<ReportInsights | null>(null)
@@ -459,35 +462,7 @@ onMounted(() => loadReport(true))
             <p class="text-sm font-medium text-ink">No category activity to compare</p>
           </div>
 
-          <div v-else class="mt-6 max-h-[32rem] space-y-3 overflow-y-auto pr-1">
-            <div
-              v-for="category in categoryComparison.categories"
-              :key="category.categoryId ?? category.categoryName"
-              class="grid gap-3 rounded-xl border-b border-line px-1 py-4 last:border-b-0 sm:grid-cols-[1fr_auto_auto_auto] sm:items-center"
-            >
-              <p class="text-sm font-semibold text-ink">{{ category.categoryName }}</p>
-              <p class="text-xs text-ink-muted">
-                Current
-                <span class="font-semibold text-ink">
-                  ${{ formatAmount(category.currentAmount) }}
-                </span>
-              </p>
-              <p class="text-xs text-ink-muted">
-                Previous
-                <span class="font-semibold text-ink">
-                  ${{ formatAmount(category.previousAmount) }}
-                </span>
-              </p>
-              <p class="text-xs text-ink-muted">
-                Change
-                <span class="font-semibold text-ink">
-                  ${{ formatAmount(category.changeAmount) }}
-                  <template v-if="category.changePercentage === null"> · New</template>
-                  <template v-else> · {{ category.changePercentage }}%</template>
-                </span>
-              </p>
-            </div>
-          </div>
+          <CategoryComparisonChart v-else class="mt-6" :comparison="categoryComparison" />
         </template>
       </section>
 
