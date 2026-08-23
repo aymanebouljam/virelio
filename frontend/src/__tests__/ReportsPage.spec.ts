@@ -26,6 +26,11 @@ const reportsApi = vi.hoisted(() => ({
 
 vi.mock('@/lib/reports/api', () => reportsApi)
 
+vi.mock('vue-chartjs', () => ({
+  Bar: { template: '<div data-chart-renderer="bar"></div>' },
+  Line: { template: '<div data-chart-renderer="line"></div>' },
+}))
+
 const routes: RouteRecordRaw[] = [
   { path: '/reports', name: 'reports', component: ReportsPage },
   {
