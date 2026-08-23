@@ -362,17 +362,21 @@ describe('report workflows', () => {
   it('shows category changes for a complete date range', async () => {
     const { wrapper } = await mountPage('/reports?dateFrom=2026-08-01&dateTo=2026-08-31')
     const comparisonSection = getSection(wrapper, 'Category comparison')
+    const comparisonChart = comparisonSection.get('[data-category-comparison-chart]')
+    const comparisonValues = comparisonChart.get('[data-category-comparison-values]')
 
+    expect(comparisonChart.get('figcaption').text()).toContain('selected period')
     expect(comparisonSection.text()).toContain('2026-08-01 to 2026-08-31')
     expect(comparisonSection.text()).toContain('$425.50')
     expect(comparisonSection.text()).toContain('2026-07-01 to 2026-07-31')
     expect(comparisonSection.text()).toContain('$225.50')
-    expect(comparisonSection.text()).toContain('Travel')
-    expect(comparisonSection.text()).toContain('$200.00')
-    expect(comparisonSection.text()).toContain('· 200%')
-    expect(comparisonSection.text()).toContain('Meals')
-    expect(comparisonSection.text()).toContain('$125.50')
-    expect(comparisonSection.text()).toContain('· New')
+    expect(comparisonValues.element.children).toHaveLength(2)
+    expect(comparisonValues.text()).toContain('Travel')
+    expect(comparisonValues.text()).toContain('$200.00')
+    expect(comparisonValues.text()).toContain('· 200%')
+    expect(comparisonValues.text()).toContain('Meals')
+    expect(comparisonValues.text()).toContain('$125.50')
+    expect(comparisonValues.text()).toContain('· New')
   })
 
   it('shows an empty comparison for periods without category activity', async () => {
@@ -384,6 +388,7 @@ describe('report workflows', () => {
     const { wrapper } = await mountPage('/reports?dateFrom=2026-08-01&dateTo=2026-08-31')
 
     expect(wrapper.text()).toContain('No category activity to compare')
+    expect(wrapper.find('[data-category-comparison-chart]').exists()).toBe(false)
   })
 
   it('updates the URL and reloads when the date range changes', async () => {
