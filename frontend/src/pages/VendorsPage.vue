@@ -335,7 +335,7 @@ onMounted(loadVendors)
       <div
         v-if="actionError"
         role="alert"
-        class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        class="rounded-2xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
       >
         {{ actionError }}
       </div>
@@ -352,14 +352,14 @@ onMounted(loadVendors)
           <Search
             :size="16"
             aria-hidden="true"
-            class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"
+            class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted"
           />
           <input
             v-model="search"
             type="search"
             maxlength="120"
             placeholder="Name, email, phone, or website"
-            class="min-h-10 w-full rounded-xl border border-line bg-white py-2 pl-9 pr-3 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+            class="min-h-10 w-full rounded-xl border border-line bg-surface py-2 pl-9 pr-3 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand"
           />
         </span>
       </label>
@@ -423,14 +423,14 @@ onMounted(loadVendors)
               :aria-describedby="formErrors.name ? 'vendor-name-error' : undefined"
               :aria-invalid="Boolean(formErrors.name)"
               :class="[
-                'min-h-11 w-full rounded-xl border bg-white px-3 py-2 text-sm text-ink outline-none transition',
+                'min-h-11 w-full rounded-xl border bg-surface px-3 py-2 text-sm text-ink outline-none transition',
                 formErrors.name
-                  ? 'border-red-300 focus:border-red-500'
-                  : 'border-line hover:border-stone-300 focus:border-brand',
+                  ? 'border-danger focus:border-danger'
+                  : 'border-line hover:border-line-strong focus:border-brand',
               ]"
             />
 
-            <p v-if="formErrors.name" id="vendor-name-error" class="ml-3 mt-2 text-sm text-red-600">
+            <p v-if="formErrors.name" id="vendor-name-error" class="ml-3 mt-2 text-sm text-danger">
               {{ formErrors.name }}
             </p>
           </label>
@@ -445,17 +445,17 @@ onMounted(loadVendors)
               :aria-describedby="formErrors.email ? 'vendor-email-error' : undefined"
               :aria-invalid="Boolean(formErrors.email)"
               :class="[
-                'min-h-11 w-full rounded-xl border bg-white px-3 py-2 text-sm text-ink outline-none transition',
+                'min-h-11 w-full rounded-xl border bg-surface px-3 py-2 text-sm text-ink outline-none transition',
                 formErrors.email
-                  ? 'border-red-300 focus:border-red-500'
-                  : 'border-line hover:border-stone-300 focus:border-brand',
+                  ? 'border-danger focus:border-danger'
+                  : 'border-line hover:border-line-strong focus:border-brand',
               ]"
             />
 
             <p
               v-if="formErrors.email"
               id="vendor-email-error"
-              class="ml-3 mt-2 text-sm text-red-600"
+              class="ml-3 mt-2 text-sm text-danger"
             >
               {{ formErrors.email }}
             </p>
@@ -471,17 +471,17 @@ onMounted(loadVendors)
               :aria-describedby="formErrors.phone ? 'vendor-phone-error' : undefined"
               :aria-invalid="Boolean(formErrors.phone)"
               :class="[
-                'min-h-11 w-full rounded-xl border bg-white px-3 py-2 text-sm text-ink outline-none transition',
+                'min-h-11 w-full rounded-xl border bg-surface px-3 py-2 text-sm text-ink outline-none transition',
                 formErrors.phone
-                  ? 'border-red-300 focus:border-red-500'
-                  : 'border-line hover:border-stone-300 focus:border-brand',
+                  ? 'border-danger focus:border-danger'
+                  : 'border-line hover:border-line-strong focus:border-brand',
               ]"
             />
 
             <p
               v-if="formErrors.phone"
               id="vendor-phone-error"
-              class="ml-3 mt-2 text-sm text-red-600"
+              class="ml-3 mt-2 text-sm text-danger"
             >
               {{ formErrors.phone }}
             </p>
@@ -497,17 +497,17 @@ onMounted(loadVendors)
               :aria-describedby="formErrors.website ? 'vendor-website-error' : undefined"
               :aria-invalid="Boolean(formErrors.website)"
               :class="[
-                'min-h-11 w-full rounded-xl border bg-white px-3 py-2 text-sm text-ink outline-none transition',
+                'min-h-11 w-full rounded-xl border bg-surface px-3 py-2 text-sm text-ink outline-none transition',
                 formErrors.website
-                  ? 'border-red-300 focus:border-red-500'
-                  : 'border-line hover:border-stone-300 focus:border-brand',
+                  ? 'border-danger focus:border-danger'
+                  : 'border-line hover:border-line-strong focus:border-brand',
               ]"
             />
 
             <p
               v-if="formErrors.website"
               id="vendor-website-error"
-              class="ml-3 mt-2 text-sm text-red-600"
+              class="ml-3 mt-2 text-sm text-danger"
             >
               {{ formErrors.website }}
             </p>
@@ -524,14 +524,14 @@ onMounted(loadVendors)
             :aria-describedby="formErrors.notes ? 'vendor-notes-error' : undefined"
             :aria-invalid="Boolean(formErrors.notes)"
             :class="[
-              'w-full rounded-xl border bg-white px-3 py-2 text-sm text-ink outline-none transition',
+              'w-full rounded-xl border bg-surface px-3 py-2 text-sm text-ink outline-none transition',
               formErrors.notes
-                ? 'border-red-300 focus:border-red-500'
-                : 'border-line hover:border-stone-300 focus:border-brand',
+                ? 'border-danger focus:border-danger'
+                : 'border-line hover:border-line-strong focus:border-brand',
             ]"
           />
 
-          <p v-if="formErrors.notes" id="vendor-notes-error" class="ml-3 mt-2 text-sm text-red-600">
+          <p v-if="formErrors.notes" id="vendor-notes-error" class="ml-3 mt-2 text-sm text-danger">
             {{ formErrors.notes }}
           </p>
         </label>
@@ -539,7 +539,7 @@ onMounted(loadVendors)
         <div
           v-if="submitError"
           role="alert"
-          class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          class="rounded-2xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
         >
           {{ submitError }}
         </div>
@@ -556,7 +556,7 @@ onMounted(loadVendors)
           <button
             type="submit"
             :disabled="submitting"
-            class="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-stone-400"
+            class="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-line-strong"
           >
             {{ submitting ? 'Saving...' : 'Save vendor' }}
           </button>
@@ -594,7 +594,7 @@ onMounted(loadVendors)
       <div
         v-else-if="error"
         role="alert"
-        class="m-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-700 sm:m-6"
+        class="m-5 rounded-2xl border border-danger/25 bg-danger-soft px-4 py-5 text-sm text-danger sm:m-6"
       >
         <p class="font-medium">Could not load vendors</p>
         <p class="mt-1">{{ error }}</p>
@@ -699,7 +699,7 @@ onMounted(loadVendors)
                 </button>
                 <button
                   type="button"
-                  class="inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-red-50 hover:text-red-700"
+                  class="inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-danger-soft hover:text-danger"
                   @click="archive(vendor)"
                 >
                   <Archive :size="14" aria-hidden="true" />
@@ -724,7 +724,7 @@ onMounted(loadVendors)
             <button
               type="button"
               :disabled="pagination.page === 1"
-              class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink-muted transition hover:border-stone-300 hover:text-ink disabled:cursor-not-allowed disabled:text-stone-300"
+              class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-surface px-3 text-sm font-medium text-ink-muted transition hover:border-line-strong hover:text-ink disabled:cursor-not-allowed disabled:text-line-strong"
               @click="changePage(pagination.page - 1)"
             >
               <ChevronLeft :size="15" aria-hidden="true" />
@@ -733,7 +733,7 @@ onMounted(loadVendors)
             <button
               type="button"
               :disabled="pagination.page === pagination.totalPages"
-              class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink-muted transition hover:border-stone-300 hover:text-ink disabled:cursor-not-allowed disabled:text-stone-300"
+              class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-surface px-3 text-sm font-medium text-ink-muted transition hover:border-line-strong hover:text-ink disabled:cursor-not-allowed disabled:text-line-strong"
               @click="changePage(pagination.page + 1)"
             >
               Next
