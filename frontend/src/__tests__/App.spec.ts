@@ -49,6 +49,8 @@ describe('App', () => {
     )
     const accountLink = wrapper.get('[data-account-link]')
     const scrollRegion = wrapper.get('[data-sidebar-scroll-region]')
+    expect(accountLink.get('[data-account-initials]').text()).toBe('LO')
+    expect(accountLink.get('[data-account-initials]').attributes('aria-hidden')).toBe('true')
     expect(accountLink.text()).toContain(user.fullName)
     expect(accountLink.text()).toContain(user.email)
     expect(scrollRegion.find('[data-account-link]').exists()).toBe(false)
@@ -56,6 +58,14 @@ describe('App', () => {
     expect(scrollRegion.classes()).toContain('lg:overscroll-contain')
     expect(scrollRegion.classes()).not.toContain('overflow-y-auto')
     expect(scrollRegion.classes()).not.toContain('overscroll-contain')
+  })
+
+  it('uses a single initial for a one-word account name', async () => {
+    setAccessToken('test-token')
+    currentUser.value = { ...user, fullName: 'Owner' }
+    const { wrapper } = await mountWithRouter(App, routes)
+
+    expect(wrapper.get('[data-account-initials]').text()).toBe('O')
   })
 
   it('expands archived navigation on demand', async () => {

@@ -3,6 +3,18 @@ export function formatAmount(value: string) {
   return Number.isNaN(amount) ? 'N/A' : amount.toFixed(2)
 }
 
+export function getInitials(fullName: string) {
+  const nameParts = fullName.trim().split(/\s+/).filter(Boolean)
+  if (nameParts.length === 0) return '?'
+
+  const firstInitial = Array.from(nameParts[0] ?? '')[0] ?? ''
+
+  const lastInitial =
+    nameParts.length > 1 ? (Array.from(nameParts[nameParts.length - 1] ?? '')[0] ?? '') : ''
+
+  return `${firstInitial}${lastInitial}`.toLocaleUpperCase()
+}
+
 export function formatDate(value: string) {
   return new Date(value).toLocaleDateString()
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   Archive,
@@ -12,16 +12,17 @@ import {
   ReceiptText,
   Repeat2,
   Tags,
-  UserRound,
   X,
 } from '@lucide/vue'
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
 import { clearAccessToken, currentUser, isAuthenticated } from '@/lib/auth/storage'
+import { getInitials } from '@/lib/helpers'
 
 const route = useRoute()
 const router = useRouter()
 const mobileNavigationOpen = ref(false)
 const archiveNavigationOpen = ref(route.path.endsWith('/archived'))
+const accountInitials = computed(() => getInitials(currentUser.value?.fullName ?? ''))
 
 const primaryNavigationGroups = [
   {
@@ -205,9 +206,11 @@ watch(
               active-class="bg-white/10 hover:bg-white/10"
             >
               <span
-                class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/70"
+                data-account-initials
+                class="font-figure flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent text-xs font-semibold tracking-[0.08em] text-white shadow-card"
+                aria-hidden="true"
               >
-                <UserRound :size="17" aria-hidden="true" />
+                {{ accountInitials }}
               </span>
               <span class="min-w-0">
                 <span class="block truncate text-sm font-semibold text-white">
