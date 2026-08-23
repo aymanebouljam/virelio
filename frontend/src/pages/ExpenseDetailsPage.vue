@@ -44,7 +44,7 @@ async function loadExpense() {
 }
 
 function goBack() {
-  void router.push('/expenses')
+  router.back()
 }
 
 async function onProofSelected(event: Event) {
