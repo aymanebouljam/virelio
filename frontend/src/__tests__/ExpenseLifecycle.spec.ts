@@ -10,6 +10,7 @@ import type { Vendor } from '@/lib/vendors/schema'
 import ArchivedExpensesPage from '@/pages/ArchivedExpensesPage.vue'
 import ExpenseDetailsPage from '@/pages/ExpenseDetailsPage.vue'
 import { mountWithRouter } from './test-mount'
+import { createTestRouter } from './test-router'
 
 const expensesApi = vi.hoisted(() => ({
   fetchArchivedExpenses: vi.fn<() => Promise<Expense[]>>(),
@@ -137,6 +138,22 @@ afterEach(() => {
 })
 
 describe('expense details and proofs', () => {
+  it('returns to the previous page', async () => {
+    const router = await createTestRouter(detailRoutes, '/expenses')
+    await router.push('/expenses/expense-1')
+    const wrapper = mount(ExpenseDetailsPage, {
+      global: {
+        plugins: [router],
+      },
+    })
+    await flushPromises()
+
+    await getButton(wrapper, 'Back').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.fullPath).toBe('/expenses')
+  })
+
   it('shows loading before rendering expense, vendor, category, and proof details', async () => {
     let resolveExpense!: (expense: ExpenseDetail) => void
     expensesApi.fetchExpense.mockReturnValue(

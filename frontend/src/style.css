@@ -66,6 +66,10 @@
     font: inherit;
   }
 
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+
   ::selection {
     background: var(--color-brand-soft);
     color: var(--color-brand-strong);
