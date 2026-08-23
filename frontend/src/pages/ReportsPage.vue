@@ -265,7 +265,7 @@ onMounted(() => loadReport(true))
             type="date"
             :aria-describedby="dateRangeError ? 'report-date-range-error' : undefined"
             :aria-invalid="Boolean(dateRangeError)"
-            class="min-h-10 rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+            class="min-h-10 rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand"
             @change="
               updateDateRange({
                 dateFrom: ($event.target as HTMLInputElement).value || undefined,
@@ -283,7 +283,7 @@ onMounted(() => loadReport(true))
             type="date"
             :aria-describedby="dateRangeError ? 'report-date-range-error' : undefined"
             :aria-invalid="Boolean(dateRangeError)"
-            class="min-h-10 rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition hover:border-stone-300 focus:border-brand"
+            class="min-h-10 rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand"
             @change="
               updateDateRange({
                 dateFrom: dateFrom,
@@ -305,7 +305,7 @@ onMounted(() => loadReport(true))
         <button
           type="button"
           :disabled="exporting"
-          class="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-stone-400"
+          class="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-line-strong"
           @click="downloadCsv"
         >
           <Download :size="16" aria-hidden="true" />
@@ -317,7 +317,7 @@ onMounted(() => loadReport(true))
     <p
       v-if="exportError"
       role="alert"
-      class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+      class="rounded-2xl border border-danger/25 bg-danger-soft px-5 py-4 text-sm text-danger"
     >
       {{ exportError }}
     </p>
@@ -336,7 +336,7 @@ onMounted(() => loadReport(true))
     <section
       v-else-if="error"
       role="alert"
-      class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+      class="rounded-2xl border border-danger/25 bg-danger-soft px-5 py-4 text-sm text-danger"
     >
       <p class="font-medium">Could not load expense report</p>
       <p :id="dateRangeError ? 'report-date-range-error' : undefined" class="mt-1">
@@ -448,9 +448,9 @@ onMounted(() => loadReport(true))
 
           <div
             v-if="categoryComparison.categories.length === 0"
-            class="mt-6 rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-10 text-center"
+            class="mt-6 rounded-2xl border border-dashed border-line bg-surface-muted px-5 py-10 text-center"
           >
-            <p class="text-sm font-medium text-stone-600">No category activity to compare</p>
+            <p class="text-sm font-medium text-ink">No category activity to compare</p>
           </div>
 
           <div v-else class="mt-6 max-h-[32rem] space-y-3 overflow-y-auto pr-1">
@@ -494,9 +494,9 @@ onMounted(() => loadReport(true))
 
           <div
             v-if="!insights?.monthlyTotals.length"
-            class="mt-6 rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-10 text-center"
+            class="mt-6 rounded-2xl border border-dashed border-line bg-surface-muted px-5 py-10 text-center"
           >
-            <p class="text-sm font-medium text-stone-600">No monthly totals</p>
+            <p class="text-sm font-medium text-ink">No monthly totals</p>
           </div>
 
           <div v-else class="mt-6 max-h-[32rem] space-y-3 overflow-y-auto pr-1">
@@ -535,9 +535,9 @@ onMounted(() => loadReport(true))
 
           <div
             v-if="!insights?.vendorTotals.length"
-            class="mt-6 rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-10 text-center"
+            class="mt-6 rounded-2xl border border-dashed border-line bg-surface-muted px-5 py-10 text-center"
           >
-            <p class="text-sm font-medium text-stone-600">No vendor totals</p>
+            <p class="text-sm font-medium text-ink">No vendor totals</p>
           </div>
 
           <div v-else class="mt-6 space-y-3">
@@ -576,10 +576,10 @@ onMounted(() => loadReport(true))
 
           <div
             v-if="!hasCategoryTotals"
-            class="mt-6 rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-10 text-center"
+            class="mt-6 rounded-2xl border border-dashed border-line bg-surface-muted px-5 py-10 text-center"
           >
-            <p class="text-sm font-medium text-stone-600">No category totals</p>
-            <p class="mt-2 text-sm text-stone-500">
+            <p class="text-sm font-medium text-ink">No category totals</p>
+            <p class="mt-2 text-sm text-ink-muted">
               Matching categorized expenses will appear here.
             </p>
           </div>
@@ -625,10 +625,10 @@ onMounted(() => loadReport(true))
 
           <div
             v-if="!hasExpenses"
-            class="mt-6 rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-10 text-center"
+            class="mt-6 rounded-2xl border border-dashed border-line bg-surface-muted px-5 py-10 text-center"
           >
-            <p class="text-sm font-medium text-stone-600">No matching expenses</p>
-            <p class="mt-2 text-sm text-stone-500">
+            <p class="text-sm font-medium text-ink">No matching expenses</p>
+            <p class="mt-2 text-sm text-ink-muted">
               Try broadening the date range to include more expense records.
             </p>
           </div>
@@ -659,7 +659,7 @@ onMounted(() => loadReport(true))
                 <ArrowRight
                   :size="15"
                   aria-hidden="true"
-                  class="text-stone-300 transition group-hover:text-brand"
+                  class="text-line-strong transition group-hover:text-brand"
                 />
               </span>
             </RouterLink>
@@ -680,7 +680,7 @@ onMounted(() => loadReport(true))
               <button
                 type="button"
                 :disabled="report.expenses.pagination.page === 1"
-                class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink-muted transition hover:border-stone-300 hover:text-ink disabled:cursor-not-allowed disabled:text-stone-300"
+                class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-surface px-3 text-sm font-medium text-ink-muted transition hover:border-line-strong hover:text-ink disabled:cursor-not-allowed disabled:text-line-strong"
                 @click="changePage(report.expenses.pagination.page - 1)"
               >
                 <ChevronLeft :size="15" aria-hidden="true" />
@@ -691,7 +691,7 @@ onMounted(() => loadReport(true))
                 :disabled="
                   report.expenses.pagination.page === report.expenses.pagination.totalPages
                 "
-                class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink-muted transition hover:border-stone-300 hover:text-ink disabled:cursor-not-allowed disabled:text-stone-300"
+                class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-surface px-3 text-sm font-medium text-ink-muted transition hover:border-line-strong hover:text-ink disabled:cursor-not-allowed disabled:text-line-strong"
                 @click="changePage(report.expenses.pagination.page + 1)"
               >
                 Next
