@@ -59,6 +59,11 @@
     font-feature-settings: 'kern' 1;
   }
 
+  :where(button, a, input, select, textarea):focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+
   button,
   input,
   select,
@@ -73,6 +78,16 @@
   ::selection {
     background: var(--color-brand-soft);
     color: var(--color-brand-strong);
+  }
+}
+
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea,
+  button,
+  [role='button'] {
+    scroll-margin-bottom: calc(5rem + env(safe-area-inset-bottom));
   }
 }
 
