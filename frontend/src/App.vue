@@ -141,6 +141,7 @@ watch(
                     v-for="item in group.items"
                     :key="item.to"
                     :to="item.to"
+                    :aria-current="isSectionActive(item.to) ? 'page' : undefined"
                     class="relative flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition"
                     :class="
                       isSectionActive(item.to)
@@ -184,6 +185,7 @@ watch(
                     v-for="item in archiveNavigation"
                     :key="item.to"
                     :to="item.to"
+                    :aria-current="route.path === item.to ? 'page' : undefined"
                     class="relative flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-sm transition"
                     :class="
                       route.path === item.to
@@ -243,7 +245,7 @@ watch(
       </aside>
 
       <header
-        class="fixed inset-x-0 top-0 z-30 flex min-h-14 items-center border-b border-white/10 bg-brand-strong px-4 text-white shadow-card lg:hidden"
+        class="fixed inset-x-0 top-0 z-30 flex min-h-14 items-center border-b border-white/10 bg-brand-strong px-5 text-white shadow-card lg:hidden"
       >
         <RouterLink to="/" class="flex items-center gap-2.5" aria-label="Virelio dashboard">
           <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface">
@@ -265,7 +267,7 @@ watch(
       <main
         id="main-content"
         tabindex="-1"
-        class="min-w-0 flex-1 bg-canvas px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-[4.75rem] sm:px-7 sm:pt-[5.5rem] lg:px-10 lg:py-10"
+        class="min-w-0 flex-1 bg-canvas px-5 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-[4.5rem] sm:px-7 sm:pt-[5.25rem] lg:px-10 lg:py-10"
       >
         <div class="mx-auto w-full max-w-[1280px]">
           <RouterView />
@@ -281,6 +283,7 @@ watch(
             v-for="item in mobileNavigation"
             :key="item.to"
             :to="item.to"
+            :aria-current="isSectionActive(item.to) ? 'page' : undefined"
             class="relative flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 px-1 text-[10px] font-medium transition-colors"
             :class="isSectionActive(item.to) ? 'text-brand-strong' : 'text-ink-muted'"
           >
@@ -299,6 +302,7 @@ watch(
               class="relative flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 px-1 text-[10px] font-medium transition-colors"
               :class="isMoreActive || mobileMoreOpen ? 'text-brand-strong' : 'text-ink-muted'"
               aria-haspopup="dialog"
+              aria-label="More navigation"
               :aria-expanded="mobileMoreOpen"
             >
               <span
