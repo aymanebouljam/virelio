@@ -264,7 +264,7 @@ onMounted(loadCategoriesPage)
       <div
         v-if="actionError"
         role="alert"
-        class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        class="rounded-2xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
       >
         {{ actionError }}
       </div>
@@ -301,16 +301,16 @@ onMounted(loadCategoriesPage)
               :aria-describedby="formErrors.name ? 'category-name-error' : undefined"
               :aria-invalid="Boolean(formErrors.name)"
               :class="[
-                'min-h-11 w-full rounded-xl border bg-white px-3 py-2 text-sm text-ink outline-none transition',
+                'min-h-11 w-full rounded-xl border bg-surface px-3 py-2 text-sm text-ink outline-none transition',
                 formErrors.name
-                  ? 'border-red-300 focus:border-red-500'
-                  : 'border-line hover:border-stone-300 focus:border-brand',
+                  ? 'border-danger focus:border-danger'
+                  : 'border-line hover:border-line-strong focus:border-brand',
               ]"
             />
             <p
               v-if="formErrors.name"
               id="category-name-error"
-              class="ml-3 mt-2 text-sm text-red-600"
+              class="ml-3 mt-2 text-sm text-danger"
             >
               {{ formErrors.name }}
             </p>
@@ -319,7 +319,7 @@ onMounted(loadCategoriesPage)
           <label class="block">
             <span class="mb-1.5 block text-sm font-medium text-ink">Color</span>
             <span
-              class="flex min-h-11 items-center gap-2 rounded-xl border border-line bg-white px-2"
+              class="flex min-h-11 items-center gap-2 rounded-xl border border-line bg-surface px-2"
             >
               <input
                 id="category-color"
@@ -334,7 +334,7 @@ onMounted(loadCategoriesPage)
             <p
               v-if="formErrors.color"
               id="category-color-error"
-              class="ml-3 mt-2 text-sm text-red-600"
+              class="ml-3 mt-2 text-sm text-danger"
             >
               {{ formErrors.color }}
             </p>
@@ -344,7 +344,7 @@ onMounted(loadCategoriesPage)
         <div
           v-if="submitError"
           role="alert"
-          class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          class="rounded-2xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
         >
           {{ submitError }}
         </div>
@@ -361,7 +361,7 @@ onMounted(loadCategoriesPage)
           <button
             type="submit"
             :disabled="submitting"
-            class="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-stone-400"
+            class="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-line-strong"
           >
             {{ submitting ? 'Saving...' : 'Save category' }}
           </button>
@@ -394,7 +394,7 @@ onMounted(loadCategoriesPage)
       <div
         v-else-if="error"
         role="alert"
-        class="m-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-700 sm:m-6"
+        class="m-5 rounded-2xl border border-danger/25 bg-danger-soft px-4 py-5 text-sm text-danger sm:m-6"
       >
         <p class="font-medium">Could not load categories</p>
         <p class="mt-1">{{ error }}</p>
@@ -424,11 +424,11 @@ onMounted(loadCategoriesPage)
         <article
           v-for="category in categories"
           :key="category.id"
-          class="relative overflow-hidden rounded-2xl border border-line bg-white p-4 transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-card"
+          class="relative overflow-hidden rounded-2xl border border-line bg-surface p-4 transition hover:-translate-y-0.5 hover:border-line-strong hover:shadow-card"
         >
           <span
-            class="absolute inset-x-0 top-0 h-1"
-            :style="{ backgroundColor: category.color ?? '#94a3b8' }"
+            class="absolute inset-x-0 top-0 h-1 bg-line-strong"
+            :style="{ backgroundColor: category.color ?? undefined }"
             aria-hidden="true"
           />
           <div class="flex items-start justify-between gap-3 pt-1">
@@ -437,8 +437,8 @@ onMounted(loadCategoriesPage)
                 class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface-muted"
               >
                 <span
-                  class="size-4 rounded-full ring-2 ring-white shadow-sm"
-                  :style="{ backgroundColor: category.color ?? '#94a3b8' }"
+                  class="size-4 rounded-full bg-line-strong ring-2 ring-surface shadow-sm"
+                  :style="{ backgroundColor: category.color ?? undefined }"
                 />
               </span>
               <div class="min-w-0">
@@ -465,7 +465,7 @@ onMounted(loadCategoriesPage)
 
             <button
               type="button"
-              class="inline-flex min-h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-red-50 hover:text-red-700"
+              class="inline-flex min-h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-danger-soft hover:text-danger"
               @click="archive(category)"
             >
               <Archive :size="14" aria-hidden="true" />
@@ -489,7 +489,7 @@ onMounted(loadCategoriesPage)
           <button
             type="button"
             :disabled="pagination.page === 1"
-            class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink-muted transition hover:border-stone-300 hover:text-ink disabled:cursor-not-allowed disabled:text-stone-300"
+            class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-surface px-3 text-sm font-medium text-ink-muted transition hover:border-line-strong hover:text-ink disabled:cursor-not-allowed disabled:text-line-strong"
             @click="changePage(pagination.page - 1)"
           >
             <ChevronLeft :size="15" aria-hidden="true" />
@@ -498,7 +498,7 @@ onMounted(loadCategoriesPage)
           <button
             type="button"
             :disabled="pagination.page === pagination.totalPages"
-            class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink-muted transition hover:border-stone-300 hover:text-ink disabled:cursor-not-allowed disabled:text-stone-300"
+            class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-surface px-3 text-sm font-medium text-ink-muted transition hover:border-line-strong hover:text-ink disabled:cursor-not-allowed disabled:text-line-strong"
             @click="changePage(pagination.page + 1)"
           >
             Next
