@@ -28,6 +28,7 @@ vi.mock('@/lib/reports/api', () => reportsApi)
 
 vi.mock('vue-chartjs', () => ({
   Bar: { template: '<div data-chart-renderer="bar"></div>' },
+  Doughnut: { template: '<div data-chart-renderer="doughnut"></div>' },
   Line: { template: '<div data-chart-renderer="line"></div>' },
 }))
 
@@ -91,7 +92,6 @@ const report: ExpenseReport = {
   },
 }
 
-const firstPageQuery = { page: 1, pageSize: 4 }
 const insights: ReportInsights = {
   monthlyTotals: [
     { month: '2026-07', totalAmount: '125.50', expenseCount: 1 },
@@ -162,22 +162,6 @@ function emptyReport(): ExpenseReport {
   }
 }
 
-function paginatedReport(page: number, totalItems = 25, totalPages = 7): ExpenseReport {
-  return {
-    ...report,
-    expenseCount: totalItems,
-    expenses: {
-      items: report.expenses.items,
-      pagination: {
-        page,
-        pageSize: 4,
-        totalItems,
-        totalPages,
-      },
-    },
-  }
-}
-
 function categoryTotal(number: number): ExpenseReport['categoryTotals'][number] {
   return {
     categoryId: `category-${number}`,
@@ -237,7 +221,7 @@ describe('report workflows', () => {
     reportsApi.fetchCategoryComparison.mockResolvedValue(comparison)
   })
 
-  it('shows loading before rendering totals, category groups, and expense rows', async () => {
+  it('shows loading before rendering report totals and analysis', async () => {
     let resolveReport!: (report: ExpenseReport) => void
     let resolveInsights!: (insights: ReportInsights) => void
     reportsApi.fetchExpenseReport.mockReturnValue(
@@ -259,9 +243,9 @@ describe('report workflows', () => {
     resolveInsights(insights)
     await settlePage()
 
-    expect(getMetric(wrapper, 'Total amount').text()).toContain('$425.50')
-    expect(getMetric(wrapper, 'Expense count').text()).toContain('3')
-    expect(getMetric(wrapper, 'Categories').text()).toContain('2')
+    expect(getMetric(wrapper, 'SPEND RECORDED').text()).toContain('$425.50')
+    expect(getMetric(wrapper, 'Recorded expenses').text()).toContain('3')
+    expect(getMetric(wrapper, 'Categories represented').text()).toContain('2')
     expect(wrapper.get('[aria-label="Report overview"]').findAll('article')).toHaveLength(3)
     expect(wrapper.find('[data-report-category-comparison]').exists()).toBe(false)
     expect(wrapper.get('[data-report-category-comparison-prompt]').text()).toBe(
@@ -269,14 +253,10 @@ describe('report workflows', () => {
     )
     expect(wrapper.get('[data-report-monthly-spending]').classes()).toContain('min-w-0')
     expect(wrapper.get('[data-report-vendor-spending]').classes()).toContain('min-w-0')
-    expect(wrapper.get('[data-report-expense-rows]').classes()).toContain('min-w-0')
     expect(wrapper.text()).toContain('Travel')
     expect(wrapper.text()).toContain('Uncategorized')
-    expect(wrapper.text()).toContain('Client-site flight')
-    expect(wrapper.text()).toContain('Atlas Supplies')
-    expect(wrapper.text()).toContain('Office supplies')
-    expect(wrapper.find('a[href="/expenses/expense-1"]').exists()).toBe(true)
-    expect(wrapper.find('a[href="/expenses/expense-2"]').exists()).toBe(true)
+    expect(wrapper.find('[data-category-totals-donut]').exists()).toBe(true)
+    expect(wrapper.get('[aria-label="Category spending values"]').text()).toContain('71%')
     expect(wrapper.text()).toContain('Monthly spending')
     expect(wrapper.findAll('[data-monthly-spend-chart]')).toHaveLength(1)
     expect(wrapper.find('[data-monthly-values]').exists()).toBe(false)
@@ -294,9 +274,8 @@ describe('report workflows', () => {
 
     const { wrapper } = await mountPage()
 
-    expect(getMetric(wrapper, 'Total amount').text()).toContain('$0.00')
+    expect(getMetric(wrapper, 'SPEND RECORDED').text()).toContain('$0.00')
     expect(wrapper.text()).toContain('No category totals')
-    expect(wrapper.text()).toContain('No matching expenses')
     expect(wrapper.text()).toContain('No monthly totals')
     expect(wrapper.text()).toContain('No vendor totals')
     expect(wrapper.text()).toContain('Select both dates to compare category spending.')
@@ -311,7 +290,7 @@ describe('report workflows', () => {
     const { wrapper } = await mountPage()
     const categorySection = getSection(wrapper, 'Category totals')
 
-    expect(getMetric(wrapper, 'Categories').text()).toContain('7')
+    expect(getMetric(wrapper, 'Categories represented').text()).toContain('7')
     expect(categorySection.text()).toContain('Category 5')
     expect(categorySection.text()).toContain('Other')
     expect(categorySection.text()).not.toContain('Category 6')
@@ -359,7 +338,7 @@ describe('report workflows', () => {
 
     const { wrapper } = await mountPage('/reports?dateFrom=2026-08-01&dateTo=2026-08-31')
 
-    expect(reportsApi.fetchExpenseReport).toHaveBeenCalledWith({ ...filters, ...firstPageQuery })
+    expect(reportsApi.fetchExpenseReport).toHaveBeenCalledWith(filters)
     expect(reportsApi.fetchReportInsights).toHaveBeenCalledWith(filters)
     expect(reportsApi.fetchCategoryComparison).toHaveBeenCalledWith(filters)
     expect(wrapper.get('fieldset legend').text()).toBe('Report date range')
@@ -413,10 +392,28 @@ describe('report workflows', () => {
     expect(router.currentRoute.value.query).toEqual(filters)
     expect(reportsApi.fetchExpenseReport).toHaveBeenLastCalledWith({
       ...filters,
-      ...firstPageQuery,
     })
     expect(reportsApi.fetchReportInsights).toHaveBeenLastCalledWith(filters)
     expect(reportsApi.fetchCategoryComparison).toHaveBeenLastCalledWith(filters)
+  })
+
+  it('keeps the current report visible while a date-range refresh is loading', async () => {
+    const { wrapper } = await mountPage()
+    let resolveRefresh!: (value: ExpenseReport) => void
+    reportsApi.fetchExpenseReport.mockReturnValue(
+      new Promise<ExpenseReport>((resolve) => {
+        resolveRefresh = resolve
+      }),
+    )
+
+    await wrapper.get('#report-date-from').setValue('2026-08-01')
+    await flushPromises()
+
+    expect(wrapper.get('[role="status"]').text()).toBe('Updating report…')
+    expect(wrapper.find('[aria-label="Report overview"]').exists()).toBe(true)
+
+    resolveRefresh(report)
+    await settlePage()
   })
 
   it('clears the active date range', async () => {
@@ -431,7 +428,6 @@ describe('report workflows', () => {
     expect(reportsApi.fetchExpenseReport).toHaveBeenLastCalledWith({
       dateFrom: undefined,
       dateTo: undefined,
-      ...firstPageQuery,
     })
     expect(reportsApi.fetchReportInsights).toHaveBeenLastCalledWith({
       dateFrom: undefined,
@@ -439,34 +435,6 @@ describe('report workflows', () => {
     })
     expect(reportsApi.fetchCategoryComparison).toHaveBeenCalledTimes(1)
     expect(wrapper.text()).toContain('Select both dates to compare category spending.')
-  })
-
-  it('loads report pages from the URL and navigates between them', async () => {
-    reportsApi.fetchExpenseReport.mockResolvedValue(paginatedReport(2))
-
-    const { router, wrapper } = await mountPage('/reports?page=2')
-
-    expect(reportsApi.fetchExpenseReport).toHaveBeenCalledWith({
-      dateFrom: undefined,
-      dateTo: undefined,
-      page: 2,
-      pageSize: 4,
-    })
-    expect(wrapper.get('nav[aria-label="Report expense pagination"]').text()).toContain(
-      'Page 2 of 7 · 25 expenses',
-    )
-
-    await getButton(wrapper, 'Next').trigger('click')
-    await flushPromises()
-
-    expect(router.currentRoute.value.query).toEqual({ page: '3' })
-    expect(reportsApi.fetchExpenseReport).toHaveBeenLastCalledWith({
-      dateFrom: undefined,
-      dateTo: undefined,
-      page: 3,
-      pageSize: 4,
-    })
-    expect(reportsApi.fetchReportInsights).toHaveBeenCalledTimes(1)
   })
 
   it('downloads a CSV using the active date range', async () => {
@@ -495,24 +463,7 @@ describe('report workflows', () => {
     await flushPromises()
 
     expect(wrapper.get('[role="alert"]').text()).toBe('Export unavailable')
-    expect(getMetric(wrapper, 'Total amount').text()).toContain('$425.50')
-  })
-
-  it('redirects an out-of-range page to the final report page', async () => {
-    reportsApi.fetchExpenseReport
-      .mockResolvedValueOnce(paginatedReport(5, 8, 2))
-      .mockResolvedValueOnce(paginatedReport(2, 8, 2))
-
-    const { router } = await mountPage('/reports?page=5')
-    await flushPromises()
-
-    expect(router.currentRoute.value.query).toEqual({ page: '2' })
-    expect(reportsApi.fetchExpenseReport).toHaveBeenLastCalledWith({
-      dateFrom: undefined,
-      dateTo: undefined,
-      page: 2,
-      pageSize: 4,
-    })
+    expect(getMetric(wrapper, 'SPEND RECORDED').text()).toContain('$425.50')
   })
 
   it('shows inverted date-range errors from the API', async () => {

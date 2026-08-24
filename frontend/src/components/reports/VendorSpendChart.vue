@@ -70,8 +70,12 @@ const chartOptions: ChartOptions<'bar'> = {
 </script>
 
 <template>
-  <figure data-vendor-spend-chart aria-labelledby="vendor-spend-chart-caption" class="min-w-0">
-    <div class="hidden h-60 min-w-0 sm:block" aria-hidden="true">
+  <figure
+    data-vendor-spend-chart
+    aria-labelledby="vendor-spend-chart-caption"
+    class="min-w-0 sm:h-full"
+  >
+    <div class="hidden h-60 min-w-0 sm:block sm:h-full sm:min-h-72" aria-hidden="true">
       <Bar class="block !h-full !w-full" :data="chartData" :options="chartOptions" />
     </div>
 

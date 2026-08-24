@@ -1,20 +1,7 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue'
-import { RouterLink, useRoute, useRouter } from 'vue-router'
-import {
-  ArrowRight,
-  Building2,
-  CalendarDays,
-  ChartNoAxesCombined,
-  ChevronLeft,
-  ChevronRight,
-  CircleDollarSign,
-  Download,
-  Hash,
-  Layers3,
-  ReceiptText,
-  Tags,
-} from '@lucide/vue'
+import { useRoute, useRouter } from 'vue-router'
+import { Building2, CalendarDays, ChartNoAxesCombined, Download, Tags } from '@lucide/vue'
 import { ApiError } from '@/lib/api'
 import {
   downloadExpenseReportCsv,
@@ -31,13 +18,12 @@ import {
   type ExpenseReport,
   type ReportInsights,
 } from '@/lib/reports/schema'
-import { formatAmount, formatDate } from '@/lib/helpers'
+import { formatAmount } from '@/lib/helpers'
 import LedgerSurface from '@/components/ui/LedgerSurface.vue'
 import WorkspaceHeader from '@/components/ui/WorkspaceHeader.vue'
 
 const route = useRoute()
 const router = useRouter()
-const PAGE_SIZE = 4
 const MonthlySpendChart = defineAsyncComponent(
   () => import('@/components/reports/MonthlySpendChart.vue'),
 )
@@ -46,6 +32,9 @@ const VendorSpendChart = defineAsyncComponent(
 )
 const CategoryComparisonChart = defineAsyncComponent(
   () => import('@/components/reports/CategoryComparisonChart.vue'),
+)
+const CategoryTotalsDonut = defineAsyncComponent(
+  () => import('@/components/reports/CategoryTotalsDonut.vue'),
 )
 
 const report = ref<ExpenseReport | null>(null)
@@ -69,7 +58,6 @@ const dateTo = computed(() => {
 
 const hasCompleteDateRange = computed(() => Boolean(dateFrom.value && dateTo.value))
 
-const hasExpenses = computed(() => (report.value?.expenses.items.length ?? 0) > 0)
 const hasCategoryTotals = computed(() => (report.value?.categoryTotals.length ?? 0) > 0)
 const visibleCategoryTotals = computed(() =>
   summarizeCategoryTotals(report.value?.categoryTotals ?? []),
@@ -81,33 +69,11 @@ const visibleVendorTotals = computed(() =>
   summarizeVendorTotals(insights.value?.vendorTotals ?? []),
 )
 
-function readPageQuery() {
-  const value = route.query.page
-  if (typeof value !== 'string') return 1
-
-  const page = Number(value)
-  return Number.isInteger(page) && page > 0 ? page : 1
-}
-
-async function changePage(page: number) {
-  if (page < 1) return
-
-  const query = { ...route.query }
-  if (page === 1) {
-    delete query.page
-  } else {
-    query.page = String(page)
-  }
-
-  await router.replace({ query })
-}
-
 async function loadReport(includeInsights: boolean) {
   try {
     error.value = ''
     dateRangeError.value = ''
 
-    const requestedPage = readPageQuery()
     const filters = {
       dateFrom: dateFrom.value,
       dateTo: dateTo.value,
@@ -117,8 +83,6 @@ async function loadReport(includeInsights: boolean) {
     const [reportResponse, insightsResponse, categoryComparisonResponse] = await Promise.all([
       fetchExpenseReport({
         ...filters,
-        page: requestedPage,
-        pageSize: PAGE_SIZE,
       }),
       includeInsights ? fetchReportInsights(filters) : Promise.resolve(null),
       includeInsights && comparisonFilters
@@ -154,12 +118,6 @@ async function loadReport(includeInsights: boolean) {
       } else {
         categoryComparison.value = null
       }
-    }
-
-    const lastPage = Math.max(result.data.expenses.pagination.totalPages, 1)
-    if (requestedPage > lastPage) {
-      await changePage(lastPage)
-      return
     }
 
     report.value = result.data
@@ -225,7 +183,7 @@ async function downloadCsv() {
 }
 
 watch(
-  () => [dateFrom.value, dateTo.value, readPageQuery()] as const,
+  () => [dateFrom.value, dateTo.value] as const,
   ([nextDateFrom, nextDateTo], [previousDateFrom, previousDateTo]) => {
     loading.value = true
     const dateRangeChanged = nextDateFrom !== previousDateFrom || nextDateTo !== previousDateTo
@@ -327,7 +285,12 @@ onMounted(() => loadReport(true))
       {{ exportError }}
     </p>
 
-    <section v-if="loading" class="space-y-4" role="status" aria-label="Loading expense report">
+    <section
+      v-if="loading && !report"
+      class="space-y-4"
+      role="status"
+      aria-label="Loading expense report"
+    >
       <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <div
           v-for="index in 3"
@@ -339,7 +302,7 @@ onMounted(() => loadReport(true))
     </section>
 
     <section
-      v-else-if="error"
+      v-else-if="error && !report"
       role="alert"
       class="rounded-2xl border border-danger/25 bg-danger-soft px-5 py-4 text-sm text-danger"
     >
@@ -350,54 +313,68 @@ onMounted(() => loadReport(true))
     </section>
 
     <template v-else-if="report">
+      <p
+        v-if="loading"
+        role="status"
+        aria-live="polite"
+        class="border-l-2 border-evidence bg-evidence-soft/45 px-4 py-3 text-sm text-ink-muted"
+      >
+        Updating report…
+      </p>
+
+      <section
+        v-if="error"
+        role="alert"
+        class="border-l-2 border-danger bg-danger-soft px-4 py-3 text-sm text-danger"
+      >
+        <p class="font-medium">Could not update report</p>
+        <p :id="dateRangeError ? 'report-date-range-error' : undefined" class="mt-1">
+          {{ error }}
+        </p>
+      </section>
+
       <LedgerSurface
-        class="grid overflow-hidden sm:grid-cols-2 xl:grid-cols-3"
+        tone="featured"
+        class="relative grid overflow-hidden sm:grid-cols-[1.45fr_0.8fr_0.8fr]"
         aria-label="Report overview"
       >
-        <article
-          class="relative min-w-0 overflow-hidden bg-brand-strong p-5 text-white sm:col-span-2 sm:p-6 xl:col-span-1"
-        >
+        <span class="absolute inset-y-0 left-0 z-10 w-1 bg-evidence" aria-hidden="true" />
+        <article class="relative min-w-0 overflow-hidden p-7 pl-8 text-white sm:p-9 sm:pl-10">
           <div
-            class="absolute -right-8 -top-10 size-28 rounded-full border-[20px] border-white/5"
+            class="absolute -right-10 -top-16 size-44 rounded-full border-[28px] border-white/5"
             aria-hidden="true"
           />
-          <span class="flex size-10 items-center justify-center rounded-lg bg-white/10">
-            <CircleDollarSign :size="20" aria-hidden="true" />
-          </span>
-          <p class="mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-white/55">
-            Total amount
+          <p class="relative text-xs font-semibold tracking-[0.14em] text-white/55">
+            SPEND RECORDED
           </p>
-          <p class="mt-1 text-3xl font-semibold tracking-tight">
+          <p
+            class="font-figure relative mt-3 break-words text-[clamp(2.25rem,5vw,4.5rem)] font-semibold leading-none tracking-[-0.06em]"
+          >
             ${{ formatAmount(report.totalAmount) }}
           </p>
+          <p class="relative mt-5 text-sm text-white/65">Across the selected reporting period.</p>
         </article>
 
-        <article class="min-w-0 border-b border-line p-5 sm:border-r sm:p-6 xl:border-b-0">
-          <span
-            class="flex size-10 items-center justify-center rounded-lg bg-brand-soft text-brand"
-          >
-            <Hash :size="20" aria-hidden="true" />
-          </span>
-          <p class="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-ink-muted">
-            Expense count
-          </p>
-          <p class="mt-1 text-3xl font-semibold tracking-tight text-ink">
+        <article
+          class="relative flex min-w-0 flex-col justify-center border-t border-white/15 p-7 sm:border-l sm:border-t-0 sm:p-8"
+        >
+          <span class="mb-5 h-px w-8 bg-evidence" aria-hidden="true" />
+          <p class="font-figure text-4xl font-semibold tracking-[-0.05em] text-white">
             {{ report.expenseCount }}
           </p>
+          <p class="mt-2 text-sm font-semibold text-white">Recorded expenses</p>
+          <p class="mt-1 text-xs leading-5 text-white/55">Entries in this report.</p>
         </article>
 
-        <article class="min-w-0 p-5 sm:p-6">
-          <span
-            class="flex size-10 items-center justify-center rounded-lg bg-accent-soft text-accent"
-          >
-            <Layers3 :size="20" aria-hidden="true" />
-          </span>
-          <p class="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-ink-muted">
-            Categories
-          </p>
-          <p class="mt-1 text-3xl font-semibold tracking-tight text-ink">
+        <article
+          class="relative flex min-w-0 flex-col justify-center border-t border-white/15 p-7 sm:border-l sm:border-t-0 sm:p-8"
+        >
+          <span class="mb-5 h-px w-8 bg-white/35" aria-hidden="true" />
+          <p class="font-figure text-4xl font-semibold tracking-[-0.05em] text-white">
             {{ report.categoryTotals.length }}
           </p>
+          <p class="mt-2 text-sm font-semibold text-white">Categories represented</p>
+          <p class="mt-1 text-xs leading-5 text-white/55">Where this period's spend is recorded.</p>
         </article>
       </LedgerSurface>
 
@@ -464,8 +441,8 @@ onMounted(() => loadReport(true))
         </template>
       </LedgerSurface>
 
-      <div class="grid min-w-0 gap-5 xl:grid-cols-[0.85fr_1.25fr]">
-        <LedgerSurface data-report-monthly-spending class="p-5 sm:p-6">
+      <div class="grid min-w-0 gap-5 xl:grid-cols-2">
+        <LedgerSurface data-report-monthly-spending class="p-5 sm:p-6 xl:col-span-2">
           <h3 class="text-lg font-semibold tracking-tight text-ink">Monthly spending</h3>
           <p class="mt-1 text-sm text-ink-muted">
             Spending totals by calendar month for the current report period.
@@ -481,7 +458,7 @@ onMounted(() => loadReport(true))
           <MonthlySpendChart v-else class="mt-6" :monthly-totals="visibleMonthlyTotals" />
         </LedgerSurface>
 
-        <LedgerSurface data-report-vendor-spending class="p-5 sm:p-6">
+        <LedgerSurface data-report-vendor-spending class="p-5 sm:flex sm:flex-col sm:p-6">
           <div class="flex items-start gap-3">
             <span
               class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand"
@@ -503,7 +480,11 @@ onMounted(() => loadReport(true))
             <p class="text-sm font-medium text-ink">No vendor totals</p>
           </div>
 
-          <VendorSpendChart v-else class="mt-6" :vendor-totals="visibleVendorTotals" />
+          <VendorSpendChart
+            v-else
+            class="mt-6 sm:min-h-0 sm:flex-1"
+            :vendor-totals="visibleVendorTotals"
+          />
         </LedgerSurface>
 
         <LedgerSurface data-report-category-totals class="p-5 sm:p-6">
@@ -531,123 +512,7 @@ onMounted(() => loadReport(true))
             </p>
           </div>
 
-          <div v-else class="mt-6 space-y-3">
-            <div
-              v-for="category in visibleCategoryTotals"
-              :key="category.categoryId ?? category.categoryName"
-              class="border-l-2 border-l-evidence bg-surface-muted px-4 py-4"
-            >
-              <div class="flex min-w-0 items-start justify-between gap-4">
-                <div class="min-w-0">
-                  <p class="truncate text-sm font-semibold text-ink">
-                    {{ category.categoryName }}
-                  </p>
-                  <p class="mt-1 text-xs text-ink-muted">
-                    {{ category.expenseCount }} expense{{ category.expenseCount === 1 ? '' : 's' }}
-                  </p>
-                </div>
-
-                <span class="shrink-0 text-sm font-semibold text-ink">
-                  ${{ formatAmount(category.totalAmount) }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </LedgerSurface>
-
-        <LedgerSurface data-report-expense-rows class="p-5 sm:p-6">
-          <div class="flex items-start gap-3">
-            <span
-              class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand"
-            >
-              <ReceiptText :size="19" aria-hidden="true" />
-            </span>
-            <div>
-              <h3 class="text-lg font-semibold tracking-tight text-ink">Expense rows</h3>
-              <p class="mt-1 text-sm text-ink-muted">
-                Detailed active expenses for the selected report period.
-              </p>
-            </div>
-          </div>
-
-          <div
-            v-if="!hasExpenses"
-            class="mt-6 rounded-xl border border-dashed border-line bg-surface-muted px-5 py-10 text-center"
-          >
-            <p class="text-sm font-medium text-ink">No matching expenses</p>
-            <p class="mt-2 text-sm text-ink-muted">
-              Try broadening the date range to include more expense records.
-            </p>
-          </div>
-
-          <div v-else class="mt-6 divide-y divide-line border-y border-line">
-            <RouterLink
-              v-for="expense in report.expenses.items"
-              :key="expense.id"
-              :to="`/expenses/${expense.id}`"
-              class="group flex min-w-0 items-center justify-between gap-3 px-1 py-4 transition hover:bg-surface-muted/45 sm:gap-4"
-            >
-              <div class="min-w-0">
-                <p class="truncate text-sm font-semibold text-ink">
-                  {{ expense.description }}
-                </p>
-                <div
-                  class="mt-1 grid grid-cols-1 gap-y-1 text-xs text-ink-muted sm:flex sm:flex-wrap sm:gap-x-4"
-                >
-                  <span class="truncate">{{ expense.vendorName }}</span>
-                  <span class="truncate">{{ expense.categoryName }}</span>
-                  <span class="truncate">{{ formatDate(expense.expenseDate) }}</span>
-                </div>
-                <p v-if="expense.notes" class="mt-2 text-xs text-ink-muted">
-                  {{ expense.notes }}
-                </p>
-              </div>
-
-              <span class="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-ink">
-                ${{ formatAmount(expense.amount) }}
-                <ArrowRight
-                  :size="15"
-                  aria-hidden="true"
-                  class="text-line-strong transition group-hover:text-brand"
-                />
-              </span>
-            </RouterLink>
-          </div>
-
-          <nav
-            v-if="report.expenses.pagination.totalPages > 1"
-            aria-label="Report expense pagination"
-            class="mt-6 flex flex-col gap-3 border-t border-line pt-4 sm:flex-row sm:items-center sm:justify-between"
-          >
-            <p class="text-sm text-ink-muted">
-              Page {{ report.expenses.pagination.page }} of
-              {{ report.expenses.pagination.totalPages }} ·
-              {{ report.expenses.pagination.totalItems }} expenses
-            </p>
-
-            <div class="flex gap-2">
-              <button
-                type="button"
-                :disabled="report.expenses.pagination.page === 1"
-                class="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-sm font-medium text-ink-muted transition hover:border-line-strong hover:text-ink disabled:cursor-not-allowed disabled:text-line-strong"
-                @click="changePage(report.expenses.pagination.page - 1)"
-              >
-                <ChevronLeft :size="15" aria-hidden="true" />
-                Previous
-              </button>
-              <button
-                type="button"
-                :disabled="
-                  report.expenses.pagination.page === report.expenses.pagination.totalPages
-                "
-                class="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-sm font-medium text-ink-muted transition hover:border-line-strong hover:text-ink disabled:cursor-not-allowed disabled:text-line-strong"
-                @click="changePage(report.expenses.pagination.page + 1)"
-              >
-                Next
-                <ChevronRight :size="15" aria-hidden="true" />
-              </button>
-            </div>
-          </nav>
+          <CategoryTotalsDonut v-else class="mt-6" :category-totals="visibleCategoryTotals" />
         </LedgerSurface>
       </div>
     </template>
