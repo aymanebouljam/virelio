@@ -77,7 +77,11 @@ const chartOptions: ChartOptions<'bar'> = {
 </script>
 
 <template>
-  <figure data-category-comparison-chart aria-labelledby="category-comparison-chart-caption">
+  <figure
+    data-category-comparison-chart
+    aria-labelledby="category-comparison-chart-caption"
+    class="min-w-0"
+  >
     <div
       class="flex flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-ink-muted"
       aria-hidden="true"
@@ -92,8 +96,8 @@ const chartOptions: ChartOptions<'bar'> = {
       </span>
     </div>
 
-    <div class="mt-4 h-72" aria-hidden="true">
-      <Bar :data="chartData" :options="chartOptions" />
+    <div class="mt-4 h-60 min-w-0 sm:h-72" aria-hidden="true">
+      <Bar class="block !h-full !w-full" :data="chartData" :options="chartOptions" />
     </div>
 
     <figcaption id="category-comparison-chart-caption" class="sr-only">
@@ -111,7 +115,7 @@ const chartOptions: ChartOptions<'bar'> = {
         :key="category.categoryId ?? category.categoryName"
         class="grid gap-3 px-1 py-4 first:pt-0 last:pb-0 sm:grid-cols-[1fr_auto_auto_auto] sm:items-center"
       >
-        <p class="text-sm font-semibold text-ink">{{ category.categoryName }}</p>
+        <p class="truncate text-sm font-semibold text-ink">{{ category.categoryName }}</p>
         <p class="text-xs text-ink-muted">
           Current
           <span class="font-semibold text-ink"> ${{ formatAmount(category.currentAmount) }} </span>
