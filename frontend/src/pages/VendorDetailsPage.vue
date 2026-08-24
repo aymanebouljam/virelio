@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute, RouterLink, useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { Archive, ArrowLeft, Building2, ExternalLink, Mail, Phone } from '@lucide/vue'
 import { fetchVendor, archiveVendor } from '@/lib/vendors/api'
 import { ApiError } from '@/lib/api'
@@ -56,6 +56,10 @@ async function archiveCurrentVendor() {
   }
 }
 
+function goBack() {
+  router.back()
+}
+
 onMounted(loadVendor)
 watch(vendorId, () => {
   vendor.value = null
@@ -68,13 +72,14 @@ watch(vendorId, () => {
 <template>
   <section class="min-w-0 space-y-6">
     <header class="space-y-5 border-b border-line pb-6">
-      <RouterLink
-        to="/vendors"
+      <button
+        type="button"
         class="inline-flex min-h-10 items-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm font-medium text-ink-muted transition hover:border-line-strong hover:text-ink"
+        @click="goBack"
       >
         <ArrowLeft :size="15" aria-hidden="true" />
-        Back to vendors
-      </RouterLink>
+        Back
+      </button>
 
       <div class="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div class="min-w-0">
