@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { ArchiveRestore, ReceiptText, Trash2 } from '@lucide/vue'
+import { ArchiveRestore, EllipsisVertical, ReceiptText, Trash2 } from '@lucide/vue'
+import RecordActionSheet, { type RecordActionItem } from '@/components/ui/RecordActionSheet.vue'
 import { ApiError } from '@/lib/api'
 import { fetchExpenseCategories } from '@/lib/expense-categories/api'
 import { expenseCategorySchema, type ExpenseCategory } from '@/lib/expense-categories/schema'
@@ -19,6 +20,13 @@ const error = ref('')
 const actionError = ref('')
 const restoringId = ref<string | null>(null)
 const removingId = ref<string | null>(null)
+const mobileActionsOpen = ref(false)
+const activeActionExpense = ref<Expense | null>(null)
+
+const mobileExpenseActions = [
+  { id: 'restore', label: 'Restore expense', icon: ArchiveRestore },
+  { id: 'remove', label: 'Remove expense', icon: Trash2, tone: 'danger' },
+] as const satisfies readonly RecordActionItem[]
 
 const vendorNameById = computed(
   () => new Map(vendors.value.map((vendor) => [vendor.id, vendor.name])),
@@ -101,11 +109,30 @@ async function remove(expense: Expense) {
   }
 }
 
+function openMobileActions(expense: Expense) {
+  activeActionExpense.value = expense
+  mobileActionsOpen.value = true
+}
+
+function handleMobileAction(actionId: string) {
+  const expense = activeActionExpense.value
+  if (!expense) return
+
+  mobileActionsOpen.value = false
+  activeActionExpense.value = null
+
+  if (actionId === 'restore') {
+    void restore(expense)
+  } else if (actionId === 'remove') {
+    void remove(expense)
+  }
+}
+
 onMounted(loadArchivedExpensesPage)
 </script>
 
 <template>
-  <section class="space-y-6">
+  <section class="min-w-0 space-y-6">
     <header class="space-y-4 border-b border-line pb-6">
       <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
         Expense archive
@@ -131,7 +158,7 @@ onMounted(loadArchivedExpensesPage)
       </div>
     </header>
 
-    <section class="overflow-hidden rounded-xl border border-line bg-surface shadow-card">
+    <section class="min-w-0 overflow-hidden rounded-xl border border-line bg-surface shadow-card">
       <header class="border-b border-line px-5 py-4 sm:px-6">
         <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
           Inactive records
@@ -181,23 +208,31 @@ onMounted(loadArchivedExpensesPage)
           v-for="expense in expenses"
           :key="expense.id"
           data-archived-expense-record
-          class="relative px-5 py-5 transition hover:bg-surface-muted/45 sm:px-6"
+          class="relative min-w-0 px-4 py-5 transition hover:bg-surface-muted/45 sm:px-6"
         >
           <span class="absolute inset-y-0 left-0 w-0.5 bg-line-strong" aria-hidden="true" />
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div class="flex min-w-0 items-start gap-3.5">
+          <div
+            class="relative flex min-w-0 flex-col gap-2 md:static md:gap-4 lg:flex-row lg:items-center lg:justify-between"
+          >
+            <div class="flex min-w-0 items-start gap-3.5 pr-12 sm:pr-0">
               <span
                 class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-ink-muted"
               >
                 <ReceiptText :size="17" aria-hidden="true" />
               </span>
               <div class="min-w-0">
-                <h3 class="text-base font-semibold tracking-[-0.015em] text-ink">
+                <h3 class="truncate text-base font-semibold tracking-[-0.015em] text-ink">
                   {{ expense.description }}
                 </h3>
-                <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-muted">
-                  <span>{{ vendorNameById.get(expense.vendorId) ?? 'Unknown vendor' }}</span>
-                  <span>{{ categoryNameById.get(expense.categoryId ?? '') ?? 'No category' }}</span>
+                <div
+                  class="mt-2.5 grid min-w-0 grid-cols-1 gap-y-1.5 text-xs text-ink-muted sm:flex sm:flex-wrap sm:gap-x-3"
+                >
+                  <span class="truncate">{{
+                    vendorNameById.get(expense.vendorId) ?? 'Unknown vendor'
+                  }}</span>
+                  <span class="truncate">{{
+                    categoryNameById.get(expense.categoryId ?? '') ?? 'No category'
+                  }}</span>
                   <span>{{ formatDate(expense.expenseDate) }}</span>
                 </div>
                 <p v-if="expense.notes" class="mt-2 text-sm text-ink-muted">
@@ -212,7 +247,7 @@ onMounted(loadArchivedExpensesPage)
               </div>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2 sm:flex-nowrap lg:justify-end">
+            <div class="flex min-w-0 flex-wrap items-center justify-end gap-2 lg:justify-end">
               <span class="font-figure mr-auto text-base font-semibold text-ink sm:mr-2">
                 ${{ formatAmount(expense.amount) }}
               </span>
@@ -220,32 +255,49 @@ onMounted(loadArchivedExpensesPage)
               <button
                 type="button"
                 :aria-label="`Restore ${expense.description}`"
+                title="Restore expense"
                 :disabled="restoringId === expense.id"
-                class="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-brand-soft px-3 text-sm font-semibold text-brand transition hover:bg-brand hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                class="hidden min-h-11 min-w-11 items-center justify-center rounded-xl bg-brand-soft px-2.5 text-brand transition hover:bg-brand hover:text-white disabled:cursor-not-allowed disabled:opacity-60 sm:inline-flex"
                 @click="restore(expense)"
               >
-                <ArchiveRestore :size="14" aria-hidden="true" />
-                {{ restoringId === expense.id ? 'Restoring...' : 'Restore' }}
+                <ArchiveRestore :size="17" :stroke-width="1.8" aria-hidden="true" />
               </button>
 
               <button
                 type="button"
                 :aria-label="`Remove ${expense.description}`"
+                title="Remove expense"
                 :disabled="removingId === expense.id"
-                class="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-danger-soft hover:text-danger disabled:cursor-not-allowed disabled:opacity-60"
+                class="hidden min-h-11 min-w-11 items-center justify-center rounded-xl bg-danger-soft px-2.5 text-danger transition hover:bg-danger hover:text-white disabled:cursor-not-allowed disabled:opacity-60 sm:inline-flex"
                 @click="remove(expense)"
               >
-                <Trash2 :size="14" aria-hidden="true" />
-                {{ removingId === expense.id ? 'Removing...' : 'Remove' }}
+                <Trash2 :size="17" :stroke-width="1.8" aria-hidden="true" />
               </button>
 
               <span class="border-l-2 border-line-strong pl-2 text-xs font-semibold text-ink-muted">
                 Archived
               </span>
+              <button
+                type="button"
+                data-mobile-archived-expense-actions
+                class="absolute right-0 top-0 inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-surface px-2.5 text-ink-muted transition hover:bg-surface-muted hover:text-ink sm:hidden"
+                :aria-label="`Actions for ${expense.description}`"
+                @click="openMobileActions(expense)"
+              >
+                <EllipsisVertical :size="18" aria-hidden="true" />
+              </button>
             </div>
           </div>
         </article>
       </div>
     </section>
+
+    <RecordActionSheet
+      :open="mobileActionsOpen"
+      :record-label="activeActionExpense?.description ?? 'expense'"
+      :actions="mobileExpenseActions"
+      @update:open="mobileActionsOpen = $event"
+      @select="handleMobileAction"
+    />
   </section>
 </template>
