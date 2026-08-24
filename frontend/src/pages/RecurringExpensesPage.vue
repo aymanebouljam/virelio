@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ZodError } from 'zod'
 import {
@@ -8,6 +8,7 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  Ellipsis,
   Pencil,
   Play,
   Plus,
@@ -38,6 +39,8 @@ import {
 import { fetchVendors } from '@/lib/vendors/api'
 import { vendorSchema, type Vendor } from '@/lib/vendors/schema'
 import { mapZodErrors } from '@/lib/zod'
+import RecordActionSheet, { type RecordActionItem } from '@/components/ui/RecordActionSheet.vue'
+import ResponsiveFormSurface from '@/components/ui/ResponsiveFormSurface.vue'
 
 const PAGE_SIZE = 6
 const route = useRoute()
@@ -49,6 +52,8 @@ const loading = ref(true)
 const error = ref('')
 const actionError = ref('')
 const showForm = ref(false)
+const mobileActionsOpen = ref(false)
+const activeActionTemplate = ref<RecurringExpenseTemplate | null>(null)
 const editingId = ref<string | null>(null)
 const submitting = ref(false)
 const generatingId = ref<string | null>(null)
@@ -109,6 +114,12 @@ function openCreateForm() {
   showForm.value = true
 }
 
+function updateFormOpen(open: boolean) {
+  if (!open) {
+    resetForm()
+  }
+}
+
 function openEditForm(template: RecurringExpenseTemplate) {
   const values: RecurringExpenseFormValues = {
     vendorId: template.vendorId,
@@ -127,6 +138,31 @@ function openEditForm(template: RecurringExpenseTemplate) {
   submitError.value = ''
   formErrors.value = {}
   actionError.value = ''
+}
+
+function openMobileActions(template: RecurringExpenseTemplate) {
+  activeActionTemplate.value = template
+  mobileActionsOpen.value = true
+}
+
+function updateMobileActionsOpen(open: boolean) {
+  mobileActionsOpen.value = open
+}
+
+function handleMobileAction(actionId: string) {
+  const template = activeActionTemplate.value
+  if (!template) return
+
+  mobileActionsOpen.value = false
+  activeActionTemplate.value = null
+
+  if (actionId === 'generate') {
+    void generate(template)
+  } else if (actionId === 'edit') {
+    openEditForm(template)
+  } else if (actionId === 'archive') {
+    void archive(template)
+  }
 }
 
 function normalizePayload(values: RecurringExpenseFormValues): RecurringExpensePayload {
@@ -285,6 +321,21 @@ function isDue(template: RecurringExpenseTemplate) {
   return new Date(template.nextDueDate).getTime() <= Date.now()
 }
 
+const mobileRecurringActions = computed<readonly RecordActionItem[]>(() => {
+  const template = activeActionTemplate.value
+
+  return [
+    {
+      id: 'generate',
+      label: generatingId.value === template?.id ? 'Generating...' : 'Generate expense',
+      icon: Play,
+      disabled: !template || !isDue(template) || generatingId.value === template.id,
+    },
+    { id: 'edit', label: 'Edit schedule', icon: Pencil },
+    { id: 'archive', label: 'Archive schedule', icon: Archive, tone: 'danger' },
+  ]
+})
+
 async function generate(template: RecurringExpenseTemplate) {
   actionError.value = ''
   generatingId.value = template.id
@@ -350,248 +401,239 @@ onMounted(loadPage)
       </div>
     </header>
 
-    <section
-      v-if="showForm"
-      data-recurring-expense-form-panel
-      class="relative overflow-hidden rounded-xl border border-line bg-surface shadow-card"
-    >
-      <span class="absolute inset-y-0 left-0 w-1 bg-accent" aria-hidden="true" />
-      <header
-        class="flex items-center gap-3 border-b border-line bg-surface-raised px-5 py-4 sm:px-6"
+    <div v-if="showForm" data-recurring-expense-form-panel>
+      <ResponsiveFormSurface
+        :open="showForm"
+        :eyebrow="editingId ? 'Revise schedule' : 'New schedule'"
+        :title="editingId ? 'Edit recurring expense' : 'Create recurring expense'"
+        description="Define the cost, cadence, and next expected date."
+        @update:open="updateFormOpen"
       >
-        <span class="flex size-9 items-center justify-center rounded-lg bg-brand-soft text-brand">
+        <template #icon>
           <Pencil v-if="editingId" :size="18" aria-hidden="true" />
           <Plus v-else :size="18" aria-hidden="true" />
-        </span>
-        <div>
-          <p class="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
-            {{ editingId ? 'Revise schedule' : 'New schedule' }}
-          </p>
-          <h2 class="font-display mt-0.5 text-lg font-semibold tracking-[-0.02em] text-ink">
-            {{ editingId ? 'Edit recurring expense' : 'Create recurring expense' }}
-          </h2>
-          <p class="text-xs text-ink-muted">Define the cost, cadence, and next expected date.</p>
-        </div>
-      </header>
+        </template>
 
-      <form
-        aria-label="Recurring expense form"
-        class="space-y-5 p-5 sm:p-6"
-        @submit.prevent="submitForm"
-      >
-        <div class="grid gap-4 sm:grid-cols-2">
-          <label class="block">
-            <span class="mb-1.5 block text-sm font-medium text-ink">Vendor</span>
-            <select
-              id="recurring-vendor"
-              v-model="form.vendorId"
-              :aria-describedby="formErrors.vendorId ? 'recurring-vendor-error' : undefined"
-              :aria-invalid="Boolean(formErrors.vendorId)"
-              :class="[
-                'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
-                formErrors.vendorId
-                  ? 'border-danger/45 focus:border-danger'
-                  : 'border-line hover:border-line-strong focus:border-brand',
-              ]"
-            >
-              <option value="">Select vendor</option>
-              <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
-                {{ vendor.name }}
-              </option>
-            </select>
-            <p
-              v-if="formErrors.vendorId"
-              id="recurring-vendor-error"
-              class="mt-1.5 text-sm text-danger"
-            >
-              {{ formErrors.vendorId }}
-            </p>
-          </label>
+        <form aria-label="Recurring expense form" class="space-y-5" @submit.prevent="submitForm">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label class="block">
+              <span class="mb-1.5 block text-sm font-medium text-ink">Vendor</span>
+              <select
+                id="recurring-vendor"
+                v-model="form.vendorId"
+                :aria-describedby="formErrors.vendorId ? 'recurring-vendor-error' : undefined"
+                :aria-invalid="Boolean(formErrors.vendorId)"
+                :class="[
+                  'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                  formErrors.vendorId
+                    ? 'border-danger/45 focus:border-danger'
+                    : 'border-line hover:border-line-strong focus:border-brand',
+                ]"
+              >
+                <option value="">Select vendor</option>
+                <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
+                  {{ vendor.name }}
+                </option>
+              </select>
+              <p
+                v-if="formErrors.vendorId"
+                id="recurring-vendor-error"
+                class="mt-1.5 text-sm text-danger"
+              >
+                {{ formErrors.vendorId }}
+              </p>
+            </label>
 
-          <label class="block">
-            <span class="mb-1.5 block text-sm font-medium text-ink">Category</span>
-            <select
-              id="recurring-category"
-              v-model="form.categoryId"
-              :aria-describedby="formErrors.categoryId ? 'recurring-category-error' : undefined"
-              :aria-invalid="Boolean(formErrors.categoryId)"
-              :class="[
-                'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
-                formErrors.categoryId
-                  ? 'border-danger/45 focus:border-danger'
-                  : 'border-line hover:border-line-strong focus:border-brand',
-              ]"
-            >
-              <option value="">No category</option>
-              <option v-for="category in categories" :key="category.id" :value="category.id">
-                {{ category.name }}
-              </option>
-            </select>
-            <p
-              v-if="formErrors.categoryId"
-              id="recurring-category-error"
-              class="mt-1.5 text-sm text-danger"
-            >
-              {{ formErrors.categoryId }}
-            </p>
-          </label>
+            <label class="block">
+              <span class="mb-1.5 block text-sm font-medium text-ink">Category</span>
+              <select
+                id="recurring-category"
+                v-model="form.categoryId"
+                :aria-describedby="formErrors.categoryId ? 'recurring-category-error' : undefined"
+                :aria-invalid="Boolean(formErrors.categoryId)"
+                :class="[
+                  'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                  formErrors.categoryId
+                    ? 'border-danger/45 focus:border-danger'
+                    : 'border-line hover:border-line-strong focus:border-brand',
+                ]"
+              >
+                <option value="">No category</option>
+                <option v-for="category in categories" :key="category.id" :value="category.id">
+                  {{ category.name }}
+                </option>
+              </select>
+              <p
+                v-if="formErrors.categoryId"
+                id="recurring-category-error"
+                class="mt-1.5 text-sm text-danger"
+              >
+                {{ formErrors.categoryId }}
+              </p>
+            </label>
 
-          <label class="block sm:col-span-2">
-            <span class="mb-1.5 block text-sm font-medium text-ink">Description</span>
-            <input
-              id="recurring-description"
-              v-model="form.description"
-              type="text"
-              maxlength="240"
-              :aria-describedby="formErrors.description ? 'recurring-description-error' : undefined"
-              :aria-invalid="Boolean(formErrors.description)"
-              :class="[
-                'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
-                formErrors.description
-                  ? 'border-danger/45 focus:border-danger'
-                  : 'border-line hover:border-line-strong focus:border-brand',
-              ]"
-            />
-            <p
-              v-if="formErrors.description"
-              id="recurring-description-error"
-              class="mt-1.5 text-sm text-danger"
-            >
-              {{ formErrors.description }}
-            </p>
-          </label>
+            <label class="block sm:col-span-2">
+              <span class="mb-1.5 block text-sm font-medium text-ink">Description</span>
+              <input
+                id="recurring-description"
+                v-model="form.description"
+                type="text"
+                maxlength="240"
+                :aria-describedby="
+                  formErrors.description ? 'recurring-description-error' : undefined
+                "
+                :aria-invalid="Boolean(formErrors.description)"
+                :class="[
+                  'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                  formErrors.description
+                    ? 'border-danger/45 focus:border-danger'
+                    : 'border-line hover:border-line-strong focus:border-brand',
+                ]"
+              />
+              <p
+                v-if="formErrors.description"
+                id="recurring-description-error"
+                class="mt-1.5 text-sm text-danger"
+              >
+                {{ formErrors.description }}
+              </p>
+            </label>
 
-          <label class="block">
-            <span class="mb-1.5 block text-sm font-medium text-ink">Amount</span>
-            <input
-              id="recurring-amount"
-              v-model.number="form.amount"
-              type="number"
-              min="0.01"
-              step="0.01"
-              :aria-describedby="formErrors.amount ? 'recurring-amount-error' : undefined"
-              :aria-invalid="Boolean(formErrors.amount)"
-              :class="[
-                'font-figure min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
-                formErrors.amount
-                  ? 'border-danger/45 focus:border-danger'
-                  : 'border-line hover:border-line-strong focus:border-brand',
-              ]"
-            />
-            <p
-              v-if="formErrors.amount"
-              id="recurring-amount-error"
-              class="mt-1.5 text-sm text-danger"
-            >
-              {{ formErrors.amount }}
-            </p>
-          </label>
+            <label class="block">
+              <span class="mb-1.5 block text-sm font-medium text-ink">Amount</span>
+              <input
+                id="recurring-amount"
+                v-model.number="form.amount"
+                type="number"
+                inputmode="decimal"
+                min="0.01"
+                step="0.01"
+                :aria-describedby="formErrors.amount ? 'recurring-amount-error' : undefined"
+                :aria-invalid="Boolean(formErrors.amount)"
+                :class="[
+                  'font-figure min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                  formErrors.amount
+                    ? 'border-danger/45 focus:border-danger'
+                    : 'border-line hover:border-line-strong focus:border-brand',
+                ]"
+              />
+              <p
+                v-if="formErrors.amount"
+                id="recurring-amount-error"
+                class="mt-1.5 text-sm text-danger"
+              >
+                {{ formErrors.amount }}
+              </p>
+            </label>
 
-          <label class="block">
-            <span class="mb-1.5 block text-sm font-medium text-ink">Frequency</span>
-            <select
-              id="recurring-frequency"
-              v-model="form.frequency"
-              :aria-describedby="formErrors.frequency ? 'recurring-frequency-error' : undefined"
-              :aria-invalid="Boolean(formErrors.frequency)"
-              :class="[
-                'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
-                formErrors.frequency
-                  ? 'border-danger/45 focus:border-danger'
-                  : 'border-line hover:border-line-strong focus:border-brand',
-              ]"
-            >
-              <option value="WEEKLY">Weekly</option>
-              <option value="MONTHLY">Monthly</option>
-              <option value="YEARLY">Yearly</option>
-            </select>
-            <p
-              v-if="formErrors.frequency"
-              id="recurring-frequency-error"
-              class="mt-1.5 text-sm text-danger"
-            >
-              {{ formErrors.frequency }}
-            </p>
-          </label>
+            <label class="block">
+              <span class="mb-1.5 block text-sm font-medium text-ink">Frequency</span>
+              <select
+                id="recurring-frequency"
+                v-model="form.frequency"
+                :aria-describedby="formErrors.frequency ? 'recurring-frequency-error' : undefined"
+                :aria-invalid="Boolean(formErrors.frequency)"
+                :class="[
+                  'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                  formErrors.frequency
+                    ? 'border-danger/45 focus:border-danger'
+                    : 'border-line hover:border-line-strong focus:border-brand',
+                ]"
+              >
+                <option value="WEEKLY">Weekly</option>
+                <option value="MONTHLY">Monthly</option>
+                <option value="YEARLY">Yearly</option>
+              </select>
+              <p
+                v-if="formErrors.frequency"
+                id="recurring-frequency-error"
+                class="mt-1.5 text-sm text-danger"
+              >
+                {{ formErrors.frequency }}
+              </p>
+            </label>
 
-          <label class="block">
-            <span class="mb-1.5 block text-sm font-medium text-ink">Next due date</span>
-            <input
-              id="recurring-next-due-date"
-              v-model="form.nextDueDate"
-              type="date"
-              :aria-describedby="
-                formErrors.nextDueDate ? 'recurring-next-due-date-error' : undefined
-              "
-              :aria-invalid="Boolean(formErrors.nextDueDate)"
-              :class="[
-                'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
-                formErrors.nextDueDate
-                  ? 'border-danger/45 focus:border-danger'
-                  : 'border-line hover:border-line-strong focus:border-brand',
-              ]"
-            />
-            <p
-              v-if="formErrors.nextDueDate"
-              id="recurring-next-due-date-error"
-              class="mt-1.5 text-sm text-danger"
-            >
-              {{ formErrors.nextDueDate }}
-            </p>
-          </label>
+            <label class="block">
+              <span class="mb-1.5 block text-sm font-medium text-ink">Next due date</span>
+              <input
+                id="recurring-next-due-date"
+                v-model="form.nextDueDate"
+                type="date"
+                :aria-describedby="
+                  formErrors.nextDueDate ? 'recurring-next-due-date-error' : undefined
+                "
+                :aria-invalid="Boolean(formErrors.nextDueDate)"
+                :class="[
+                  'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                  formErrors.nextDueDate
+                    ? 'border-danger/45 focus:border-danger'
+                    : 'border-line hover:border-line-strong focus:border-brand',
+                ]"
+              />
+              <p
+                v-if="formErrors.nextDueDate"
+                id="recurring-next-due-date-error"
+                class="mt-1.5 text-sm text-danger"
+              >
+                {{ formErrors.nextDueDate }}
+              </p>
+            </label>
 
-          <label class="block sm:col-span-2">
-            <span class="mb-1.5 block text-sm font-medium text-ink">Notes</span>
-            <textarea
-              id="recurring-notes"
-              v-model="form.notes"
-              rows="3"
-              maxlength="1000"
-              :aria-describedby="formErrors.notes ? 'recurring-notes-error' : undefined"
-              :aria-invalid="Boolean(formErrors.notes)"
-              :class="[
-                'w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
-                formErrors.notes
-                  ? 'border-danger/45 focus:border-danger'
-                  : 'border-line hover:border-line-strong focus:border-brand',
-              ]"
-            />
-            <p
-              v-if="formErrors.notes"
-              id="recurring-notes-error"
-              class="mt-1.5 text-sm text-danger"
-            >
-              {{ formErrors.notes }}
-            </p>
-          </label>
-        </div>
+            <label class="block sm:col-span-2">
+              <span class="mb-1.5 block text-sm font-medium text-ink">Notes</span>
+              <textarea
+                id="recurring-notes"
+                v-model="form.notes"
+                rows="3"
+                maxlength="1000"
+                :aria-describedby="formErrors.notes ? 'recurring-notes-error' : undefined"
+                :aria-invalid="Boolean(formErrors.notes)"
+                :class="[
+                  'w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                  formErrors.notes
+                    ? 'border-danger/45 focus:border-danger'
+                    : 'border-line hover:border-line-strong focus:border-brand',
+                ]"
+              />
+              <p
+                v-if="formErrors.notes"
+                id="recurring-notes-error"
+                class="mt-1.5 text-sm text-danger"
+              >
+                {{ formErrors.notes }}
+              </p>
+            </label>
+          </div>
 
-        <div
-          v-if="submitError"
-          role="alert"
-          class="rounded-lg border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
-        >
-          {{ submitError }}
-        </div>
-
-        <div class="flex items-center justify-end gap-3 border-t border-line pt-5">
-          <button
-            type="button"
-            class="min-h-11 rounded-lg px-4 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
-            @click="resetForm"
+          <div
+            v-if="submitError"
+            role="alert"
+            class="rounded-lg border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
           >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            :disabled="submitting"
-            class="min-h-11 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-line-strong"
+            {{ submitError }}
+          </div>
+
+          <div
+            class="flex flex-col-reverse gap-2 border-t border-line pt-5 sm:flex-row sm:items-center sm:justify-end sm:gap-3"
           >
-            {{ submitting ? 'Saving...' : 'Save recurring expense' }}
-          </button>
-        </div>
-      </form>
-    </section>
+            <button
+              type="button"
+              class="min-h-11 w-full rounded-lg px-4 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink sm:w-auto"
+              @click="resetForm"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              :disabled="submitting"
+              class="min-h-11 w-full rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-line-strong sm:w-auto"
+            >
+              {{ submitting ? 'Saving...' : 'Save recurring expense' }}
+            </button>
+          </div>
+        </form>
+      </ResponsiveFormSurface>
+    </div>
 
     <section class="overflow-hidden rounded-xl border border-line bg-surface shadow-card">
       <header class="border-b border-line px-5 py-4 sm:px-6">
@@ -704,14 +746,14 @@ onMounted(loadPage)
                 </div>
               </div>
 
-              <div class="flex flex-wrap items-center gap-2 lg:justify-end">
-                <span class="font-figure mr-1 text-base font-semibold text-ink">
+              <div class="flex flex-wrap items-center justify-between gap-2 lg:justify-end">
+                <span class="font-figure mr-auto text-base font-semibold text-ink sm:mr-1">
                   {{ formatAmount(template.amount) }} {{ template.currency }}
                 </span>
                 <button
                   type="button"
                   :disabled="!isDue(template) || generatingId === template.id"
-                  class="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-brand px-3 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-line-strong"
+                  class="hidden min-h-10 items-center gap-1.5 rounded-lg bg-brand px-3 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-line-strong md:inline-flex"
                   @click="generate(template)"
                 >
                   <Play :size="14" aria-hidden="true" />
@@ -719,7 +761,7 @@ onMounted(loadPage)
                 </button>
                 <button
                   type="button"
-                  class="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
+                  class="hidden min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink md:inline-flex"
                   @click="openEditForm(template)"
                 >
                   <Pencil :size="14" aria-hidden="true" />
@@ -727,11 +769,21 @@ onMounted(loadPage)
                 </button>
                 <button
                   type="button"
-                  class="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-danger-soft hover:text-danger"
+                  class="hidden min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-danger-soft hover:text-danger md:inline-flex"
                   @click="archive(template)"
                 >
                   <Archive :size="14" aria-hidden="true" />
                   Archive
+                </button>
+
+                <button
+                  type="button"
+                  data-mobile-recurring-actions
+                  class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-line bg-surface px-2.5 text-ink-muted transition hover:border-line-strong hover:bg-surface-muted hover:text-ink md:hidden"
+                  :aria-label="`Actions for ${template.description}`"
+                  @click="openMobileActions(template)"
+                >
+                  <Ellipsis :size="18" aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -770,5 +822,13 @@ onMounted(loadPage)
         </nav>
       </div>
     </section>
+
+    <RecordActionSheet
+      :open="mobileActionsOpen"
+      :record-label="activeActionTemplate?.description ?? 'recurring expense'"
+      :actions="mobileRecurringActions"
+      @update:open="updateMobileActionsOpen"
+      @select="handleMobileAction"
+    />
   </section>
 </template>
