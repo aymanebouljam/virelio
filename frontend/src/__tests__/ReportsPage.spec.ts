@@ -263,7 +263,10 @@ describe('report workflows', () => {
     expect(getMetric(wrapper, 'Expense count').text()).toContain('3')
     expect(getMetric(wrapper, 'Categories').text()).toContain('2')
     expect(wrapper.get('[aria-label="Report overview"]').findAll('article')).toHaveLength(3)
-    expect(wrapper.get('[data-report-category-comparison]').classes()).toContain('min-w-0')
+    expect(wrapper.find('[data-report-category-comparison]').exists()).toBe(false)
+    expect(wrapper.get('[data-report-category-comparison-prompt]').text()).toBe(
+      'Select both dates to compare category spending.',
+    )
     expect(wrapper.get('[data-report-monthly-spending]').classes()).toContain('min-w-0')
     expect(wrapper.get('[data-report-vendor-spending]').classes()).toContain('min-w-0')
     expect(wrapper.get('[data-report-expense-rows]').classes()).toContain('min-w-0')
@@ -276,7 +279,7 @@ describe('report workflows', () => {
     expect(wrapper.find('a[href="/expenses/expense-2"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('Monthly spending')
     expect(wrapper.findAll('[data-monthly-spend-chart]')).toHaveLength(1)
-    expect(wrapper.text()).toContain('2026-07')
+    expect(wrapper.find('[data-monthly-values]').exists()).toBe(false)
     expect(wrapper.text()).toContain('Vendor spending')
     expect(wrapper.findAll('[data-vendor-spend-chart]')).toHaveLength(1)
     expect(wrapper.get('[data-vendor-spend-chart] > div').classes()).toEqual(
@@ -315,7 +318,7 @@ describe('report workflows', () => {
     expect(categorySection.text()).not.toContain('Category 7')
   })
 
-  it('scrolls monthly totals and shows five vendors plus Other', async () => {
+  it('shows the monthly trend once and provides vendor values only on smaller screens', async () => {
     reportsApi.fetchReportInsights.mockResolvedValue({
       monthlyTotals: Array.from({ length: 7 }, (_, index) => ({
         month: `2026-0${index + 1}`,
@@ -327,18 +330,13 @@ describe('report workflows', () => {
 
     const { wrapper } = await mountPage()
     const monthlyChart = getSection(wrapper, 'Monthly spending').get('[data-monthly-spend-chart]')
-    const monthlyTotals = monthlyChart.get('[data-monthly-values]')
     const vendorChart = getSection(wrapper, 'Vendor spending').get('[data-vendor-spend-chart]')
     const vendorTotals = vendorChart.get('[data-vendor-values]')
 
     expect(monthlyChart.get('figcaption').text()).toContain('plotted chronologically')
-    expect(monthlyTotals.classes()).toEqual(
-      expect.arrayContaining(['max-h-[32rem]', 'overflow-y-auto']),
-    )
-    expect(monthlyTotals.element.children).toHaveLength(7)
-    expect(monthlyTotals.element.firstElementChild?.textContent).toContain('2026-07')
-    expect(monthlyTotals.element.lastElementChild?.textContent).toContain('2026-01')
+    expect(monthlyChart.find('[data-monthly-values]').exists()).toBe(false)
     expect(vendorChart.get('figcaption').text()).toContain('ranked from highest to lowest')
+    expect(vendorTotals.classes()).toContain('sm:hidden')
     expect(vendorTotals.element.children).toHaveLength(6)
     expect(vendorTotals.text()).toContain('Vendor 5')
     expect(vendorTotals.text()).toContain('Other')

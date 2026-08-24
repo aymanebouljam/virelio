@@ -83,7 +83,7 @@ const chartOptions: ChartOptions<'bar'> = {
     class="min-w-0"
   >
     <div
-      class="flex flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-ink-muted"
+      class="hidden flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-ink-muted sm:flex"
       aria-hidden="true"
     >
       <span class="inline-flex items-center gap-2">
@@ -96,18 +96,18 @@ const chartOptions: ChartOptions<'bar'> = {
       </span>
     </div>
 
-    <div class="mt-4 h-60 min-w-0 sm:h-72" aria-hidden="true">
+    <div class="mt-4 hidden h-72 min-w-0 sm:block" aria-hidden="true">
       <Bar class="block !h-full !w-full" :data="chartData" :options="chartOptions" />
     </div>
 
     <figcaption id="category-comparison-chart-caption" class="sr-only">
-      Category spending compares the selected period with the previous period and is listed with
-      exact values below the chart.
+      Category spending compares the selected period with the previous period. Exact values are
+      shown on smaller screens.
     </figcaption>
 
     <ol
       data-category-comparison-values
-      class="mt-5 max-h-[32rem] divide-y divide-line overflow-y-auto pr-1"
+      class="mt-0 max-h-[32rem] divide-y divide-line overflow-y-auto pr-1 sm:hidden"
       aria-label="Category comparison values"
     >
       <li

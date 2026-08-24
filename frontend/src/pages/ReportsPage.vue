@@ -32,6 +32,8 @@ import {
   type ReportInsights,
 } from '@/lib/reports/schema'
 import { formatAmount, formatDate } from '@/lib/helpers'
+import LedgerSurface from '@/components/ui/LedgerSurface.vue'
+import WorkspaceHeader from '@/components/ui/WorkspaceHeader.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -236,25 +238,19 @@ onMounted(() => loadReport(true))
 
 <template>
   <section class="min-w-0 space-y-7">
-    <header>
-      <p class="text-xs font-semibold uppercase tracking-[0.24em] text-accent">Analysis</p>
-      <div>
-        <h2 class="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-          Expense report
-        </h2>
-        <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-base">
-          Turn expense history into a clearer view of trends, vendors, and categories.
-        </p>
-      </div>
-    </header>
+    <WorkspaceHeader
+      context="Analysis workspace"
+      title="Read the patterns in your spending."
+      description="Compare periods, follow the movement, and inspect the entries behind every total."
+    />
 
     <fieldset
-      class="min-w-0 max-w-full rounded-2xl border border-line bg-surface px-4 py-3 shadow-card sm:flex sm:items-end sm:gap-3"
+      class="min-w-0 max-w-full rounded-xl border border-line bg-surface-raised px-4 py-4 sm:flex sm:items-end sm:gap-3"
     >
       <legend class="sr-only">Report date range</legend>
 
       <div class="mb-3 flex items-center gap-2 sm:mb-0 sm:mr-auto sm:self-center">
-        <span class="flex size-9 items-center justify-center rounded-xl bg-brand-soft text-brand">
+        <span class="flex size-9 items-center justify-center rounded-lg bg-brand-soft text-brand">
           <CalendarDays :size="17" aria-hidden="true" />
         </span>
         <div>
@@ -274,7 +270,7 @@ onMounted(() => loadReport(true))
             type="date"
             :aria-describedby="dateRangeError ? 'report-date-range-error' : undefined"
             :aria-invalid="Boolean(dateRangeError)"
-            class="min-h-10 w-full min-w-0 max-w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand sm:w-auto"
+            class="min-h-10 w-full min-w-0 max-w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand sm:w-auto"
             @change="
               updateDateRange({
                 dateFrom: ($event.target as HTMLInputElement).value || undefined,
@@ -292,7 +288,7 @@ onMounted(() => loadReport(true))
             type="date"
             :aria-describedby="dateRangeError ? 'report-date-range-error' : undefined"
             :aria-invalid="Boolean(dateRangeError)"
-            class="min-h-10 w-full min-w-0 max-w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand sm:w-auto"
+            class="min-h-10 w-full min-w-0 max-w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand sm:w-auto"
             @change="
               updateDateRange({
                 dateFrom: dateFrom,
@@ -305,7 +301,7 @@ onMounted(() => loadReport(true))
         <button
           v-if="dateFrom || dateTo"
           type="button"
-          class="min-h-10 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
+          class="min-h-10 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
           @click="updateDateRange({ dateFrom: undefined, dateTo: undefined })"
         >
           Clear
@@ -314,7 +310,7 @@ onMounted(() => loadReport(true))
         <button
           type="button"
           :disabled="exporting"
-          class="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-line-strong"
+          class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-line-strong"
           @click="downloadCsv"
         >
           <Download :size="16" aria-hidden="true" />
@@ -354,18 +350,18 @@ onMounted(() => loadReport(true))
     </section>
 
     <template v-else-if="report">
-      <section
-        class="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+      <LedgerSurface
+        class="grid overflow-hidden sm:grid-cols-2 xl:grid-cols-3"
         aria-label="Report overview"
       >
         <article
-          class="relative min-w-0 overflow-hidden rounded-2xl bg-brand-strong p-4 text-white shadow-lifted sm:p-5"
+          class="relative min-w-0 overflow-hidden bg-brand-strong p-5 text-white sm:col-span-2 sm:p-6 xl:col-span-1"
         >
           <div
             class="absolute -right-8 -top-10 size-28 rounded-full border-[20px] border-white/5"
             aria-hidden="true"
           />
-          <span class="flex size-10 items-center justify-center rounded-xl bg-white/10">
+          <span class="flex size-10 items-center justify-center rounded-lg bg-white/10">
             <CircleDollarSign :size="20" aria-hidden="true" />
           </span>
           <p class="mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-white/55">
@@ -376,9 +372,9 @@ onMounted(() => loadReport(true))
           </p>
         </article>
 
-        <article class="min-w-0 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-5">
+        <article class="min-w-0 border-b border-line p-5 sm:border-r sm:p-6 xl:border-b-0">
           <span
-            class="flex size-10 items-center justify-center rounded-xl bg-brand-soft text-brand"
+            class="flex size-10 items-center justify-center rounded-lg bg-brand-soft text-brand"
           >
             <Hash :size="20" aria-hidden="true" />
           </span>
@@ -390,9 +386,9 @@ onMounted(() => loadReport(true))
           </p>
         </article>
 
-        <article class="min-w-0 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-5">
+        <article class="min-w-0 p-5 sm:p-6">
           <span
-            class="flex size-10 items-center justify-center rounded-xl bg-accent-soft text-accent"
+            class="flex size-10 items-center justify-center rounded-lg bg-accent-soft text-accent"
           >
             <Layers3 :size="20" aria-hidden="true" />
           </span>
@@ -403,15 +399,20 @@ onMounted(() => loadReport(true))
             {{ report.categoryTotals.length }}
           </p>
         </article>
-      </section>
+      </LedgerSurface>
 
-      <section
-        data-report-category-comparison
-        class="min-w-0 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6"
+      <aside
+        v-if="!hasCompleteDateRange"
+        data-report-category-comparison-prompt
+        class="border-l-2 border-evidence bg-evidence-soft/45 px-4 py-3 text-sm text-ink-muted"
       >
+        Select both dates to compare category spending.
+      </aside>
+
+      <LedgerSurface v-else data-report-category-comparison class="p-5 sm:p-6">
         <div class="flex items-start gap-3">
           <span
-            class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent"
+            class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent"
           >
             <ChartNoAxesCombined :size="19" aria-hidden="true" />
           </span>
@@ -423,18 +424,9 @@ onMounted(() => loadReport(true))
           </div>
         </div>
 
-        <div
-          v-if="!hasCompleteDateRange"
-          class="mt-6 rounded-2xl bg-surface-muted px-5 py-10 text-center"
-        >
-          <p class="text-sm font-medium text-ink-muted">
-            Select both dates to compare category spending.
-          </p>
-        </div>
-
-        <template v-else-if="categoryComparison">
+        <template v-if="categoryComparison">
           <div class="mt-6 grid gap-3 sm:grid-cols-2">
-            <article class="rounded-2xl border border-brand/15 bg-brand-soft/45 px-4 py-4">
+            <article class="rounded-xl border border-brand/15 bg-brand-soft/45 px-4 py-4">
               <p class="text-xs font-semibold uppercase tracking-[0.18em] text-brand">
                 Selected period
               </p>
@@ -447,7 +439,7 @@ onMounted(() => loadReport(true))
               </p>
             </article>
 
-            <article class="rounded-2xl border border-line bg-surface-muted px-4 py-4">
+            <article class="rounded-xl border border-line bg-surface-muted px-4 py-4">
               <p class="text-xs font-semibold uppercase tracking-[0.18em] text-ink-muted">
                 Previous period
               </p>
@@ -463,20 +455,17 @@ onMounted(() => loadReport(true))
 
           <div
             v-if="categoryComparison.categories.length === 0"
-            class="mt-6 rounded-2xl border border-dashed border-line bg-surface-muted px-5 py-10 text-center"
+            class="mt-6 rounded-xl border border-dashed border-line bg-surface-muted px-5 py-10 text-center"
           >
             <p class="text-sm font-medium text-ink">No category activity to compare</p>
           </div>
 
           <CategoryComparisonChart v-else class="mt-6" :comparison="categoryComparison" />
         </template>
-      </section>
+      </LedgerSurface>
 
       <div class="grid min-w-0 gap-5 xl:grid-cols-[0.85fr_1.25fr]">
-        <section
-          data-report-monthly-spending
-          class="min-w-0 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6"
-        >
+        <LedgerSurface data-report-monthly-spending class="p-5 sm:p-6">
           <h3 class="text-lg font-semibold tracking-tight text-ink">Monthly spending</h3>
           <p class="mt-1 text-sm text-ink-muted">
             Spending totals by calendar month for the current report period.
@@ -484,21 +473,18 @@ onMounted(() => loadReport(true))
 
           <div
             v-if="!insights?.monthlyTotals.length"
-            class="mt-6 rounded-2xl border border-dashed border-line bg-surface-muted px-5 py-10 text-center"
+            class="mt-6 rounded-xl border border-dashed border-line bg-surface-muted px-5 py-10 text-center"
           >
             <p class="text-sm font-medium text-ink">No monthly totals</p>
           </div>
 
           <MonthlySpendChart v-else class="mt-6" :monthly-totals="visibleMonthlyTotals" />
-        </section>
+        </LedgerSurface>
 
-        <section
-          data-report-vendor-spending
-          class="min-w-0 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6"
-        >
+        <LedgerSurface data-report-vendor-spending class="p-5 sm:p-6">
           <div class="flex items-start gap-3">
             <span
-              class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand"
+              class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand"
             >
               <Building2 :size="19" aria-hidden="true" />
             </span>
@@ -512,21 +498,18 @@ onMounted(() => loadReport(true))
 
           <div
             v-if="!insights?.vendorTotals.length"
-            class="mt-6 rounded-2xl border border-dashed border-line bg-surface-muted px-5 py-10 text-center"
+            class="mt-6 rounded-xl border border-dashed border-line bg-surface-muted px-5 py-10 text-center"
           >
             <p class="text-sm font-medium text-ink">No vendor totals</p>
           </div>
 
           <VendorSpendChart v-else class="mt-6" :vendor-totals="visibleVendorTotals" />
-        </section>
+        </LedgerSurface>
 
-        <section
-          data-report-category-totals
-          class="min-w-0 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6"
-        >
+        <LedgerSurface data-report-category-totals class="p-5 sm:p-6">
           <div class="flex items-start gap-3">
             <span
-              class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent"
+              class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent"
             >
               <Tags :size="19" aria-hidden="true" />
             </span>
@@ -540,7 +523,7 @@ onMounted(() => loadReport(true))
 
           <div
             v-if="!hasCategoryTotals"
-            class="mt-6 rounded-2xl border border-dashed border-line bg-surface-muted px-5 py-10 text-center"
+            class="mt-6 rounded-xl border border-dashed border-line bg-surface-muted px-5 py-10 text-center"
           >
             <p class="text-sm font-medium text-ink">No category totals</p>
             <p class="mt-2 text-sm text-ink-muted">
@@ -552,7 +535,7 @@ onMounted(() => loadReport(true))
             <div
               v-for="category in visibleCategoryTotals"
               :key="category.categoryId ?? category.categoryName"
-              class="rounded-xl bg-surface-muted px-4 py-4"
+              class="border-l-2 border-l-evidence bg-surface-muted px-4 py-4"
             >
               <div class="flex min-w-0 items-start justify-between gap-4">
                 <div class="min-w-0">
@@ -570,15 +553,12 @@ onMounted(() => loadReport(true))
               </div>
             </div>
           </div>
-        </section>
+        </LedgerSurface>
 
-        <section
-          data-report-expense-rows
-          class="min-w-0 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6"
-        >
+        <LedgerSurface data-report-expense-rows class="p-5 sm:p-6">
           <div class="flex items-start gap-3">
             <span
-              class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand"
+              class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand"
             >
               <ReceiptText :size="19" aria-hidden="true" />
             </span>
@@ -592,7 +572,7 @@ onMounted(() => loadReport(true))
 
           <div
             v-if="!hasExpenses"
-            class="mt-6 rounded-2xl border border-dashed border-line bg-surface-muted px-5 py-10 text-center"
+            class="mt-6 rounded-xl border border-dashed border-line bg-surface-muted px-5 py-10 text-center"
           >
             <p class="text-sm font-medium text-ink">No matching expenses</p>
             <p class="mt-2 text-sm text-ink-muted">
@@ -600,12 +580,12 @@ onMounted(() => loadReport(true))
             </p>
           </div>
 
-          <div v-else class="mt-6 space-y-3">
+          <div v-else class="mt-6 divide-y divide-line border-y border-line">
             <RouterLink
               v-for="expense in report.expenses.items"
               :key="expense.id"
               :to="`/expenses/${expense.id}`"
-              class="group flex min-w-0 items-center justify-between gap-3 border-b border-line px-1 py-4 transition last:border-b-0 hover:bg-surface-muted/45 sm:gap-4"
+              class="group flex min-w-0 items-center justify-between gap-3 px-1 py-4 transition hover:bg-surface-muted/45 sm:gap-4"
             >
               <div class="min-w-0">
                 <p class="truncate text-sm font-semibold text-ink">
@@ -649,7 +629,7 @@ onMounted(() => loadReport(true))
               <button
                 type="button"
                 :disabled="report.expenses.pagination.page === 1"
-                class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-surface px-3 text-sm font-medium text-ink-muted transition hover:border-line-strong hover:text-ink disabled:cursor-not-allowed disabled:text-line-strong"
+                class="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-sm font-medium text-ink-muted transition hover:border-line-strong hover:text-ink disabled:cursor-not-allowed disabled:text-line-strong"
                 @click="changePage(report.expenses.pagination.page - 1)"
               >
                 <ChevronLeft :size="15" aria-hidden="true" />
@@ -660,7 +640,7 @@ onMounted(() => loadReport(true))
                 :disabled="
                   report.expenses.pagination.page === report.expenses.pagination.totalPages
                 "
-                class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-surface px-3 text-sm font-medium text-ink-muted transition hover:border-line-strong hover:text-ink disabled:cursor-not-allowed disabled:text-line-strong"
+                class="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-sm font-medium text-ink-muted transition hover:border-line-strong hover:text-ink disabled:cursor-not-allowed disabled:text-line-strong"
                 @click="changePage(report.expenses.pagination.page + 1)"
               >
                 Next
@@ -668,7 +648,7 @@ onMounted(() => loadReport(true))
               </button>
             </div>
           </nav>
-        </section>
+        </LedgerSurface>
       </div>
     </template>
   </section>

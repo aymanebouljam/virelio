@@ -15,6 +15,8 @@ import { ApiError } from '@/lib/api'
 import { fetchDashboardSummary } from '@/lib/dashboard/api'
 import { formatAmount, formatDate } from '@/lib/helpers'
 import { dashboardSummarySchema, type DashboardSummary } from '@/lib/dashboard/schema'
+import LedgerSurface from '@/components/ui/LedgerSurface.vue'
+import WorkspaceHeader from '@/components/ui/WorkspaceHeader.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -105,34 +107,24 @@ onMounted(loadSummary)
 
 <template>
   <section class="min-w-0 space-y-6">
-    <header
-      class="flex flex-col gap-5 border-b border-line pb-6 lg:flex-row lg:items-end lg:justify-between"
+    <WorkspaceHeader
+      context="Ledger snapshot"
+      title="Follow the record, not the noise."
+      description="Review spend, supporting proof, and the entries that need attention."
     >
-      <div>
-        <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
-          Ledger snapshot
-        </p>
-        <h1
-          class="font-display mt-2 text-[2rem] font-semibold leading-tight tracking-[-0.035em] text-ink sm:text-[2.5rem]"
+      <template #actions>
+        <RouterLink
+          to="/expenses"
+          class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
         >
-          Follow the record, not the noise.
-        </h1>
-        <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-[15px]">
-          Review spend, supporting proof, and the entries that need attention.
-        </p>
-      </div>
-
-      <RouterLink
-        to="/expenses"
-        class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
-      >
-        <Plus :size="17" aria-hidden="true" />
-        Manage expenses
-      </RouterLink>
-    </header>
+          <Plus :size="17" aria-hidden="true" />
+          Manage expenses
+        </RouterLink>
+      </template>
+    </WorkspaceHeader>
 
     <fieldset
-      class="grid gap-4 rounded-xl border border-line bg-surface px-4 py-4 shadow-card lg:grid-cols-[1fr_auto] lg:items-end"
+      class="grid gap-4 rounded-xl border border-line bg-surface-raised px-4 py-4 lg:grid-cols-[1fr_auto] lg:items-end"
     >
       <legend class="sr-only">Dashboard date range</legend>
 
@@ -323,10 +315,7 @@ onMounted(loadSummary)
       </section>
 
       <div class="grid min-w-0 gap-5 xl:grid-cols-[1.15fr_0.85fr]">
-        <section
-          data-dashboard-recent-activity
-          class="min-w-0 overflow-hidden rounded-xl border border-line bg-surface shadow-card"
-        >
+        <LedgerSurface data-dashboard-recent-activity class="overflow-hidden">
           <header
             class="flex flex-col items-start gap-3 border-b border-line px-4 py-4 sm:flex-row sm:justify-between sm:px-6"
           >
@@ -407,12 +396,9 @@ onMounted(loadSummary)
               />
             </RouterLink>
           </div>
-        </section>
+        </LedgerSurface>
 
-        <section
-          data-dashboard-category-spend
-          class="min-w-0 rounded-xl border border-line bg-surface p-4 shadow-card sm:p-6"
-        >
+        <LedgerSurface data-dashboard-category-spend class="p-4 sm:p-6">
           <div class="border-b border-line pb-4">
             <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-accent">
               Distribution
@@ -441,7 +427,7 @@ onMounted(loadSummary)
             :categories="summary.categoryBreakdown"
             :total-spend="summary.totalSpend"
           />
-        </section>
+        </LedgerSurface>
       </div>
     </template>
   </section>

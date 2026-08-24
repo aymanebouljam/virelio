@@ -76,12 +76,12 @@ const chartOptions: ChartOptions<'bar'> = {
     </div>
 
     <figcaption id="vendor-spend-chart-caption" class="sr-only">
-      Vendor spending is ranked from highest to lowest and listed with exact values below the chart.
+      Vendor spending is ranked from highest to lowest. Exact values are shown on smaller screens.
     </figcaption>
 
     <ol
       data-vendor-values
-      class="mt-0 divide-y divide-line sm:mt-5"
+      class="mt-0 divide-y divide-line sm:hidden"
       aria-label="Vendor spending values"
     >
       <li
