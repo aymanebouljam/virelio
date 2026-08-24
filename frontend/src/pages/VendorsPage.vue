@@ -6,6 +6,8 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
+  EllipsisVertical,
+  Eye,
   ExternalLink,
   Mail,
   Pencil,
@@ -24,6 +26,8 @@ import {
 } from '@/lib/vendors/schema'
 import { ZodError } from 'zod'
 import { mapZodErrors } from '@/lib/zod'
+import RecordActionSheet, { type RecordActionItem } from '@/components/ui/RecordActionSheet.vue'
+import ResponsiveFormSurface from '@/components/ui/ResponsiveFormSurface.vue'
 
 const vendors = ref<Vendor[]>([])
 const PAGE_SIZE = 6
@@ -53,6 +57,8 @@ const editingVendorId = ref<string | null>(null)
 const submitting = ref(false)
 const submitError = ref('')
 const actionError = ref('')
+const mobileActionsOpen = ref(false)
+const activeActionVendor = ref<Vendor | null>(null)
 
 const form = ref<VendorFormValues>({
   name: '',
@@ -63,6 +69,11 @@ const form = ref<VendorFormValues>({
 })
 
 const formErrors = ref<Record<string, string>>({})
+
+const mobileVendorActions = [
+  { id: 'edit', label: 'Edit vendor', icon: Pencil },
+  { id: 'archive', label: 'Archive vendor', icon: Archive, tone: 'danger' },
+] as const satisfies readonly RecordActionItem[]
 
 function readSearchQuery() {
   const value = route.query.search
@@ -207,6 +218,31 @@ function closeVendorForm() {
   resetForm()
 }
 
+function updateVendorFormOpen(open: boolean) {
+  if (!open) {
+    closeVendorForm()
+  }
+}
+
+function openMobileActions(vendorData: Vendor) {
+  activeActionVendor.value = vendorData
+  mobileActionsOpen.value = true
+}
+
+function handleMobileAction(actionId: string) {
+  const vendorData = activeActionVendor.value
+  if (!vendorData) return
+
+  mobileActionsOpen.value = false
+  activeActionVendor.value = null
+
+  if (actionId === 'edit') {
+    openEditForm(vendorData)
+  } else if (actionId === 'archive') {
+    void archive(vendorData)
+  }
+}
+
 function normalizePayload(input: VendorFormValues): VendorFormValues {
   return {
     name: input.name,
@@ -309,7 +345,7 @@ onMounted(loadVendors)
 </script>
 
 <template>
-  <section class="space-y-7">
+  <section class="min-w-0 space-y-7">
     <header class="space-y-4">
       <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -325,7 +361,7 @@ onMounted(loadVendors)
         <button
           v-if="!showVendorForm"
           type="button"
-          class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white shadow-card transition hover:bg-brand-strong"
+          class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white shadow-card transition hover:bg-brand-strong max-[375px]:w-full"
           @click="openCreateForm"
         >
           <Plus :size="17" aria-hidden="true" />
@@ -342,7 +378,7 @@ onMounted(loadVendors)
     </header>
 
     <form
-      class="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-4 shadow-card sm:flex-row sm:items-end"
+      class="flex min-w-0 flex-col gap-3 rounded-2xl border border-line bg-surface p-4 shadow-card sm:flex-row sm:items-end"
       role="search"
       @submit.prevent="applySearch"
     >
@@ -358,7 +394,7 @@ onMounted(loadVendors)
             v-model="search"
             type="search"
             maxlength="120"
-            placeholder="Name, email, phone, or website"
+            placeholder="Search vendors"
             class="min-h-10 w-full rounded-xl border border-line bg-surface py-2 pl-9 pr-3 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand"
           />
         </span>
@@ -382,189 +418,187 @@ onMounted(loadVendors)
       </button>
     </form>
 
-    <section
-      v-if="showVendorForm"
-      class="overflow-hidden rounded-2xl border border-line bg-surface shadow-lifted"
-    >
-      <header
-        class="flex items-center gap-3 border-b border-line bg-brand-soft/55 px-5 py-4 sm:px-6"
+    <div v-if="showVendorForm" data-vendor-form-panel>
+      <ResponsiveFormSurface
+        :open="showVendorForm"
+        :eyebrow="editingVendorId ? 'Revise supplier' : 'New supplier'"
+        :title="editingVendorId ? 'Edit vendor' : 'Create vendor'"
+        :description="
+          editingVendorId
+            ? 'Update this supplier and their contact details.'
+            : 'Add a supplier before linking expenses and proofs.'
+        "
+        @update:open="updateVendorFormOpen"
       >
-        <span class="flex size-10 items-center justify-center rounded-xl bg-brand text-white">
+        <template #icon>
           <Pencil v-if="editingVendorId" :size="18" aria-hidden="true" />
           <Plus v-else :size="18" aria-hidden="true" />
-        </span>
-        <div>
-          <h3 class="text-lg font-semibold tracking-tight text-ink">
-            {{ editingVendorId ? 'Edit vendor' : 'Create vendor' }}
-          </h3>
-          <p class="text-xs text-ink-muted">
-            {{
-              editingVendorId
-                ? 'Update this supplier and their contact details.'
-                : 'Add a supplier before linking expenses and proofs.'
-            }}
-          </p>
-        </div>
-      </header>
+        </template>
+        <form aria-label="Vendor form" class="space-y-5" @submit.prevent="submitVendorForm">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label class="block">
+              <span class="mb-1.5 block text-sm font-medium text-ink">Name</span>
+              <input
+                id="vendor-name"
+                v-model="form.name"
+                type="text"
+                maxlength="120"
+                :aria-describedby="formErrors.name ? 'vendor-name-error' : undefined"
+                :aria-invalid="Boolean(formErrors.name)"
+                :class="[
+                  'min-h-11 w-full rounded-xl border bg-surface px-3 py-2 text-sm text-ink outline-none transition',
+                  formErrors.name
+                    ? 'border-danger focus:border-danger'
+                    : 'border-line hover:border-line-strong focus:border-brand',
+                ]"
+              />
 
-      <form
-        aria-label="Vendor form"
-        class="space-y-5 p-5 sm:p-6"
-        @submit.prevent="submitVendorForm"
-      >
-        <div class="grid gap-4 sm:grid-cols-2">
+              <p
+                v-if="formErrors.name"
+                id="vendor-name-error"
+                class="ml-3 mt-2 text-sm text-danger"
+              >
+                {{ formErrors.name }}
+              </p>
+            </label>
+
+            <label class="block">
+              <span class="mb-1.5 block text-sm font-medium text-ink">Email</span>
+              <input
+                id="vendor-email"
+                v-model="form.email"
+                type="email"
+                maxlength="120"
+                :aria-describedby="formErrors.email ? 'vendor-email-error' : undefined"
+                :aria-invalid="Boolean(formErrors.email)"
+                :class="[
+                  'min-h-11 w-full rounded-xl border bg-surface px-3 py-2 text-sm text-ink outline-none transition',
+                  formErrors.email
+                    ? 'border-danger focus:border-danger'
+                    : 'border-line hover:border-line-strong focus:border-brand',
+                ]"
+              />
+
+              <p
+                v-if="formErrors.email"
+                id="vendor-email-error"
+                class="ml-3 mt-2 text-sm text-danger"
+              >
+                {{ formErrors.email }}
+              </p>
+            </label>
+
+            <label class="block">
+              <span class="mb-1.5 block text-sm font-medium text-ink">Phone</span>
+              <input
+                id="vendor-phone"
+                v-model="form.phone"
+                type="tel"
+                maxlength="40"
+                :aria-describedby="formErrors.phone ? 'vendor-phone-error' : undefined"
+                :aria-invalid="Boolean(formErrors.phone)"
+                :class="[
+                  'min-h-11 w-full rounded-xl border bg-surface px-3 py-2 text-sm text-ink outline-none transition',
+                  formErrors.phone
+                    ? 'border-danger focus:border-danger'
+                    : 'border-line hover:border-line-strong focus:border-brand',
+                ]"
+              />
+
+              <p
+                v-if="formErrors.phone"
+                id="vendor-phone-error"
+                class="ml-3 mt-2 text-sm text-danger"
+              >
+                {{ formErrors.phone }}
+              </p>
+            </label>
+
+            <label class="block">
+              <span class="mb-1.5 block text-sm font-medium text-ink">Website</span>
+              <input
+                id="vendor-website"
+                v-model="form.website"
+                type="url"
+                maxlength="120"
+                :aria-describedby="formErrors.website ? 'vendor-website-error' : undefined"
+                :aria-invalid="Boolean(formErrors.website)"
+                :class="[
+                  'min-h-11 w-full rounded-xl border bg-surface px-3 py-2 text-sm text-ink outline-none transition',
+                  formErrors.website
+                    ? 'border-danger focus:border-danger'
+                    : 'border-line hover:border-line-strong focus:border-brand',
+                ]"
+              />
+
+              <p
+                v-if="formErrors.website"
+                id="vendor-website-error"
+                class="ml-3 mt-2 text-sm text-danger"
+              >
+                {{ formErrors.website }}
+              </p>
+            </label>
+          </div>
+
           <label class="block">
-            <span class="mb-1.5 block text-sm font-medium text-ink">Name</span>
-            <input
-              id="vendor-name"
-              v-model="form.name"
-              type="text"
-              maxlength="120"
-              :aria-describedby="formErrors.name ? 'vendor-name-error' : undefined"
-              :aria-invalid="Boolean(formErrors.name)"
+            <span class="mb-1.5 block text-sm font-medium text-ink">Notes</span>
+            <textarea
+              id="vendor-notes"
+              v-model="form.notes"
+              rows="4"
+              maxlength="1000"
+              :aria-describedby="formErrors.notes ? 'vendor-notes-error' : undefined"
+              :aria-invalid="Boolean(formErrors.notes)"
               :class="[
-                'min-h-11 w-full rounded-xl border bg-surface px-3 py-2 text-sm text-ink outline-none transition',
-                formErrors.name
-                  ? 'border-danger focus:border-danger'
-                  : 'border-line hover:border-line-strong focus:border-brand',
-              ]"
-            />
-
-            <p v-if="formErrors.name" id="vendor-name-error" class="ml-3 mt-2 text-sm text-danger">
-              {{ formErrors.name }}
-            </p>
-          </label>
-
-          <label class="block">
-            <span class="mb-1.5 block text-sm font-medium text-ink">Email</span>
-            <input
-              id="vendor-email"
-              v-model="form.email"
-              type="email"
-              maxlength="120"
-              :aria-describedby="formErrors.email ? 'vendor-email-error' : undefined"
-              :aria-invalid="Boolean(formErrors.email)"
-              :class="[
-                'min-h-11 w-full rounded-xl border bg-surface px-3 py-2 text-sm text-ink outline-none transition',
-                formErrors.email
+                'w-full rounded-xl border bg-surface px-3 py-2 text-sm text-ink outline-none transition',
+                formErrors.notes
                   ? 'border-danger focus:border-danger'
                   : 'border-line hover:border-line-strong focus:border-brand',
               ]"
             />
 
             <p
-              v-if="formErrors.email"
-              id="vendor-email-error"
+              v-if="formErrors.notes"
+              id="vendor-notes-error"
               class="ml-3 mt-2 text-sm text-danger"
             >
-              {{ formErrors.email }}
+              {{ formErrors.notes }}
             </p>
           </label>
 
-          <label class="block">
-            <span class="mb-1.5 block text-sm font-medium text-ink">Phone</span>
-            <input
-              id="vendor-phone"
-              v-model="form.phone"
-              type="tel"
-              maxlength="40"
-              :aria-describedby="formErrors.phone ? 'vendor-phone-error' : undefined"
-              :aria-invalid="Boolean(formErrors.phone)"
-              :class="[
-                'min-h-11 w-full rounded-xl border bg-surface px-3 py-2 text-sm text-ink outline-none transition',
-                formErrors.phone
-                  ? 'border-danger focus:border-danger'
-                  : 'border-line hover:border-line-strong focus:border-brand',
-              ]"
-            />
-
-            <p
-              v-if="formErrors.phone"
-              id="vendor-phone-error"
-              class="ml-3 mt-2 text-sm text-danger"
-            >
-              {{ formErrors.phone }}
-            </p>
-          </label>
-
-          <label class="block">
-            <span class="mb-1.5 block text-sm font-medium text-ink">Website</span>
-            <input
-              id="vendor-website"
-              v-model="form.website"
-              type="url"
-              maxlength="120"
-              :aria-describedby="formErrors.website ? 'vendor-website-error' : undefined"
-              :aria-invalid="Boolean(formErrors.website)"
-              :class="[
-                'min-h-11 w-full rounded-xl border bg-surface px-3 py-2 text-sm text-ink outline-none transition',
-                formErrors.website
-                  ? 'border-danger focus:border-danger'
-                  : 'border-line hover:border-line-strong focus:border-brand',
-              ]"
-            />
-
-            <p
-              v-if="formErrors.website"
-              id="vendor-website-error"
-              class="ml-3 mt-2 text-sm text-danger"
-            >
-              {{ formErrors.website }}
-            </p>
-          </label>
-        </div>
-
-        <label class="block">
-          <span class="mb-1.5 block text-sm font-medium text-ink">Notes</span>
-          <textarea
-            id="vendor-notes"
-            v-model="form.notes"
-            rows="4"
-            maxlength="1000"
-            :aria-describedby="formErrors.notes ? 'vendor-notes-error' : undefined"
-            :aria-invalid="Boolean(formErrors.notes)"
-            :class="[
-              'w-full rounded-xl border bg-surface px-3 py-2 text-sm text-ink outline-none transition',
-              formErrors.notes
-                ? 'border-danger focus:border-danger'
-                : 'border-line hover:border-line-strong focus:border-brand',
-            ]"
-          />
-
-          <p v-if="formErrors.notes" id="vendor-notes-error" class="ml-3 mt-2 text-sm text-danger">
-            {{ formErrors.notes }}
-          </p>
-        </label>
-
-        <div
-          v-if="submitError"
-          role="alert"
-          class="rounded-2xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
-        >
-          {{ submitError }}
-        </div>
-
-        <div class="flex items-center justify-end gap-3">
-          <button
-            type="button"
-            class="min-h-11 rounded-xl px-4 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
-            @click="closeVendorForm"
+          <div
+            v-if="submitError"
+            role="alert"
+            class="rounded-2xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
           >
-            Cancel
-          </button>
+            {{ submitError }}
+          </div>
 
-          <button
-            type="submit"
-            :disabled="submitting"
-            class="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-line-strong"
+          <div
+            class="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3"
           >
-            {{ submitting ? 'Saving...' : 'Save vendor' }}
-          </button>
-        </div>
-      </form>
-    </section>
+            <button
+              type="button"
+              class="min-h-11 w-full rounded-xl px-4 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink sm:w-auto"
+              @click="closeVendorForm"
+            >
+              Cancel
+            </button>
 
-    <section class="overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
+            <button
+              type="submit"
+              :disabled="submitting"
+              class="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-line-strong sm:w-auto"
+            >
+              {{ submitting ? 'Saving...' : 'Save vendor' }}
+            </button>
+          </div>
+        </form>
+      </ResponsiveFormSurface>
+    </div>
+
+    <section class="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
       <header
         class="flex items-center justify-between gap-4 border-b border-line px-5 py-4 sm:px-6"
       >
@@ -640,70 +674,90 @@ onMounted(loadVendors)
           <article
             v-for="vendor in vendors"
             :key="vendor.id"
-            class="group px-5 py-5 transition hover:bg-surface-muted/45 sm:px-6"
+            data-vendor-record
+            class="group min-w-0 px-4 py-5 transition hover:bg-surface-muted/45 sm:px-6"
           >
-            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div class="flex min-w-0 items-start gap-3.5">
-                <span
-                  class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand"
-                >
-                  <Building2 :size="18" :stroke-width="1.8" aria-hidden="true" />
-                </span>
-                <div class="min-w-0">
+            <div
+              class="relative flex min-w-0 flex-col gap-2 md:static md:gap-4 lg:flex-row lg:items-center lg:justify-between"
+            >
+              <div class="min-w-0 pr-12 sm:pr-0">
+                <div class="flex min-w-0 items-center gap-3.5">
+                  <span
+                    class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand"
+                  >
+                    <Building2 :size="18" :stroke-width="1.8" aria-hidden="true" />
+                  </span>
                   <h4 class="truncate text-sm font-semibold text-ink sm:text-base">
                     {{ vendor.name }}
                   </h4>
-
-                  <div class="mt-1.5 flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-ink-muted">
-                    <span v-if="vendor.email" class="inline-flex items-center gap-1.5">
-                      <Mail :size="13" aria-hidden="true" />
-                      {{ vendor.email }}
-                    </span>
-                    <span v-if="vendor.phone" class="inline-flex items-center gap-1.5">
-                      <Phone :size="13" aria-hidden="true" />
-                      {{ vendor.phone }}
-                    </span>
-                    <a
-                      v-if="vendor.website"
-                      :href="vendor.website"
-                      target="_blank"
-                      rel="noopener"
-                      class="inline-flex items-center gap-1 font-semibold text-brand hover:text-brand-strong"
-                    >
-                      Website
-                      <ExternalLink :size="12" aria-hidden="true" />
-                    </a>
-                  </div>
-
-                  <p v-if="vendor.notes" class="mt-2 line-clamp-2 text-sm leading-6 text-ink-muted">
-                    {{ vendor.notes }}
-                  </p>
                 </div>
+
+                <div
+                  class="mt-2.5 grid min-w-0 grid-cols-1 gap-y-1.5 text-xs text-ink-muted sm:flex sm:flex-wrap sm:gap-x-3"
+                >
+                  <span v-if="vendor.email" class="inline-flex min-w-0 items-center gap-1.5">
+                    <Mail :size="13" aria-hidden="true" />
+                    <span data-vendor-email :title="vendor.email" class="truncate">{{
+                      vendor.email
+                    }}</span>
+                  </span>
+                  <span v-if="vendor.phone" class="inline-flex min-w-0 items-center gap-1.5">
+                    <Phone :size="13" aria-hidden="true" />
+                    <span class="truncate">{{ vendor.phone }}</span>
+                  </span>
+                  <a
+                    v-if="vendor.website"
+                    :href="vendor.website"
+                    target="_blank"
+                    rel="noopener"
+                    class="inline-flex items-center gap-1 font-semibold text-brand hover:text-brand-strong"
+                  >
+                    Website
+                    <ExternalLink :size="12" aria-hidden="true" />
+                  </a>
+                </div>
+
+                <p v-if="vendor.notes" class="mt-2 line-clamp-2 text-sm leading-6 text-ink-muted">
+                  {{ vendor.notes }}
+                </p>
               </div>
 
-              <div class="flex flex-wrap items-center gap-2 lg:justify-end">
+              <div class="flex min-w-0 flex-wrap items-center justify-end gap-2 lg:justify-end">
                 <RouterLink
                   :to="{ name: 'vendorDetails', params: { id: vendor.id } }"
-                  class="inline-flex min-h-10 items-center rounded-xl bg-brand-soft px-3 text-sm font-semibold text-brand transition hover:bg-brand hover:text-white"
+                  class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-brand-soft px-2.5 text-brand transition hover:bg-brand hover:text-white"
+                  :aria-label="`View ${vendor.name}`"
+                  title="View vendor"
                 >
-                  View
+                  <Eye :size="17" :stroke-width="1.8" aria-hidden="true" />
                 </RouterLink>
 
                 <button
                   type="button"
-                  class="inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
+                  class="hidden min-h-11 min-w-11 items-center justify-center rounded-xl bg-surface-muted px-2.5 text-ink-muted transition hover:bg-surface-muted hover:text-ink sm:inline-flex"
+                  :aria-label="`Edit ${vendor.name}`"
+                  title="Edit vendor"
                   @click="openEditForm(vendor)"
                 >
-                  <Pencil :size="14" aria-hidden="true" />
-                  Edit
+                  <Pencil :size="17" :stroke-width="1.8" aria-hidden="true" />
                 </button>
                 <button
                   type="button"
-                  class="inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-danger-soft hover:text-danger"
+                  class="hidden min-h-11 min-w-11 items-center justify-center rounded-xl bg-danger-soft px-2.5 text-danger transition hover:bg-danger hover:text-white sm:inline-flex"
+                  :aria-label="`Archive ${vendor.name}`"
+                  title="Archive vendor"
                   @click="archive(vendor)"
                 >
-                  <Archive :size="14" aria-hidden="true" />
-                  Archive
+                  <Archive :size="17" :stroke-width="1.8" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  data-mobile-vendor-actions
+                  class="absolute right-0 top-0 inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-surface px-2.5 text-ink-muted transition hover:bg-surface-muted hover:text-ink sm:hidden"
+                  :aria-label="`Actions for ${vendor.name}`"
+                  @click="openMobileActions(vendor)"
+                >
+                  <EllipsisVertical :size="18" aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -743,5 +797,13 @@ onMounted(loadVendors)
         </nav>
       </div>
     </section>
+
+    <RecordActionSheet
+      :open="mobileActionsOpen"
+      :record-label="activeActionVendor?.name ?? 'vendor'"
+      :actions="mobileVendorActions"
+      @update:open="mobileActionsOpen = $event"
+      @select="handleMobileAction"
+    />
   </section>
 </template>

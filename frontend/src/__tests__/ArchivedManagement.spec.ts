@@ -52,6 +52,21 @@ function getButton(wrapper: VueWrapper, text: string) {
   return button
 }
 
+function getVendorAction(wrapper: VueWrapper, label: string) {
+  return wrapper.get(`button[aria-label="${label} Atlas Supplies"]`)
+}
+
+function stubMobileViewport(matches = true) {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn(() => ({
+      matches,
+      addEventListener: vi.fn<() => void>(),
+      removeEventListener: vi.fn<() => void>(),
+    })),
+  )
+}
+
 async function mountPage(component: Component) {
   const wrapper = mount(component)
   await flushPromises()
@@ -113,8 +128,8 @@ describe('archived vendor management', () => {
 
     const wrapper = await mountPage(ArchivedVendorsPage)
 
-    expect(getButton(wrapper, 'Restore').attributes('aria-label')).toBe('Restore Atlas Supplies')
-    expect(getButton(wrapper, 'Remove').attributes('aria-label')).toBe('Remove Atlas Supplies')
+    expect(getVendorAction(wrapper, 'Restore').attributes('title')).toBe('Restore vendor')
+    expect(getVendorAction(wrapper, 'Remove').attributes('title')).toBe('Remove vendor')
   })
 
   it('restores a confirmed vendor', async () => {
@@ -124,7 +139,7 @@ describe('archived vendor management', () => {
     vi.stubGlobal('confirm', confirmMock)
     const wrapper = await mountPage(ArchivedVendorsPage)
 
-    await getButton(wrapper, 'Restore').trigger('click')
+    await getVendorAction(wrapper, 'Restore').trigger('click')
     await flushPromises()
 
     expect(confirmMock).toHaveBeenCalledExactlyOnceWith(
@@ -144,7 +159,7 @@ describe('archived vendor management', () => {
     )
     const wrapper = await mountPage(ArchivedVendorsPage)
 
-    await getButton(wrapper, 'Remove').trigger('click')
+    await getVendorAction(wrapper, 'Remove').trigger('click')
     await flushPromises()
 
     expect(vendorsApi.removeVendor).toHaveBeenCalledExactlyOnceWith('vendor-1')
@@ -161,11 +176,23 @@ describe('archived vendor management', () => {
     )
     const wrapper = await mountPage(ArchivedVendorsPage)
 
-    await getButton(wrapper, 'Remove').trigger('click')
+    await getVendorAction(wrapper, 'Remove').trigger('click')
     await flushPromises()
 
     expect(wrapper.get('[role="alert"]').text()).toBe('Vendor has linked expenses')
     expect(wrapper.text()).toContain('Atlas Supplies')
+  })
+
+  it('uses the shared mobile action sheet for archived vendor actions', async () => {
+    stubMobileViewport()
+    vendorsApi.fetchArchivedVendors.mockResolvedValue([atlas])
+    const wrapper = await mountPage(ArchivedVendorsPage)
+
+    await wrapper.get('[data-mobile-archived-vendor-actions]').trigger('click')
+
+    expect(wrapper.get('[role="dialog"]').text()).toContain('Actions for Atlas Supplies')
+    expect(getButton(wrapper, 'Restore vendor').exists()).toBe(true)
+    expect(getButton(wrapper, 'Remove vendor').exists()).toBe(true)
   })
 })
 

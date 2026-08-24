@@ -89,6 +89,17 @@ async function mountPage(initialRoute = '/vendors') {
   return result
 }
 
+function stubMobileViewport(matches = true) {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn(() => ({
+      matches,
+      addEventListener: vi.fn<() => void>(),
+      removeEventListener: vi.fn<() => void>(),
+    })),
+  )
+}
+
 describe('vendor management', () => {
   beforeEach(() => {
     vi.resetAllMocks()
@@ -252,6 +263,18 @@ describe('vendor management', () => {
       rel: 'noopener',
       target: '_blank',
     })
+    expect(wrapper.get('[data-vendor-record]').classes()).toContain('min-w-0')
+    expect(wrapper.get('[data-vendor-record] .mt-2\\.5').classes()).toEqual(
+      expect.arrayContaining(['grid-cols-1', 'sm:flex']),
+    )
+    expect(wrapper.get('[data-vendor-email]').classes()).toContain('truncate')
+    expect(wrapper.get('a[aria-label="View Atlas Supplies"]').attributes('title')).toBe(
+      'View vendor',
+    )
+    expect(wrapper.get('[data-vendor-record] > div').classes()).toContain('relative')
+    expect(wrapper.get('[data-mobile-vendor-actions]').classes()).toEqual(
+      expect.arrayContaining(['absolute', 'right-0', 'top-0']),
+    )
   })
 
   it('edits a vendor in place', async () => {
@@ -260,7 +283,7 @@ describe('vendor management', () => {
     vendorsApi.updateVendor.mockResolvedValue(updatedAtlas)
     const { wrapper } = await mountPage()
 
-    await getButton(wrapper, 'Edit').trigger('click')
+    await wrapper.get('button[aria-label="Edit Atlas Supplies"]').trigger('click')
     await getFormField(wrapper, 'Name').setValue('Atlas Office Supplies')
     await getVendorForm(wrapper).trigger('submit')
     await flushPromises()
@@ -276,6 +299,40 @@ describe('vendor management', () => {
     expect(wrapper.find('form[aria-label="Vendor form"]').exists()).toBe(false)
   })
 
+  it('uses the shared mobile action sheet to edit a vendor', async () => {
+    stubMobileViewport()
+    vendorsApi.fetchVendorsPage.mockResolvedValue(vendorPage([atlas]))
+    const { wrapper } = await mountPage()
+
+    await wrapper.get('[data-mobile-vendor-actions]').trigger('click')
+
+    expect(wrapper.get('[role="dialog"]').text()).toContain('Actions for Atlas Supplies')
+    await getButton(wrapper, 'Edit vendor').trigger('click')
+
+    expect(wrapper.get('[data-vendor-form-panel] h2').text()).toBe('Edit vendor')
+  })
+
+  it('archives a vendor from the shared mobile action sheet', async () => {
+    stubMobileViewport()
+    vendorsApi.fetchVendorsPage
+      .mockResolvedValueOnce(vendorPage([atlas]))
+      .mockResolvedValueOnce(vendorPage([]))
+    vendorsApi.archiveVendor.mockResolvedValue(vendor({ archivedAt: '2026-08-04T10:00:00.000Z' }))
+    const confirmMock = vi.fn<() => boolean>(() => true)
+    vi.stubGlobal('confirm', confirmMock)
+    const { wrapper } = await mountPage()
+
+    await wrapper.get('[data-mobile-vendor-actions]').trigger('click')
+    await getButton(wrapper, 'Archive vendor').trigger('click')
+    await flushPromises()
+
+    expect(confirmMock).toHaveBeenCalledExactlyOnceWith(
+      'Are you sure you want to archive this vendor?',
+    )
+    expect(vendorsApi.archiveVendor).toHaveBeenCalledExactlyOnceWith('vendor-1')
+    expect(wrapper.text()).toContain('No vendors yet')
+  })
+
   it('archives a confirmed vendor', async () => {
     vendorsApi.fetchVendorsPage
       .mockResolvedValueOnce(vendorPage([atlas]))
@@ -285,7 +342,7 @@ describe('vendor management', () => {
     vi.stubGlobal('confirm', confirmMock)
     const { wrapper } = await mountPage()
 
-    await getButton(wrapper, 'Archive').trigger('click')
+    await wrapper.get('button[aria-label="Archive Atlas Supplies"]').trigger('click')
     await flushPromises()
 
     expect(confirmMock).toHaveBeenCalledExactlyOnceWith(

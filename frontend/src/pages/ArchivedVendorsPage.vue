@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { ArchiveRestore, Building2, Trash2 } from '@lucide/vue'
+import { ArchiveRestore, Building2, EllipsisVertical, Trash2 } from '@lucide/vue'
 import { fetchArchivedVendors, removeVendor, restoreVendor } from '@/lib/vendors/api'
 import { ApiError } from '@/lib/api'
 import { formatDateTime } from '@/lib/helpers'
 import { vendorSchema, type Vendor } from '@/lib/vendors/schema'
+import RecordActionSheet, { type RecordActionItem } from '@/components/ui/RecordActionSheet.vue'
 
 const vendors = ref<Vendor[]>([])
 const loading = ref(true)
@@ -12,6 +13,13 @@ const error = ref('')
 const actionError = ref('')
 const restoringId = ref<string | null>(null)
 const removingId = ref<string | null>(null)
+const mobileActionsOpen = ref(false)
+const activeActionVendor = ref<Vendor | null>(null)
+
+const mobileVendorActions = [
+  { id: 'restore', label: 'Restore vendor', icon: ArchiveRestore },
+  { id: 'remove', label: 'Remove vendor', icon: Trash2, tone: 'danger' },
+] as const satisfies readonly RecordActionItem[]
 
 async function loadArchivedVendors() {
   try {
@@ -71,11 +79,30 @@ async function remove(vendor: Vendor) {
   }
 }
 
+function openMobileActions(vendor: Vendor) {
+  activeActionVendor.value = vendor
+  mobileActionsOpen.value = true
+}
+
+function handleMobileAction(actionId: string) {
+  const vendor = activeActionVendor.value
+  if (!vendor) return
+
+  mobileActionsOpen.value = false
+  activeActionVendor.value = null
+
+  if (actionId === 'restore') {
+    void restore(vendor)
+  } else if (actionId === 'remove') {
+    void remove(vendor)
+  }
+}
+
 onMounted(loadArchivedVendors)
 </script>
 
 <template>
-  <section class="space-y-6">
+  <section class="min-w-0 space-y-6">
     <header class="space-y-4 border-b border-line pb-6">
       <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
         Vendor archive
@@ -103,7 +130,7 @@ onMounted(loadArchivedVendors)
       </div>
     </header>
 
-    <section class="overflow-hidden rounded-xl border border-line bg-surface shadow-card">
+    <section class="min-w-0 overflow-hidden rounded-xl border border-line bg-surface shadow-card">
       <header class="border-b border-line px-5 py-4 sm:px-6">
         <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
           Inactive vendors
@@ -155,24 +182,30 @@ onMounted(loadArchivedVendors)
           v-for="vendor in vendors"
           :key="vendor.id"
           data-archived-vendor-record
-          class="relative px-5 py-5 transition hover:bg-surface-muted/45 sm:px-6"
+          class="relative min-w-0 px-4 py-5 transition hover:bg-surface-muted/45 sm:px-6"
         >
           <span class="absolute inset-y-0 left-0 w-0.5 bg-line-strong" aria-hidden="true" />
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div class="flex min-w-0 items-start gap-3.5">
+          <div
+            class="relative flex min-w-0 flex-col gap-2 md:static md:gap-4 lg:flex-row lg:items-center lg:justify-between"
+          >
+            <div class="flex min-w-0 items-center gap-3.5 pr-12 sm:pr-0">
               <span
                 class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-ink-muted"
               >
                 <Building2 :size="17" aria-hidden="true" />
               </span>
               <div class="min-w-0">
-                <h3 class="text-base font-semibold tracking-[-0.015em] text-ink">
+                <h3 class="truncate text-base font-semibold tracking-[-0.015em] text-ink">
                   {{ vendor.name }}
                 </h3>
 
-                <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-muted">
-                  <span v-if="vendor.email">{{ vendor.email }}</span>
-                  <span v-if="vendor.phone">{{ vendor.phone }}</span>
+                <div
+                  class="mt-2.5 grid min-w-0 grid-cols-1 gap-y-1.5 text-xs text-ink-muted sm:flex sm:flex-wrap sm:gap-x-3"
+                >
+                  <span v-if="vendor.email" :title="vendor.email" class="truncate">
+                    {{ vendor.email }}
+                  </span>
+                  <span v-if="vendor.phone" class="truncate">{{ vendor.phone }}</span>
                   <a
                     v-if="vendor.website"
                     :href="vendor.website"
@@ -197,35 +230,52 @@ onMounted(loadArchivedVendors)
               </div>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2 sm:flex-nowrap lg:justify-end">
+            <div class="flex min-w-0 flex-wrap items-center justify-end gap-2 lg:justify-end">
               <button
                 type="button"
                 :aria-label="`Restore ${vendor.name}`"
+                title="Restore vendor"
                 :disabled="restoringId === vendor.id"
-                class="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-brand-soft px-3 text-sm font-semibold text-brand transition hover:bg-brand hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                class="hidden min-h-11 min-w-11 items-center justify-center rounded-xl bg-brand-soft px-2.5 text-brand transition hover:bg-brand hover:text-white disabled:cursor-not-allowed disabled:opacity-60 sm:inline-flex"
                 @click="restore(vendor)"
               >
-                <ArchiveRestore :size="14" aria-hidden="true" />
-                {{ restoringId === vendor.id ? 'Restoring...' : 'Restore' }}
+                <ArchiveRestore :size="17" :stroke-width="1.8" aria-hidden="true" />
               </button>
               <button
                 type="button"
                 :aria-label="`Remove ${vendor.name}`"
+                title="Remove vendor"
                 :disabled="removingId === vendor.id"
-                class="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-danger-soft hover:text-danger disabled:cursor-not-allowed disabled:opacity-60"
+                class="hidden min-h-11 min-w-11 items-center justify-center rounded-xl bg-danger-soft px-2.5 text-danger transition hover:bg-danger hover:text-white disabled:cursor-not-allowed disabled:opacity-60 sm:inline-flex"
                 @click="remove(vendor)"
               >
-                <Trash2 :size="14" aria-hidden="true" />
-                {{ removingId === vendor.id ? 'Removing...' : 'Remove' }}
+                <Trash2 :size="17" :stroke-width="1.8" aria-hidden="true" />
               </button>
 
               <span class="border-l-2 border-line-strong pl-2 text-xs font-semibold text-ink-muted">
                 Archived
               </span>
+              <button
+                type="button"
+                data-mobile-archived-vendor-actions
+                class="absolute right-0 top-0 inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-surface px-2.5 text-ink-muted transition hover:bg-surface-muted hover:text-ink sm:hidden"
+                :aria-label="`Actions for ${vendor.name}`"
+                @click="openMobileActions(vendor)"
+              >
+                <EllipsisVertical :size="18" aria-hidden="true" />
+              </button>
             </div>
           </div>
         </article>
       </div>
     </section>
+
+    <RecordActionSheet
+      :open="mobileActionsOpen"
+      :record-label="activeActionVendor?.name ?? 'vendor'"
+      :actions="mobileVendorActions"
+      @update:open="mobileActionsOpen = $event"
+      @select="handleMobileAction"
+    />
   </section>
 </template>
