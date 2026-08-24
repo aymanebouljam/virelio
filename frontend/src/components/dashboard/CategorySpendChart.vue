@@ -77,9 +77,9 @@ function categoryShare(totalAmount: string) {
 </script>
 
 <template>
-  <figure aria-labelledby="category-spend-chart-title">
-    <div class="h-52" aria-hidden="true">
-      <Bar :data="chartData" :options="chartOptions" />
+  <figure aria-labelledby="category-spend-chart-title" class="min-w-0">
+    <div class="h-48 min-w-0 sm:h-52" aria-hidden="true">
+      <Bar class="block !h-full !w-full" :data="chartData" :options="chartOptions" />
     </div>
 
     <figcaption id="category-spend-chart-title" class="sr-only">

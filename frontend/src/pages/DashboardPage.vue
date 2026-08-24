@@ -104,7 +104,7 @@ onMounted(loadSummary)
 </script>
 
 <template>
-  <section class="space-y-6">
+  <section class="min-w-0 space-y-6">
     <header
       class="flex flex-col gap-5 border-b border-line pb-6 lg:flex-row lg:items-end lg:justify-between"
     >
@@ -148,8 +148,8 @@ onMounted(loadSummary)
         </div>
       </div>
 
-      <div class="grid grid-cols-2 gap-3 sm:flex sm:items-end">
-        <div class="flex flex-col gap-1.5">
+      <div class="grid grid-cols-2 gap-3 max-[375px]:grid-cols-1 sm:flex sm:items-end">
+        <div class="flex min-w-0 flex-col gap-1.5">
           <label for="dashboard-date-from" class="text-xs font-medium text-ink-muted">From</label>
           <input
             id="dashboard-date-from"
@@ -157,7 +157,7 @@ onMounted(loadSummary)
             type="date"
             :aria-describedby="dateRangeError ? 'dashboard-date-range-error' : undefined"
             :aria-invalid="Boolean(dateRangeError)"
-            class="min-h-10 rounded-lg border border-line bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand focus:bg-surface"
+            class="min-h-10 w-full min-w-0 rounded-lg border border-line bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand focus:bg-surface sm:w-auto"
             @change="
               updateDateRange({
                 dateFrom: ($event.target as HTMLInputElement).value,
@@ -167,7 +167,7 @@ onMounted(loadSummary)
           />
         </div>
 
-        <div class="flex flex-col gap-1.5">
+        <div class="flex min-w-0 flex-col gap-1.5">
           <label for="dashboard-date-to" class="text-xs font-medium text-ink-muted">To</label>
           <input
             id="dashboard-date-to"
@@ -175,7 +175,7 @@ onMounted(loadSummary)
             type="date"
             :aria-describedby="dateRangeError ? 'dashboard-date-range-error' : undefined"
             :aria-invalid="Boolean(dateRangeError)"
-            class="min-h-10 rounded-lg border border-line bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand focus:bg-surface"
+            class="min-h-10 w-full min-w-0 rounded-lg border border-line bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand focus:bg-surface sm:w-auto"
             @change="
               updateDateRange({
                 dateFrom: dateFrom,
@@ -188,7 +188,7 @@ onMounted(loadSummary)
         <button
           v-if="hasDateRange"
           type="button"
-          class="col-span-2 min-h-10 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink sm:col-span-1"
+          class="col-span-2 min-h-10 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink max-[375px]:col-span-1 sm:col-span-1"
           @click="updateDateRange({ dateFrom: undefined, dateTo: undefined })"
         >
           Clear
@@ -322,10 +322,13 @@ onMounted(loadSummary)
         </article>
       </section>
 
-      <div class="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
-        <section class="overflow-hidden rounded-xl border border-line bg-surface shadow-card">
+      <div class="grid min-w-0 gap-5 xl:grid-cols-[1.15fr_0.85fr]">
+        <section
+          data-dashboard-recent-activity
+          class="min-w-0 overflow-hidden rounded-xl border border-line bg-surface shadow-card"
+        >
           <header
-            class="flex items-start justify-between gap-4 border-b border-line px-5 py-4 sm:px-6"
+            class="flex flex-col items-start gap-3 border-b border-line px-4 py-4 sm:flex-row sm:justify-between sm:px-6"
           >
             <div>
               <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-accent">
@@ -338,7 +341,7 @@ onMounted(loadSummary)
             </div>
             <RouterLink
               to="/expenses"
-              class="hidden items-center gap-1.5 text-sm font-semibold text-brand hover:text-brand-strong sm:inline-flex"
+              class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand hover:text-brand-strong"
             >
               View all
               <ArrowRight :size="15" aria-hidden="true" />
@@ -364,12 +367,12 @@ onMounted(loadSummary)
             </RouterLink>
           </div>
 
-          <div v-else class="relative divide-y divide-line border-l-2 border-l-accent/70">
+          <div v-else class="relative min-w-0 divide-y divide-line border-l-2 border-l-accent/70">
             <RouterLink
               v-for="item in summary.recentActivity"
               :key="`${item.type}-${item.id}`"
               :to="`/expenses/${item.expenseId}`"
-              class="group flex items-center gap-4 px-5 py-4 transition hover:bg-surface-muted/55 sm:px-6"
+              class="group grid min-w-0 grid-cols-[2.25rem_minmax(0,1fr)_1.25rem] items-center gap-3 px-4 py-4 transition hover:bg-surface-muted/55 sm:grid-cols-[2.25rem_minmax(0,1fr)_1.25rem] sm:px-6"
             >
               <span
                 class="flex size-9 shrink-0 items-center justify-center rounded-lg"
@@ -381,9 +384,11 @@ onMounted(loadSummary)
                 <ReceiptText v-else :size="18" aria-hidden="true" />
               </span>
 
-              <div class="min-w-0 flex-1">
+              <div class="min-w-0">
                 <div class="flex items-center gap-2">
-                  <p class="truncate text-sm font-semibold text-ink">{{ item.title }}</p>
+                  <p class="min-w-0 flex-1 truncate text-sm font-semibold text-ink">
+                    {{ item.title }}
+                  </p>
                   <span
                     class="shrink-0 border-l border-line-strong pl-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-muted"
                   >
@@ -404,7 +409,10 @@ onMounted(loadSummary)
           </div>
         </section>
 
-        <section class="rounded-xl border border-line bg-surface p-5 shadow-card sm:p-6">
+        <section
+          data-dashboard-category-spend
+          class="min-w-0 rounded-xl border border-line bg-surface p-4 shadow-card sm:p-6"
+        >
           <div class="border-b border-line pb-4">
             <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-accent">
               Distribution

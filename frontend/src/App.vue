@@ -318,7 +318,7 @@ watch(
 
         <DialogOverlay class="fixed inset-0 z-40 bg-brand-strong/55 backdrop-blur-[2px]" />
         <DialogContent
-          class="fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-2xl border-t border-line bg-surface px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-16px_48px_rgba(31,43,66,0.2)] focus:outline-none sm:inset-x-auto sm:left-1/2 sm:w-full sm:max-w-xl sm:-translate-x-1/2"
+          class="fixed inset-x-3 bottom-0 z-50 max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-2xl border-t border-line bg-surface px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-16px_48px_rgba(31,43,66,0.2)] focus:outline-none sm:inset-x-auto sm:left-1/2 sm:w-full sm:max-w-xl sm:-translate-x-1/2"
         >
           <div class="mx-auto h-1 w-10 rounded-full bg-line-strong" aria-hidden="true" />
           <div class="mt-4 flex items-start justify-between gap-4">
