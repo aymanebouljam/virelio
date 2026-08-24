@@ -136,6 +136,8 @@ describe('dashboard workflows', () => {
     expect(wrapper.get('[aria-label="Category spending values"]').element.tagName).toBe('OL')
     expect(wrapper.get('[data-category-value="Travel"]').text()).toContain('$300.00')
     expect(wrapper.get('[data-category-value="Travel"]').text()).toContain('71%')
+    expect(wrapper.get('[data-dashboard-recent-activity]').classes()).toContain('min-w-0')
+    expect(wrapper.get('[data-dashboard-category-spend]').classes()).toContain('min-w-0')
   })
 
   it('renders empty dashboard sections', async () => {

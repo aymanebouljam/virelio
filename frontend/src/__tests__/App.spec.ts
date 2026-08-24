@@ -91,10 +91,12 @@ describe('App', () => {
     const { wrapper } = await mountWithRouter(App, routes)
     const mobileNavigation = wrapper.get('nav[aria-label="Mobile navigation"]')
 
+    expect(mobileNavigation.classes()).toContain('grid-cols-5')
     expect(mobileNavigation.get('a[href="/"]').text()).toContain('Dashboard')
     expect(mobileNavigation.get('a[href="/expenses"]').text()).toContain('Expenses')
     expect(mobileNavigation.get('a[href="/recurring-expenses"]').text()).toContain('Recurring')
     expect(mobileNavigation.get('a[href="/reports"]').text()).toContain('Reports')
+    expect(mobileNavigation.get('button[aria-label="More navigation"]').text()).toContain('More')
   })
 
   it('opens secondary navigation in the mobile more sheet', async () => {
@@ -112,6 +114,7 @@ describe('App', () => {
     expect(wrapper.get('[role="dialog"]').text()).toContain(
       'Organization, archives, and account settings.',
     )
+    expect(wrapper.get('[role="dialog"]').classes()).toContain('inset-x-3')
     expect(wrapper.get('nav[aria-label="More navigation"]').text()).toContain('Vendors')
     expect(wrapper.get('nav[aria-label="More navigation"]').text()).toContain('Categories')
     expect(wrapper.get('nav[aria-label="Mobile archived records"]').text()).toContain(

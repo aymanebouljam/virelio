@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Ellipsis,
+  Eye,
   Filter,
   Pencil,
   Plus,
@@ -435,7 +436,7 @@ onMounted(loadExpensesPage)
 </script>
 
 <template>
-  <section class="space-y-6">
+  <section class="min-w-0 space-y-6">
     <header class="space-y-4 border-b border-line pb-6">
       <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -455,7 +456,7 @@ onMounted(loadExpensesPage)
         <button
           v-if="!showForm"
           type="button"
-          class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
+          class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong max-[375px]:w-full"
           @click="openCreateForm"
         >
           <Plus :size="17" aria-hidden="true" />
@@ -476,7 +477,7 @@ onMounted(loadExpensesPage)
       class="rounded-xl border border-line border-l-2 bg-surface p-4 shadow-card md:hidden"
       :class="hasFilters ? 'border-l-accent' : 'border-l-line-strong'"
     >
-      <div class="flex items-end gap-2">
+      <div class="flex items-end gap-2 max-[375px]:flex-col max-[375px]:items-stretch">
         <label class="min-w-0 flex-1">
           <span class="mb-1.5 block text-xs font-medium text-ink-muted">Search expenses</span>
           <span class="relative block">
@@ -486,10 +487,11 @@ onMounted(loadExpensesPage)
               class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted/65"
             />
             <input
+              data-mobile-expense-search
               v-model="filters.search"
               type="search"
               maxlength="240"
-              placeholder="Description, notes, vendor..."
+              placeholder="Search expenses"
               class="min-h-11 w-full rounded-lg border border-line bg-surface-raised py-2 pl-9 pr-3 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand focus:bg-surface"
             />
           </span>
@@ -498,7 +500,7 @@ onMounted(loadExpensesPage)
         <button
           type="button"
           data-mobile-filter-trigger
-          class="inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-sm font-semibold text-brand transition hover:border-line-strong hover:bg-surface-muted"
+          class="inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-sm font-semibold text-brand transition hover:border-line-strong hover:bg-surface-muted max-[375px]:w-full"
           :aria-label="
             activeFilterCount ? `Open filters, ${activeFilterCount} active` : 'Open filters'
           "
@@ -905,7 +907,10 @@ onMounted(loadExpensesPage)
       </ResponsiveFormSurface>
     </div>
 
-    <section class="overflow-hidden rounded-xl border border-line bg-surface shadow-card">
+    <section
+      data-expense-ledger
+      class="min-w-0 overflow-hidden rounded-xl border border-line bg-surface shadow-card"
+    >
       <header
         class="flex items-center justify-between gap-4 border-b border-line px-5 py-4 sm:px-6"
       >
@@ -986,13 +991,13 @@ onMounted(loadExpensesPage)
             v-for="expense in expenses"
             :key="expense.id"
             data-expense-record
-            class="group relative px-5 py-5 transition hover:bg-surface-muted/45 sm:px-6"
+            class="group relative min-w-0 px-4 py-5 transition hover:bg-surface-muted/45 sm:px-6"
           >
             <span
               class="absolute inset-y-0 left-0 w-0.5 bg-transparent transition group-hover:bg-accent"
               aria-hidden="true"
             />
-            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div class="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div class="flex min-w-0 items-start gap-3.5">
                 <span
                   class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand"
@@ -1003,18 +1008,24 @@ onMounted(loadExpensesPage)
                   <h4 class="truncate text-sm font-semibold text-ink sm:text-base">
                     {{ expense.description }}
                   </h4>
-                  <div class="mt-1.5 flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-ink-muted">
-                    <span class="inline-flex items-center gap-1.5">
+                  <div
+                    class="mt-1.5 grid min-w-0 grid-cols-1 gap-y-1.5 text-xs text-ink-muted sm:flex sm:flex-wrap sm:gap-x-3"
+                  >
+                    <span class="inline-flex min-w-0 max-w-full items-center gap-1.5">
                       <Store :size="13" aria-hidden="true" />
-                      {{ vendorNameById.get(expense.vendorId) ?? 'Unknown vendor' }}
+                      <span class="truncate">{{
+                        vendorNameById.get(expense.vendorId) ?? 'Unknown vendor'
+                      }}</span>
                     </span>
-                    <span class="inline-flex items-center gap-1.5">
+                    <span class="inline-flex min-w-0 max-w-full items-center gap-1.5">
                       <Tags :size="13" aria-hidden="true" />
-                      {{ categoryNameById.get(expense.categoryId ?? '') ?? 'No category' }}
+                      <span class="truncate">
+                        {{ categoryNameById.get(expense.categoryId ?? '') ?? 'No category' }}
+                      </span>
                     </span>
-                    <span class="inline-flex items-center gap-1.5">
+                    <span class="inline-flex min-w-0 max-w-full items-center gap-1.5">
                       <CalendarDays :size="13" aria-hidden="true" />
-                      {{ formatDate(expense.expenseDate) }}
+                      <span class="truncate">{{ formatDate(expense.expenseDate) }}</span>
                     </span>
                   </div>
                   <p v-if="expense.notes" class="mt-2 line-clamp-2 text-sm text-ink-muted">
@@ -1024,7 +1035,7 @@ onMounted(loadExpensesPage)
               </div>
 
               <div
-                class="flex flex-wrap items-center justify-between gap-3 sm:flex-nowrap lg:justify-end"
+                class="flex min-w-0 flex-wrap items-center justify-between gap-3 sm:flex-nowrap lg:justify-end"
               >
                 <span
                   class="font-figure mr-auto text-lg font-semibold tracking-[-0.025em] text-ink sm:mr-2"
@@ -1034,10 +1045,12 @@ onMounted(loadExpensesPage)
 
                 <button
                   type="button"
-                  class="inline-flex min-h-10 items-center rounded-lg bg-brand-soft px-3 text-sm font-semibold text-brand transition hover:bg-brand hover:text-white"
+                  class="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg bg-brand-soft px-2.5 text-brand transition hover:bg-brand hover:text-white"
+                  :aria-label="`View ${expense.description}`"
+                  title="View expense"
                   @click="openExpense(expense)"
                 >
-                  View
+                  <Eye :size="17" :stroke-width="1.8" aria-hidden="true" />
                 </button>
 
                 <button
