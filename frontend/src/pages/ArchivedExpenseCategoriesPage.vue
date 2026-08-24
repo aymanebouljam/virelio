@@ -194,7 +194,7 @@ onMounted(loadArchivedCategories)
           <div
             class="relative flex min-w-0 flex-col gap-2 md:static md:gap-4 sm:flex-row sm:items-center sm:justify-between"
           >
-            <div class="flex min-w-0 items-center gap-3.5 pr-12 sm:pr-0">
+            <div class="flex min-w-0 items-center gap-3.5">
               <span
                 class="relative flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-ink-muted"
               >
@@ -247,7 +247,7 @@ onMounted(loadArchivedCategories)
               <button
                 type="button"
                 data-mobile-archived-category-actions
-                class="absolute right-0 top-0 inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-surface px-2.5 text-ink-muted transition hover:bg-surface-muted hover:text-ink sm:hidden"
+                class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-line bg-surface px-2.5 text-ink-muted transition hover:border-line-strong hover:bg-surface-muted hover:text-ink sm:hidden"
                 :aria-label="`Actions for ${category.name}`"
                 @click="openMobileActions(category)"
               >

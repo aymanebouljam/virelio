@@ -6,7 +6,7 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
-  Ellipsis,
+  EllipsisVertical,
   Eye,
   Filter,
   Pencil,
@@ -1086,7 +1086,7 @@ onMounted(loadExpensesPage)
                   :aria-label="`Actions for ${expense.description}`"
                   @click="openMobileActions(expense)"
                 >
-                  <Ellipsis :size="18" aria-hidden="true" />
+                  <EllipsisVertical :size="18" aria-hidden="true" />
                 </button>
               </div>
             </div>

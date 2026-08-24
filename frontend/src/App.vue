@@ -318,15 +318,17 @@ watch(
 
         <DialogOverlay class="fixed inset-0 z-40 bg-brand-strong/55 backdrop-blur-[2px]" />
         <DialogContent
-          class="fixed inset-x-3 bottom-0 z-50 max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-2xl border-t border-line bg-surface px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-16px_48px_rgba(31,43,66,0.2)] focus:outline-none sm:inset-x-auto sm:left-1/2 sm:w-full sm:max-w-xl sm:-translate-x-1/2"
+          class="fixed inset-x-3 bottom-0 z-50 max-h-[85dvh] min-w-0 overflow-y-auto overscroll-contain rounded-t-2xl border-t border-line bg-surface px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-16px_48px_rgba(31,43,66,0.2)] focus:outline-none sm:inset-x-auto sm:left-1/2 sm:w-full sm:max-w-xl sm:-translate-x-1/2"
         >
           <div class="mx-auto h-1 w-10 rounded-full bg-line-strong" aria-hidden="true" />
-          <div class="mt-4 flex items-start justify-between gap-4">
-            <div>
-              <DialogTitle class="font-display text-xl font-semibold tracking-tight text-ink">
+          <div class="mt-4 flex min-w-0 items-start justify-between gap-4">
+            <div class="min-w-0">
+              <DialogTitle
+                class="font-display break-words text-xl font-semibold tracking-tight text-ink"
+              >
                 More
               </DialogTitle>
-              <DialogDescription class="mt-1 text-sm text-ink-muted">
+              <DialogDescription class="mt-1 break-words text-sm text-ink-muted">
                 Organization, archives, and account settings.
               </DialogDescription>
             </div>
@@ -338,15 +340,18 @@ watch(
             </DialogClose>
           </div>
 
-          <nav aria-label="More navigation" class="mt-5 grid grid-cols-2 gap-2">
+          <nav
+            aria-label="More navigation"
+            class="mt-5 grid grid-cols-1 gap-2 min-[375px]:grid-cols-2"
+          >
             <RouterLink
               v-for="item in primaryNavigationGroups[1]?.items ?? []"
               :key="item.to"
               :to="item.to"
-              class="flex min-h-12 items-center gap-3 rounded-xl border border-line bg-canvas px-3 text-sm font-medium text-ink transition hover:border-line-strong"
+              class="flex min-h-12 min-w-0 items-center gap-3 rounded-xl border border-line bg-canvas px-3 text-sm font-medium text-ink transition hover:border-line-strong"
             >
               <component :is="item.icon" :size="18" :stroke-width="1.8" aria-hidden="true" />
-              {{ item.label }}
+              <span class="min-w-0 break-words">{{ item.label }}</span>
             </RouterLink>
           </nav>
 
@@ -354,15 +359,18 @@ watch(
             <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
               Archived records
             </p>
-            <nav aria-label="Mobile archived records" class="mt-2 grid grid-cols-2 gap-x-3">
+            <nav
+              aria-label="Mobile archived records"
+              class="mt-2 grid grid-cols-1 gap-x-3 min-[375px]:grid-cols-2"
+            >
               <RouterLink
                 v-for="item in archiveNavigation"
                 :key="item.to"
                 :to="item.to"
-                class="flex min-h-11 items-center gap-2 text-sm text-ink-muted transition-colors hover:text-ink"
+                class="flex min-h-11 min-w-0 items-center gap-2 text-sm text-ink-muted transition-colors hover:text-ink"
               >
                 <component :is="item.icon" :size="16" :stroke-width="1.8" aria-hidden="true" />
-                {{ item.label }}
+                <span class="min-w-0 break-words">{{ item.label }}</span>
               </RouterLink>
             </nav>
           </section>

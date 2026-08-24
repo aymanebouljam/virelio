@@ -397,7 +397,7 @@ onMounted(loadExpense)
               v-for="proof in expense.proofs"
               :key="proof.id"
               data-proof-record
-              class="relative grid min-w-0 gap-3 py-4 pl-4 pr-12 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-4 sm:pr-0"
+              class="relative grid min-w-0 gap-3 py-4 pb-14 pl-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-4 sm:py-4"
             >
               <div class="flex min-w-0 items-start gap-3">
                 <span
@@ -448,7 +448,7 @@ onMounted(loadExpense)
               <button
                 type="button"
                 data-mobile-proof-actions
-                class="absolute right-0 top-4 inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-surface px-2.5 text-ink-muted transition hover:bg-surface-muted hover:text-ink sm:hidden"
+                class="absolute bottom-0 right-0 inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-line bg-surface px-2.5 text-ink-muted transition hover:border-line-strong hover:bg-surface-muted hover:text-ink sm:hidden"
                 :aria-label="`Actions for ${proof.originalName}`"
                 @click="openMobileProofActions(proof)"
               >

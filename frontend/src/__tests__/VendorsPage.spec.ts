@@ -273,7 +273,7 @@ describe('vendor management', () => {
     )
     expect(wrapper.get('[data-vendor-record] > div').classes()).toContain('relative')
     expect(wrapper.get('[data-mobile-vendor-actions]').classes()).toEqual(
-      expect.arrayContaining(['absolute', 'right-0', 'top-0']),
+      expect.arrayContaining(['border', 'border-line']),
     )
   })
 
