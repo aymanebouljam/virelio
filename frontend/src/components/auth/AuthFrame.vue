@@ -12,11 +12,11 @@ defineProps<{
 
 <template>
   <section
-    class="mx-auto grid w-full max-w-5xl overflow-hidden rounded-3xl border border-line bg-surface shadow-lifted lg:grid-cols-[0.95fr_1.05fr]"
+    class="mx-auto grid w-full max-w-lg overflow-hidden rounded-3xl border border-line bg-surface shadow-lifted lg:max-w-5xl lg:grid-cols-[0.95fr_1.05fr]"
   >
     <aside
       aria-label="Account benefits"
-      class="relative flex flex-col bg-brand-strong px-6 py-8 text-white sm:px-8 lg:min-h-[620px] lg:p-10"
+      class="relative hidden flex-col bg-brand-strong px-6 py-8 text-white sm:px-8 lg:flex lg:min-h-[620px] lg:p-10"
     >
       <div aria-label="Virelio brand" class="flex items-center gap-3">
         <span class="flex size-9 items-center justify-center rounded-lg bg-surface shadow-card">
@@ -62,6 +62,22 @@ defineProps<{
     </aside>
 
     <div class="flex flex-col justify-center px-6 py-8 sm:p-10 lg:px-12 lg:py-14">
+      <div data-auth-compact-brand class="mb-7 flex items-center gap-3 lg:hidden">
+        <span class="flex size-12 items-center justify-center rounded-lg">
+          <img src="/logo-mark.svg" alt="" class="size-12" />
+        </span>
+        <span>
+          <span class="block text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted">
+            Evidence ledger
+          </span>
+          <span
+            class="font-display mt-0.5 block text-xl font-semibold tracking-[-0.025em] text-ink"
+          >
+            Virelio
+          </span>
+        </span>
+      </div>
+
       <header>
         <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
           {{ formEyebrow }}
