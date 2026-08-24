@@ -152,6 +152,10 @@ function getButton(wrapper: VueWrapper, text: string) {
   return button
 }
 
+function getArchivedRecurringAction(wrapper: VueWrapper, label: string) {
+  return wrapper.get(`button[aria-label="${label} ${archivedTemplate.description}"]`)
+}
+
 function getFormField(wrapper: VueWrapper, label: string) {
   const field = wrapper
     .findAll('label')
@@ -463,11 +467,11 @@ describe('archived recurring expense management', () => {
     expect(wrapper.findAll('[data-archived-recurring-record]')).toHaveLength(1)
     expect(wrapper.text()).toContain(archivedTemplate.description)
     expect(wrapper.text()).toContain(atlas.name)
-    expect(getButton(wrapper, 'Restore').attributes('aria-label')).toBe(
-      `Restore ${archivedTemplate.description}`,
+    expect(getArchivedRecurringAction(wrapper, 'Restore').attributes('title')).toBe(
+      'Restore schedule',
     )
-    expect(getButton(wrapper, 'Remove').attributes('aria-label')).toBe(
-      `Remove ${archivedTemplate.description}`,
+    expect(getArchivedRecurringAction(wrapper, 'Remove').attributes('title')).toBe(
+      'Remove schedule',
     )
   })
 
@@ -480,7 +484,7 @@ describe('archived recurring expense management', () => {
     )
     const wrapper = await mountArchived()
 
-    await getButton(wrapper, 'Restore').trigger('click')
+    await getArchivedRecurringAction(wrapper, 'Restore').trigger('click')
     await flushPromises()
 
     expect(recurringApi.restoreRecurringExpense).toHaveBeenCalledExactlyOnceWith(
@@ -498,7 +502,7 @@ describe('archived recurring expense management', () => {
     )
     const wrapper = await mountArchived()
 
-    await getButton(wrapper, 'Remove').trigger('click')
+    await getArchivedRecurringAction(wrapper, 'Remove').trigger('click')
     await flushPromises()
 
     expect(recurringApi.removeRecurringExpense).toHaveBeenCalledExactlyOnceWith(archivedTemplate.id)
@@ -516,10 +520,24 @@ describe('archived recurring expense management', () => {
     )
     const wrapper = await mountArchived()
 
-    await getButton(wrapper, 'Remove').trigger('click')
+    await getArchivedRecurringAction(wrapper, 'Remove').trigger('click')
     await flushPromises()
 
     expect(wrapper.get('[role="alert"]').text()).toBe('Recurring expense could not be removed')
     expect(wrapper.text()).toContain(archivedTemplate.description)
+  })
+
+  it('uses the shared mobile action sheet for archived recurring actions', async () => {
+    stubMobileViewport()
+    recurringApi.fetchArchivedRecurringExpenses.mockResolvedValue([archivedTemplate])
+    const wrapper = await mountArchived()
+
+    await wrapper.get('[data-mobile-archived-recurring-actions]').trigger('click')
+
+    expect(wrapper.get('[role="dialog"]').text()).toContain(
+      `Actions for ${archivedTemplate.description}`,
+    )
+    expect(getButton(wrapper, 'Restore schedule').exists()).toBe(true)
+    expect(getButton(wrapper, 'Remove schedule').exists()).toBe(true)
   })
 })

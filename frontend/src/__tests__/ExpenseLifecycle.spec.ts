@@ -106,6 +106,21 @@ function getButton(wrapper: VueWrapper, text: string) {
   return button
 }
 
+function getArchivedExpenseAction(wrapper: VueWrapper, label: string) {
+  return wrapper.get(`button[aria-label="${label} ${archivedFlight.description}"]`)
+}
+
+function stubMobileViewport(matches = true) {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn(() => ({
+      matches,
+      addEventListener: vi.fn<() => void>(),
+      removeEventListener: vi.fn<() => void>(),
+    })),
+  )
+}
+
 async function selectProofFile(wrapper: VueWrapper, file: File) {
   const input = wrapper.get('input[type="file"]')
   Object.defineProperty(input.element, 'files', { configurable: true, value: [file] })
@@ -349,10 +364,8 @@ describe('archived expense management', () => {
 
     const wrapper = await mountArchivedExpenses()
 
-    expect(getButton(wrapper, 'Restore').attributes('aria-label')).toBe(
-      'Restore Client-site flight',
-    )
-    expect(getButton(wrapper, 'Remove').attributes('aria-label')).toBe('Remove Client-site flight')
+    expect(getArchivedExpenseAction(wrapper, 'Restore').attributes('title')).toBe('Restore expense')
+    expect(getArchivedExpenseAction(wrapper, 'Remove').attributes('title')).toBe('Remove expense')
   })
 
   it('restores a confirmed expense', async () => {
@@ -362,7 +375,7 @@ describe('archived expense management', () => {
     vi.stubGlobal('confirm', confirmMock)
     const wrapper = await mountArchivedExpenses()
 
-    await getButton(wrapper, 'Restore').trigger('click')
+    await getArchivedExpenseAction(wrapper, 'Restore').trigger('click')
     await flushPromises()
 
     expect(confirmMock).toHaveBeenCalledExactlyOnceWith(
@@ -382,7 +395,7 @@ describe('archived expense management', () => {
     )
     const wrapper = await mountArchivedExpenses()
 
-    await getButton(wrapper, 'Remove').trigger('click')
+    await getArchivedExpenseAction(wrapper, 'Remove').trigger('click')
     await flushPromises()
 
     expect(expensesApi.removeExpense).toHaveBeenCalledExactlyOnceWith('expense-1')
@@ -399,10 +412,22 @@ describe('archived expense management', () => {
     )
     const wrapper = await mountArchivedExpenses()
 
-    await getButton(wrapper, 'Remove').trigger('click')
+    await getArchivedExpenseAction(wrapper, 'Remove').trigger('click')
     await flushPromises()
 
     expect(wrapper.get('[role="alert"]').text()).toBe('Expense could not be removed')
     expect(wrapper.text()).toContain('Client-site flight')
+  })
+
+  it('uses the shared mobile action sheet for archived expense actions', async () => {
+    stubMobileViewport()
+    expensesApi.fetchArchivedExpenses.mockResolvedValue([archivedFlight])
+    const wrapper = await mountArchivedExpenses()
+
+    await wrapper.get('[data-mobile-archived-expense-actions]').trigger('click')
+
+    expect(wrapper.get('[role="dialog"]').text()).toContain('Actions for Client-site flight')
+    expect(getButton(wrapper, 'Restore expense').exists()).toBe(true)
+    expect(getButton(wrapper, 'Remove expense').exists()).toBe(true)
   })
 })

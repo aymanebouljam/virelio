@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { ArchiveRestore, CalendarClock, Trash2 } from '@lucide/vue'
+import { ArchiveRestore, CalendarClock, EllipsisVertical, Trash2 } from '@lucide/vue'
+import RecordActionSheet, { type RecordActionItem } from '@/components/ui/RecordActionSheet.vue'
 import { ApiError } from '@/lib/api'
 import { formatAmount, formatDate, formatDateTime } from '@/lib/helpers'
 import {
@@ -20,6 +21,13 @@ const error = ref('')
 const actionError = ref('')
 const restoringId = ref<string | null>(null)
 const removingId = ref<string | null>(null)
+const mobileActionsOpen = ref(false)
+const activeActionTemplate = ref<RecurringExpenseTemplate | null>(null)
+
+const mobileTemplateActions = [
+  { id: 'restore', label: 'Restore schedule', icon: ArchiveRestore },
+  { id: 'remove', label: 'Remove schedule', icon: Trash2, tone: 'danger' },
+] as const satisfies readonly RecordActionItem[]
 
 async function loadArchivedTemplates() {
   try {
@@ -65,11 +73,30 @@ async function remove(template: RecurringExpenseTemplate) {
   }
 }
 
+function openMobileActions(template: RecurringExpenseTemplate) {
+  activeActionTemplate.value = template
+  mobileActionsOpen.value = true
+}
+
+function handleMobileAction(actionId: string) {
+  const template = activeActionTemplate.value
+  if (!template) return
+
+  mobileActionsOpen.value = false
+  activeActionTemplate.value = null
+
+  if (actionId === 'restore') {
+    void restore(template)
+  } else if (actionId === 'remove') {
+    void remove(template)
+  }
+}
+
 onMounted(loadArchivedTemplates)
 </script>
 
 <template>
-  <section class="space-y-6">
+  <section class="min-w-0 space-y-6">
     <header class="space-y-4 border-b border-line pb-6">
       <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
         Schedule archive
@@ -95,7 +122,7 @@ onMounted(loadArchivedTemplates)
       </div>
     </header>
 
-    <section class="overflow-hidden rounded-xl border border-line bg-surface shadow-card">
+    <section class="min-w-0 overflow-hidden rounded-xl border border-line bg-surface shadow-card">
       <header class="border-b border-line px-5 py-4 sm:px-6">
         <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
           Inactive schedules
@@ -142,23 +169,27 @@ onMounted(loadArchivedTemplates)
           v-for="template in templates"
           :key="template.id"
           data-archived-recurring-record
-          class="relative px-5 py-5 transition hover:bg-surface-muted/45 sm:px-6"
+          class="relative min-w-0 px-4 py-5 transition hover:bg-surface-muted/45 sm:px-6"
         >
           <span class="absolute inset-y-0 left-0 w-0.5 bg-line-strong" aria-hidden="true" />
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div class="flex min-w-0 items-start gap-3.5">
+          <div
+            class="relative flex min-w-0 flex-col gap-2 md:static md:gap-4 lg:flex-row lg:items-center lg:justify-between"
+          >
+            <div class="flex min-w-0 items-start gap-3.5 pr-12 sm:pr-0">
               <span
                 class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-ink-muted"
               >
                 <CalendarClock :size="17" aria-hidden="true" />
               </span>
               <div class="min-w-0">
-                <h3 class="text-base font-semibold tracking-[-0.015em] text-ink">
+                <h3 class="truncate text-base font-semibold tracking-[-0.015em] text-ink">
                   {{ template.description }}
                 </h3>
-                <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-muted">
-                  <span>{{ template.vendor.name }}</span>
-                  <span>{{ template.category?.name ?? 'No category' }}</span>
+                <div
+                  class="mt-2.5 grid min-w-0 grid-cols-1 gap-y-1.5 text-xs text-ink-muted sm:flex sm:flex-wrap sm:gap-x-3"
+                >
+                  <span class="truncate">{{ template.vendor.name }}</span>
+                  <span class="truncate">{{ template.category?.name ?? 'No category' }}</span>
                   <span class="capitalize">{{ template.frequency.toLowerCase() }}</span>
                   <span>Next {{ formatDate(template.nextDueDate) }}</span>
                 </div>
@@ -171,34 +202,51 @@ onMounted(loadArchivedTemplates)
               </div>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2 sm:flex-nowrap lg:justify-end">
+            <div class="flex min-w-0 flex-wrap items-center justify-end gap-2 lg:justify-end">
               <span class="font-figure mr-auto text-base font-semibold text-ink sm:mr-2">
                 {{ formatAmount(template.amount) }} {{ template.currency }}
               </span>
               <button
                 type="button"
                 :aria-label="`Restore ${template.description}`"
+                title="Restore schedule"
                 :disabled="restoringId === template.id"
-                class="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-brand-soft px-3 text-sm font-semibold text-brand transition hover:bg-brand hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                class="hidden min-h-11 min-w-11 items-center justify-center rounded-xl bg-brand-soft px-2.5 text-brand transition hover:bg-brand hover:text-white disabled:cursor-not-allowed disabled:opacity-60 sm:inline-flex"
                 @click="restore(template)"
               >
-                <ArchiveRestore :size="14" aria-hidden="true" />
-                {{ restoringId === template.id ? 'Restoring...' : 'Restore' }}
+                <ArchiveRestore :size="17" :stroke-width="1.8" aria-hidden="true" />
               </button>
               <button
                 type="button"
                 :aria-label="`Remove ${template.description}`"
+                title="Remove schedule"
                 :disabled="removingId === template.id"
-                class="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-danger-soft hover:text-danger disabled:cursor-not-allowed disabled:opacity-60"
+                class="hidden min-h-11 min-w-11 items-center justify-center rounded-xl bg-danger-soft px-2.5 text-danger transition hover:bg-danger hover:text-white disabled:cursor-not-allowed disabled:opacity-60 sm:inline-flex"
                 @click="remove(template)"
               >
-                <Trash2 :size="14" aria-hidden="true" />
-                {{ removingId === template.id ? 'Removing...' : 'Remove' }}
+                <Trash2 :size="17" :stroke-width="1.8" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                data-mobile-archived-recurring-actions
+                class="absolute right-0 top-0 inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-surface px-2.5 text-ink-muted transition hover:bg-surface-muted hover:text-ink sm:hidden"
+                :aria-label="`Actions for ${template.description}`"
+                @click="openMobileActions(template)"
+              >
+                <EllipsisVertical :size="18" aria-hidden="true" />
               </button>
             </div>
           </div>
         </article>
       </div>
     </section>
+
+    <RecordActionSheet
+      :open="mobileActionsOpen"
+      :record-label="activeActionTemplate?.description ?? 'schedule'"
+      :actions="mobileTemplateActions"
+      @update:open="mobileActionsOpen = $event"
+      @select="handleMobileAction"
+    />
   </section>
 </template>
