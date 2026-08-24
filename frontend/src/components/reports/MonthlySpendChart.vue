@@ -12,7 +12,6 @@ import {
   type ChartOptions,
 } from 'chart.js'
 import { Line } from 'vue-chartjs'
-import { formatAmount } from '@/lib/helpers'
 import type { ReportInsights } from '@/lib/reports/schema'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip)
@@ -85,29 +84,7 @@ const chartOptions: ChartOptions<'line'> = {
     </div>
 
     <figcaption id="monthly-spend-chart-caption" class="sr-only">
-      Monthly spending is plotted chronologically and listed newest first below the chart.
+      Monthly spending is plotted chronologically.
     </figcaption>
-
-    <ol
-      data-monthly-values
-      class="mt-5 max-h-[32rem] space-y-3 overflow-y-auto pr-1"
-      aria-label="Monthly spending values"
-    >
-      <li
-        v-for="month in monthlyTotals"
-        :key="month.month"
-        class="flex min-w-0 items-start justify-between gap-4 rounded-xl bg-surface-muted px-4 py-4"
-      >
-        <div class="min-w-0">
-          <p class="truncate text-sm font-semibold text-ink">{{ month.month }}</p>
-          <p class="mt-1 text-xs text-ink-muted">
-            {{ month.expenseCount }} expense{{ month.expenseCount === 1 ? '' : 's' }}
-          </p>
-        </div>
-        <span class="font-figure shrink-0 text-sm font-semibold text-ink">
-          ${{ formatAmount(month.totalAmount) }}
-        </span>
-      </li>
-    </ol>
   </figure>
 </template>

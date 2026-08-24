@@ -1,20 +1,7 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue'
-import { RouterLink, useRoute, useRouter } from 'vue-router'
-import {
-  ArrowRight,
-  Building2,
-  CalendarDays,
-  ChartNoAxesCombined,
-  ChevronLeft,
-  ChevronRight,
-  CircleDollarSign,
-  Download,
-  Hash,
-  Layers3,
-  ReceiptText,
-  Tags,
-} from '@lucide/vue'
+import { useRoute, useRouter } from 'vue-router'
+import { Building2, CalendarDays, ChartNoAxesCombined, Download, Tags } from '@lucide/vue'
 import { ApiError } from '@/lib/api'
 import {
   downloadExpenseReportCsv,
@@ -31,11 +18,12 @@ import {
   type ExpenseReport,
   type ReportInsights,
 } from '@/lib/reports/schema'
-import { formatAmount, formatDate } from '@/lib/helpers'
+import { formatAmount } from '@/lib/helpers'
+import LedgerSurface from '@/components/ui/LedgerSurface.vue'
+import WorkspaceHeader from '@/components/ui/WorkspaceHeader.vue'
 
 const route = useRoute()
 const router = useRouter()
-const PAGE_SIZE = 4
 const MonthlySpendChart = defineAsyncComponent(
   () => import('@/components/reports/MonthlySpendChart.vue'),
 )
@@ -44,6 +32,9 @@ const VendorSpendChart = defineAsyncComponent(
 )
 const CategoryComparisonChart = defineAsyncComponent(
   () => import('@/components/reports/CategoryComparisonChart.vue'),
+)
+const CategoryTotalsDonut = defineAsyncComponent(
+  () => import('@/components/reports/CategoryTotalsDonut.vue'),
 )
 
 const report = ref<ExpenseReport | null>(null)
@@ -67,7 +58,6 @@ const dateTo = computed(() => {
 
 const hasCompleteDateRange = computed(() => Boolean(dateFrom.value && dateTo.value))
 
-const hasExpenses = computed(() => (report.value?.expenses.items.length ?? 0) > 0)
 const hasCategoryTotals = computed(() => (report.value?.categoryTotals.length ?? 0) > 0)
 const visibleCategoryTotals = computed(() =>
   summarizeCategoryTotals(report.value?.categoryTotals ?? []),
@@ -79,33 +69,11 @@ const visibleVendorTotals = computed(() =>
   summarizeVendorTotals(insights.value?.vendorTotals ?? []),
 )
 
-function readPageQuery() {
-  const value = route.query.page
-  if (typeof value !== 'string') return 1
-
-  const page = Number(value)
-  return Number.isInteger(page) && page > 0 ? page : 1
-}
-
-async function changePage(page: number) {
-  if (page < 1) return
-
-  const query = { ...route.query }
-  if (page === 1) {
-    delete query.page
-  } else {
-    query.page = String(page)
-  }
-
-  await router.replace({ query })
-}
-
 async function loadReport(includeInsights: boolean) {
   try {
     error.value = ''
     dateRangeError.value = ''
 
-    const requestedPage = readPageQuery()
     const filters = {
       dateFrom: dateFrom.value,
       dateTo: dateTo.value,
@@ -115,8 +83,6 @@ async function loadReport(includeInsights: boolean) {
     const [reportResponse, insightsResponse, categoryComparisonResponse] = await Promise.all([
       fetchExpenseReport({
         ...filters,
-        page: requestedPage,
-        pageSize: PAGE_SIZE,
       }),
       includeInsights ? fetchReportInsights(filters) : Promise.resolve(null),
       includeInsights && comparisonFilters
@@ -152,12 +118,6 @@ async function loadReport(includeInsights: boolean) {
       } else {
         categoryComparison.value = null
       }
-    }
-
-    const lastPage = Math.max(result.data.expenses.pagination.totalPages, 1)
-    if (requestedPage > lastPage) {
-      await changePage(lastPage)
-      return
     }
 
     report.value = result.data
@@ -223,7 +183,7 @@ async function downloadCsv() {
 }
 
 watch(
-  () => [dateFrom.value, dateTo.value, readPageQuery()] as const,
+  () => [dateFrom.value, dateTo.value] as const,
   ([nextDateFrom, nextDateTo], [previousDateFrom, previousDateTo]) => {
     loading.value = true
     const dateRangeChanged = nextDateFrom !== previousDateFrom || nextDateTo !== previousDateTo
@@ -236,25 +196,19 @@ onMounted(() => loadReport(true))
 
 <template>
   <section class="min-w-0 space-y-7">
-    <header>
-      <p class="text-xs font-semibold uppercase tracking-[0.24em] text-accent">Analysis</p>
-      <div>
-        <h2 class="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-          Expense report
-        </h2>
-        <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-base">
-          Turn expense history into a clearer view of trends, vendors, and categories.
-        </p>
-      </div>
-    </header>
+    <WorkspaceHeader
+      context="Analysis workspace"
+      title="Read the patterns in your spending."
+      description="Compare periods, follow the movement, and inspect the entries behind every total."
+    />
 
     <fieldset
-      class="min-w-0 max-w-full rounded-2xl border border-line bg-surface px-4 py-3 shadow-card sm:flex sm:items-end sm:gap-3"
+      class="min-w-0 max-w-full rounded-xl border border-line bg-surface-raised px-4 py-4 sm:flex sm:items-end sm:gap-3"
     >
       <legend class="sr-only">Report date range</legend>
 
       <div class="mb-3 flex items-center gap-2 sm:mb-0 sm:mr-auto sm:self-center">
-        <span class="flex size-9 items-center justify-center rounded-xl bg-brand-soft text-brand">
+        <span class="flex size-9 items-center justify-center rounded-lg bg-brand-soft text-brand">
           <CalendarDays :size="17" aria-hidden="true" />
         </span>
         <div>
@@ -274,7 +228,7 @@ onMounted(() => loadReport(true))
             type="date"
             :aria-describedby="dateRangeError ? 'report-date-range-error' : undefined"
             :aria-invalid="Boolean(dateRangeError)"
-            class="min-h-10 w-full min-w-0 max-w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand sm:w-auto"
+            class="min-h-10 w-full min-w-0 max-w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand sm:w-auto"
             @change="
               updateDateRange({
                 dateFrom: ($event.target as HTMLInputElement).value || undefined,
@@ -292,7 +246,7 @@ onMounted(() => loadReport(true))
             type="date"
             :aria-describedby="dateRangeError ? 'report-date-range-error' : undefined"
             :aria-invalid="Boolean(dateRangeError)"
-            class="min-h-10 w-full min-w-0 max-w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand sm:w-auto"
+            class="min-h-10 w-full min-w-0 max-w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand sm:w-auto"
             @change="
               updateDateRange({
                 dateFrom: dateFrom,
@@ -305,7 +259,7 @@ onMounted(() => loadReport(true))
         <button
           v-if="dateFrom || dateTo"
           type="button"
-          class="min-h-10 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
+          class="min-h-10 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
           @click="updateDateRange({ dateFrom: undefined, dateTo: undefined })"
         >
           Clear
@@ -314,7 +268,7 @@ onMounted(() => loadReport(true))
         <button
           type="button"
           :disabled="exporting"
-          class="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-line-strong"
+          class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-line-strong"
           @click="downloadCsv"
         >
           <Download :size="16" aria-hidden="true" />
@@ -331,7 +285,12 @@ onMounted(() => loadReport(true))
       {{ exportError }}
     </p>
 
-    <section v-if="loading" class="space-y-4" role="status" aria-label="Loading expense report">
+    <section
+      v-if="loading && !report"
+      class="space-y-4"
+      role="status"
+      aria-label="Loading expense report"
+    >
       <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <div
           v-for="index in 3"
@@ -343,7 +302,7 @@ onMounted(() => loadReport(true))
     </section>
 
     <section
-      v-else-if="error"
+      v-else-if="error && !report"
       role="alert"
       class="rounded-2xl border border-danger/25 bg-danger-soft px-5 py-4 text-sm text-danger"
     >
@@ -354,64 +313,83 @@ onMounted(() => loadReport(true))
     </section>
 
     <template v-else-if="report">
-      <section
-        class="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-3"
-        aria-label="Report overview"
+      <p
+        v-if="loading"
+        role="status"
+        aria-live="polite"
+        class="border-l-2 border-evidence bg-evidence-soft/45 px-4 py-3 text-sm text-ink-muted"
       >
-        <article
-          class="relative min-w-0 overflow-hidden rounded-2xl bg-brand-strong p-4 text-white shadow-lifted sm:p-5"
-        >
-          <div
-            class="absolute -right-8 -top-10 size-28 rounded-full border-[20px] border-white/5"
-            aria-hidden="true"
-          />
-          <span class="flex size-10 items-center justify-center rounded-xl bg-white/10">
-            <CircleDollarSign :size="20" aria-hidden="true" />
-          </span>
-          <p class="mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-white/55">
-            Total amount
-          </p>
-          <p class="mt-1 text-3xl font-semibold tracking-tight">
-            ${{ formatAmount(report.totalAmount) }}
-          </p>
-        </article>
+        Updating report…
+      </p>
 
-        <article class="min-w-0 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-5">
-          <span
-            class="flex size-10 items-center justify-center rounded-xl bg-brand-soft text-brand"
-          >
-            <Hash :size="20" aria-hidden="true" />
-          </span>
-          <p class="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-ink-muted">
-            Expense count
-          </p>
-          <p class="mt-1 text-3xl font-semibold tracking-tight text-ink">
-            {{ report.expenseCount }}
-          </p>
-        </article>
-
-        <article class="min-w-0 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-5">
-          <span
-            class="flex size-10 items-center justify-center rounded-xl bg-accent-soft text-accent"
-          >
-            <Layers3 :size="20" aria-hidden="true" />
-          </span>
-          <p class="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-ink-muted">
-            Categories
-          </p>
-          <p class="mt-1 text-3xl font-semibold tracking-tight text-ink">
-            {{ report.categoryTotals.length }}
-          </p>
-        </article>
+      <section
+        v-if="error"
+        role="alert"
+        class="border-l-2 border-danger bg-danger-soft px-4 py-3 text-sm text-danger"
+      >
+        <p class="font-medium">Could not update report</p>
+        <p :id="dateRangeError ? 'report-date-range-error' : undefined" class="mt-1">
+          {{ error }}
+        </p>
       </section>
 
-      <section
-        data-report-category-comparison
-        class="min-w-0 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6"
+      <LedgerSurface
+        tone="featured"
+        class="relative grid overflow-hidden sm:grid-cols-[1.45fr_0.8fr_0.8fr]"
+        aria-label="Report overview"
       >
+        <span class="absolute inset-y-0 left-0 z-10 w-1 bg-evidence" aria-hidden="true" />
+        <article class="relative min-w-0 overflow-hidden p-7 pl-8 text-white sm:p-9 sm:pl-10">
+          <div
+            class="absolute -right-10 -top-16 size-44 rounded-full border-[28px] border-white/5"
+            aria-hidden="true"
+          />
+          <p class="relative text-xs font-semibold tracking-[0.14em] text-white/55">
+            SPEND RECORDED
+          </p>
+          <p
+            class="font-figure relative mt-3 break-words text-[clamp(2.25rem,5vw,4.5rem)] font-semibold leading-none tracking-[-0.06em]"
+          >
+            ${{ formatAmount(report.totalAmount) }}
+          </p>
+          <p class="relative mt-5 text-sm text-white/65">Across the selected reporting period.</p>
+        </article>
+
+        <article
+          class="relative flex min-w-0 flex-col justify-center border-t border-white/15 p-7 sm:border-l sm:border-t-0 sm:p-8"
+        >
+          <span class="mb-5 h-px w-8 bg-evidence" aria-hidden="true" />
+          <p class="font-figure text-4xl font-semibold tracking-[-0.05em] text-white">
+            {{ report.expenseCount }}
+          </p>
+          <p class="mt-2 text-sm font-semibold text-white">Recorded expenses</p>
+          <p class="mt-1 text-xs leading-5 text-white/55">Entries in this report.</p>
+        </article>
+
+        <article
+          class="relative flex min-w-0 flex-col justify-center border-t border-white/15 p-7 sm:border-l sm:border-t-0 sm:p-8"
+        >
+          <span class="mb-5 h-px w-8 bg-white/35" aria-hidden="true" />
+          <p class="font-figure text-4xl font-semibold tracking-[-0.05em] text-white">
+            {{ report.categoryTotals.length }}
+          </p>
+          <p class="mt-2 text-sm font-semibold text-white">Categories represented</p>
+          <p class="mt-1 text-xs leading-5 text-white/55">Where this period's spend is recorded.</p>
+        </article>
+      </LedgerSurface>
+
+      <aside
+        v-if="!hasCompleteDateRange"
+        data-report-category-comparison-prompt
+        class="border-l-2 border-evidence bg-evidence-soft/45 px-4 py-3 text-sm text-ink-muted"
+      >
+        Select both dates to compare category spending.
+      </aside>
+
+      <LedgerSurface v-else data-report-category-comparison class="p-5 sm:p-6">
         <div class="flex items-start gap-3">
           <span
-            class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent"
+            class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent"
           >
             <ChartNoAxesCombined :size="19" aria-hidden="true" />
           </span>
@@ -423,18 +401,9 @@ onMounted(() => loadReport(true))
           </div>
         </div>
 
-        <div
-          v-if="!hasCompleteDateRange"
-          class="mt-6 rounded-2xl bg-surface-muted px-5 py-10 text-center"
-        >
-          <p class="text-sm font-medium text-ink-muted">
-            Select both dates to compare category spending.
-          </p>
-        </div>
-
-        <template v-else-if="categoryComparison">
+        <template v-if="categoryComparison">
           <div class="mt-6 grid gap-3 sm:grid-cols-2">
-            <article class="rounded-2xl border border-brand/15 bg-brand-soft/45 px-4 py-4">
+            <article class="rounded-xl border border-brand/15 bg-brand-soft/45 px-4 py-4">
               <p class="text-xs font-semibold uppercase tracking-[0.18em] text-brand">
                 Selected period
               </p>
@@ -447,7 +416,7 @@ onMounted(() => loadReport(true))
               </p>
             </article>
 
-            <article class="rounded-2xl border border-line bg-surface-muted px-4 py-4">
+            <article class="rounded-xl border border-line bg-surface-muted px-4 py-4">
               <p class="text-xs font-semibold uppercase tracking-[0.18em] text-ink-muted">
                 Previous period
               </p>
@@ -463,20 +432,17 @@ onMounted(() => loadReport(true))
 
           <div
             v-if="categoryComparison.categories.length === 0"
-            class="mt-6 rounded-2xl border border-dashed border-line bg-surface-muted px-5 py-10 text-center"
+            class="mt-6 rounded-xl border border-dashed border-line bg-surface-muted px-5 py-10 text-center"
           >
             <p class="text-sm font-medium text-ink">No category activity to compare</p>
           </div>
 
           <CategoryComparisonChart v-else class="mt-6" :comparison="categoryComparison" />
         </template>
-      </section>
+      </LedgerSurface>
 
-      <div class="grid min-w-0 gap-5 xl:grid-cols-[0.85fr_1.25fr]">
-        <section
-          data-report-monthly-spending
-          class="min-w-0 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6"
-        >
+      <div class="grid min-w-0 gap-5 xl:grid-cols-2">
+        <LedgerSurface data-report-monthly-spending class="p-5 sm:p-6 xl:col-span-2">
           <h3 class="text-lg font-semibold tracking-tight text-ink">Monthly spending</h3>
           <p class="mt-1 text-sm text-ink-muted">
             Spending totals by calendar month for the current report period.
@@ -484,21 +450,18 @@ onMounted(() => loadReport(true))
 
           <div
             v-if="!insights?.monthlyTotals.length"
-            class="mt-6 rounded-2xl border border-dashed border-line bg-surface-muted px-5 py-10 text-center"
+            class="mt-6 rounded-xl border border-dashed border-line bg-surface-muted px-5 py-10 text-center"
           >
             <p class="text-sm font-medium text-ink">No monthly totals</p>
           </div>
 
           <MonthlySpendChart v-else class="mt-6" :monthly-totals="visibleMonthlyTotals" />
-        </section>
+        </LedgerSurface>
 
-        <section
-          data-report-vendor-spending
-          class="min-w-0 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6"
-        >
+        <LedgerSurface data-report-vendor-spending class="p-5 sm:flex sm:flex-col sm:p-6">
           <div class="flex items-start gap-3">
             <span
-              class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand"
+              class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand"
             >
               <Building2 :size="19" aria-hidden="true" />
             </span>
@@ -512,21 +475,22 @@ onMounted(() => loadReport(true))
 
           <div
             v-if="!insights?.vendorTotals.length"
-            class="mt-6 rounded-2xl border border-dashed border-line bg-surface-muted px-5 py-10 text-center"
+            class="mt-6 rounded-xl border border-dashed border-line bg-surface-muted px-5 py-10 text-center"
           >
             <p class="text-sm font-medium text-ink">No vendor totals</p>
           </div>
 
-          <VendorSpendChart v-else class="mt-6" :vendor-totals="visibleVendorTotals" />
-        </section>
+          <VendorSpendChart
+            v-else
+            class="mt-6 sm:min-h-0 sm:flex-1"
+            :vendor-totals="visibleVendorTotals"
+          />
+        </LedgerSurface>
 
-        <section
-          data-report-category-totals
-          class="min-w-0 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6"
-        >
+        <LedgerSurface data-report-category-totals class="p-5 sm:p-6">
           <div class="flex items-start gap-3">
             <span
-              class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent"
+              class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent"
             >
               <Tags :size="19" aria-hidden="true" />
             </span>
@@ -540,7 +504,7 @@ onMounted(() => loadReport(true))
 
           <div
             v-if="!hasCategoryTotals"
-            class="mt-6 rounded-2xl border border-dashed border-line bg-surface-muted px-5 py-10 text-center"
+            class="mt-6 rounded-xl border border-dashed border-line bg-surface-muted px-5 py-10 text-center"
           >
             <p class="text-sm font-medium text-ink">No category totals</p>
             <p class="mt-2 text-sm text-ink-muted">
@@ -548,127 +512,8 @@ onMounted(() => loadReport(true))
             </p>
           </div>
 
-          <div v-else class="mt-6 space-y-3">
-            <div
-              v-for="category in visibleCategoryTotals"
-              :key="category.categoryId ?? category.categoryName"
-              class="rounded-xl bg-surface-muted px-4 py-4"
-            >
-              <div class="flex min-w-0 items-start justify-between gap-4">
-                <div class="min-w-0">
-                  <p class="truncate text-sm font-semibold text-ink">
-                    {{ category.categoryName }}
-                  </p>
-                  <p class="mt-1 text-xs text-ink-muted">
-                    {{ category.expenseCount }} expense{{ category.expenseCount === 1 ? '' : 's' }}
-                  </p>
-                </div>
-
-                <span class="shrink-0 text-sm font-semibold text-ink">
-                  ${{ formatAmount(category.totalAmount) }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section
-          data-report-expense-rows
-          class="min-w-0 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6"
-        >
-          <div class="flex items-start gap-3">
-            <span
-              class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand"
-            >
-              <ReceiptText :size="19" aria-hidden="true" />
-            </span>
-            <div>
-              <h3 class="text-lg font-semibold tracking-tight text-ink">Expense rows</h3>
-              <p class="mt-1 text-sm text-ink-muted">
-                Detailed active expenses for the selected report period.
-              </p>
-            </div>
-          </div>
-
-          <div
-            v-if="!hasExpenses"
-            class="mt-6 rounded-2xl border border-dashed border-line bg-surface-muted px-5 py-10 text-center"
-          >
-            <p class="text-sm font-medium text-ink">No matching expenses</p>
-            <p class="mt-2 text-sm text-ink-muted">
-              Try broadening the date range to include more expense records.
-            </p>
-          </div>
-
-          <div v-else class="mt-6 space-y-3">
-            <RouterLink
-              v-for="expense in report.expenses.items"
-              :key="expense.id"
-              :to="`/expenses/${expense.id}`"
-              class="group flex min-w-0 items-center justify-between gap-3 border-b border-line px-1 py-4 transition last:border-b-0 hover:bg-surface-muted/45 sm:gap-4"
-            >
-              <div class="min-w-0">
-                <p class="truncate text-sm font-semibold text-ink">
-                  {{ expense.description }}
-                </p>
-                <div
-                  class="mt-1 grid grid-cols-1 gap-y-1 text-xs text-ink-muted sm:flex sm:flex-wrap sm:gap-x-4"
-                >
-                  <span class="truncate">{{ expense.vendorName }}</span>
-                  <span class="truncate">{{ expense.categoryName }}</span>
-                  <span class="truncate">{{ formatDate(expense.expenseDate) }}</span>
-                </div>
-                <p v-if="expense.notes" class="mt-2 text-xs text-ink-muted">
-                  {{ expense.notes }}
-                </p>
-              </div>
-
-              <span class="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-ink">
-                ${{ formatAmount(expense.amount) }}
-                <ArrowRight
-                  :size="15"
-                  aria-hidden="true"
-                  class="text-line-strong transition group-hover:text-brand"
-                />
-              </span>
-            </RouterLink>
-          </div>
-
-          <nav
-            v-if="report.expenses.pagination.totalPages > 1"
-            aria-label="Report expense pagination"
-            class="mt-6 flex flex-col gap-3 border-t border-line pt-4 sm:flex-row sm:items-center sm:justify-between"
-          >
-            <p class="text-sm text-ink-muted">
-              Page {{ report.expenses.pagination.page }} of
-              {{ report.expenses.pagination.totalPages }} ·
-              {{ report.expenses.pagination.totalItems }} expenses
-            </p>
-
-            <div class="flex gap-2">
-              <button
-                type="button"
-                :disabled="report.expenses.pagination.page === 1"
-                class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-surface px-3 text-sm font-medium text-ink-muted transition hover:border-line-strong hover:text-ink disabled:cursor-not-allowed disabled:text-line-strong"
-                @click="changePage(report.expenses.pagination.page - 1)"
-              >
-                <ChevronLeft :size="15" aria-hidden="true" />
-                Previous
-              </button>
-              <button
-                type="button"
-                :disabled="
-                  report.expenses.pagination.page === report.expenses.pagination.totalPages
-                "
-                class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-surface px-3 text-sm font-medium text-ink-muted transition hover:border-line-strong hover:text-ink disabled:cursor-not-allowed disabled:text-line-strong"
-                @click="changePage(report.expenses.pagination.page + 1)"
-              >
-                Next
-                <ChevronRight :size="15" aria-hidden="true" />
-              </button>
-            </div>
-          </nav>
-        </section>
+          <CategoryTotalsDonut v-else class="mt-6" :category-totals="visibleCategoryTotals" />
+        </LedgerSurface>
       </div>
     </template>
   </section>

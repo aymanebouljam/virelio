@@ -70,18 +70,22 @@ const chartOptions: ChartOptions<'bar'> = {
 </script>
 
 <template>
-  <figure data-vendor-spend-chart aria-labelledby="vendor-spend-chart-caption" class="min-w-0">
-    <div class="hidden h-60 min-w-0 sm:block" aria-hidden="true">
+  <figure
+    data-vendor-spend-chart
+    aria-labelledby="vendor-spend-chart-caption"
+    class="min-w-0 sm:h-full"
+  >
+    <div class="hidden h-60 min-w-0 sm:block sm:h-full sm:min-h-72" aria-hidden="true">
       <Bar class="block !h-full !w-full" :data="chartData" :options="chartOptions" />
     </div>
 
     <figcaption id="vendor-spend-chart-caption" class="sr-only">
-      Vendor spending is ranked from highest to lowest and listed with exact values below the chart.
+      Vendor spending is ranked from highest to lowest. Exact values are shown on smaller screens.
     </figcaption>
 
     <ol
       data-vendor-values
-      class="mt-0 divide-y divide-line sm:mt-5"
+      class="mt-0 divide-y divide-line sm:hidden"
       aria-label="Vendor spending values"
     >
       <li
