@@ -66,7 +66,7 @@ watch(vendorId, () => {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <section class="min-w-0 space-y-6">
     <header class="space-y-5 border-b border-line pb-6">
       <RouterLink
         to="/vendors"
@@ -76,13 +76,13 @@ watch(vendorId, () => {
         Back to vendors
       </RouterLink>
 
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
+      <div class="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div class="min-w-0">
           <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
             Vendor dossier
           </p>
           <h1
-            class="font-display mt-2 text-[2rem] font-semibold leading-tight tracking-[-0.035em] text-ink sm:text-[2.5rem]"
+            class="font-display mt-2 break-words text-[2rem] font-semibold leading-tight tracking-[-0.035em] text-ink sm:text-[2.5rem]"
           >
             {{ vendor?.name ?? 'Vendor record' }}
           </h1>
@@ -95,7 +95,7 @@ watch(vendorId, () => {
           v-if="vendor"
           type="button"
           :disabled="archiving"
-          class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-danger-soft hover:text-danger disabled:cursor-not-allowed disabled:opacity-60"
+          class="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-danger-soft px-3 text-sm font-medium text-danger transition hover:bg-danger hover:text-white disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-10 sm:w-auto sm:bg-transparent sm:text-ink-muted sm:hover:bg-danger-soft sm:hover:text-danger"
           @click="archiveCurrentVendor"
         >
           <Archive :size="15" aria-hidden="true" />
@@ -143,22 +143,24 @@ watch(vendorId, () => {
       </p>
     </div>
 
-    <section v-else class="grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(300px,0.85fr)]">
+    <section v-else class="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(300px,0.85fr)]">
       <article
         data-vendor-record
-        class="relative overflow-hidden rounded-xl border border-line bg-surface p-5 shadow-card sm:p-6"
+        class="relative min-w-0 overflow-hidden rounded-xl border border-line bg-surface p-5 shadow-card sm:p-6"
       >
         <span class="absolute inset-y-0 left-0 w-1 bg-accent" aria-hidden="true" />
-        <header class="flex items-start justify-between gap-4 border-b border-line pb-5">
-          <div>
+        <header class="flex min-w-0 items-start justify-between gap-3 border-b border-line pb-5">
+          <div class="min-w-0">
             <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
               Contact coordinates
             </p>
-            <h2 class="font-display mt-1 text-lg font-semibold tracking-[-0.02em] text-ink">
+            <h2
+              class="font-display mt-1 break-words text-lg font-semibold tracking-[-0.02em] text-ink"
+            >
               Vendor directory record
             </h2>
           </div>
-          <span class="border-l-2 border-accent pl-2 text-xs font-semibold text-accent">
+          <span class="shrink-0 border-l-2 border-accent pl-2 text-xs font-semibold text-accent">
             Active
           </span>
         </header>
@@ -169,7 +171,7 @@ watch(vendorId, () => {
               <Mail :size="14" aria-hidden="true" />
               Email
             </dt>
-            <dd class="break-words text-sm text-ink">
+            <dd class="min-w-0 break-words text-sm text-ink">
               {{ vendor.email || 'Not provided' }}
             </dd>
           </div>
@@ -205,7 +207,7 @@ watch(vendorId, () => {
         </dl>
       </article>
 
-      <aside class="rounded-xl border border-line bg-surface p-5 shadow-card sm:p-6">
+      <aside class="min-w-0 rounded-xl border border-line bg-surface p-5 shadow-card sm:p-6">
         <header class="border-b border-line pb-5">
           <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-accent">
             Record context

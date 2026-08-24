@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Download, FileText, Trash2, Upload } from '@lucide/vue'
+import { ArrowLeft, Download, EllipsisVertical, FileText, Trash2, Upload } from '@lucide/vue'
+import RecordActionSheet, { type RecordActionItem } from '@/components/ui/RecordActionSheet.vue'
 import { ApiError } from '@/lib/api'
 import { fetchExpense } from '@/lib/expenses/api'
 import { expenseDetailSchema, type ExpenseDetail } from '@/lib/expenses/schema'
 import { formatAmount, formatDate, formatDateTime, formatFileSize } from '@/lib/helpers'
 import { downloadExpenseProof, removeExpenseProof, uploadExpenseProof } from '@/lib/proofs/api'
+import type { ProofDocument } from '@/lib/proofs/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -23,6 +25,13 @@ const proofActionError = ref('')
 const uploading = ref(false)
 
 const downloadingProofId = ref<string | null>(null)
+const mobileActionsOpen = ref(false)
+const activeActionProof = ref<ProofDocument | null>(null)
+
+const mobileProofActions = [
+  { id: 'download', label: 'Download proof', icon: Download },
+  { id: 'remove', label: 'Remove proof', icon: Trash2, tone: 'danger' },
+] as const satisfies readonly RecordActionItem[]
 
 async function loadExpense() {
   try {
@@ -122,11 +131,30 @@ async function removeProof(proofId: string) {
   }
 }
 
+function openMobileProofActions(proof: ProofDocument) {
+  activeActionProof.value = proof
+  mobileActionsOpen.value = true
+}
+
+function handleMobileProofAction(actionId: string) {
+  const proof = activeActionProof.value
+  if (!proof) return
+
+  mobileActionsOpen.value = false
+  activeActionProof.value = null
+
+  if (actionId === 'download') {
+    void downloadProof(proof.id, proof.originalName)
+  } else if (actionId === 'remove') {
+    void removeProof(proof.id)
+  }
+}
+
 onMounted(loadExpense)
 </script>
 
 <template>
-  <section class="space-y-6">
+  <section class="min-w-0 space-y-6">
     <header class="space-y-5 border-b border-line pb-6">
       <button
         type="button"
@@ -167,14 +195,16 @@ onMounted(loadExpense)
     </section>
 
     <template v-else-if="expense">
-      <section class="grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
+      <section class="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
         <article
           data-expense-record-summary
-          class="relative overflow-hidden rounded-xl border border-line bg-surface p-5 shadow-card sm:p-6"
+          class="relative min-w-0 overflow-hidden rounded-xl border border-line bg-surface p-5 shadow-card sm:p-6"
         >
           <span class="absolute inset-y-0 left-0 w-1 bg-accent" aria-hidden="true" />
-          <div class="flex items-start justify-between gap-4">
-            <div>
+          <div
+            class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
+          >
+            <div class="min-w-0">
               <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
                 Recorded amount
               </p>
@@ -186,7 +216,8 @@ onMounted(loadExpense)
             </div>
 
             <span
-              class="inline-flex items-center border-l-2 border-accent bg-accent-soft/60 px-2.5 py-1 text-xs font-semibold text-accent"
+              class="inline-flex w-fit max-w-full items-center truncate border-l-2 border-accent bg-accent-soft/60 px-2.5 py-1 text-xs font-semibold text-accent"
+              :title="expense.category?.name ?? 'No category'"
             >
               {{ expense.category?.name ?? 'No category' }}
             </span>
@@ -230,7 +261,7 @@ onMounted(loadExpense)
           </div>
         </article>
 
-        <aside class="rounded-xl border border-line bg-surface p-5 shadow-card sm:p-6">
+        <aside class="min-w-0 rounded-xl border border-line bg-surface p-5 shadow-card sm:p-6">
           <div class="border-b border-line pb-5">
             <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-accent">
               Record context
@@ -242,14 +273,16 @@ onMounted(loadExpense)
 
           <section class="py-5">
             <p class="text-xs font-medium text-ink-muted">Vendor</p>
-            <h3 class="font-display mt-2 text-xl font-semibold tracking-[-0.025em] text-ink">
+            <h3
+              class="font-display mt-2 break-words text-xl font-semibold tracking-[-0.025em] text-ink"
+            >
               {{ expense.vendor.name }}
             </h3>
 
             <dl class="mt-5 space-y-3 text-sm">
               <div v-if="expense.vendor.email" class="flex flex-col gap-1">
                 <dt class="text-xs text-ink-muted">Email</dt>
-                <dd class="text-ink">{{ expense.vendor.email }}</dd>
+                <dd class="break-words text-ink">{{ expense.vendor.email }}</dd>
               </div>
 
               <div v-if="expense.vendor.phone" class="flex flex-col gap-1">
@@ -293,7 +326,7 @@ onMounted(loadExpense)
         </aside>
       </section>
 
-      <section class="overflow-hidden rounded-xl border border-line bg-surface shadow-card">
+      <section class="min-w-0 overflow-hidden rounded-xl border border-line bg-surface shadow-card">
         <header
           class="flex flex-col gap-4 border-b border-line px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"
         >
@@ -313,7 +346,7 @@ onMounted(loadExpense)
 
           <label
             for="expense-proof-upload"
-            class="inline-flex min-h-10 w-fit cursor-pointer items-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm font-semibold text-brand transition hover:border-line-strong hover:bg-surface-muted focus-within:border-brand"
+            class="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm font-semibold text-brand transition hover:border-line-strong hover:bg-surface-muted focus-within:border-brand sm:min-h-10 sm:w-fit"
           >
             <input
               id="expense-proof-upload"
@@ -364,7 +397,7 @@ onMounted(loadExpense)
               v-for="proof in expense.proofs"
               :key="proof.id"
               data-proof-record
-              class="grid gap-4 py-4 pl-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+              class="relative grid min-w-0 gap-3 py-4 pl-4 pr-12 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-4 sm:pr-0"
             >
               <div class="flex min-w-0 items-start gap-3">
                 <span
@@ -390,31 +423,49 @@ onMounted(loadExpense)
                 </div>
               </div>
 
-              <div class="flex items-center gap-2 sm:justify-end">
+              <div class="hidden items-center gap-2 sm:flex sm:justify-end">
                 <button
                   type="button"
-                  class="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-brand transition hover:bg-brand-soft disabled:cursor-not-allowed disabled:opacity-60"
+                  :aria-label="`Download ${proof.originalName}`"
+                  title="Download proof"
+                  class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-brand-soft px-2.5 text-brand transition hover:bg-brand hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
                   :disabled="downloadingProofId === proof.id"
                   @click="downloadProof(proof.id, proof.originalName)"
                 >
-                  <Download :size="14" aria-hidden="true" />
-                  Download
+                  <Download :size="17" :stroke-width="1.8" aria-hidden="true" />
                 </button>
                 <button
                   type="button"
                   :aria-label="`Remove ${proof.originalName}`"
-                  class="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-danger-soft hover:text-danger disabled:cursor-not-allowed disabled:opacity-60"
+                  title="Remove proof"
+                  class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-danger-soft px-2.5 text-danger transition hover:bg-danger hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
                   :disabled="removingProofId === proof.id || downloadingProofId !== null"
                   @click="removeProof(proof.id)"
                 >
-                  <Trash2 :size="14" aria-hidden="true" />
-                  {{ removingProofId === proof.id ? 'Removing...' : 'Remove' }}
+                  <Trash2 :size="17" :stroke-width="1.8" aria-hidden="true" />
                 </button>
               </div>
+              <button
+                type="button"
+                data-mobile-proof-actions
+                class="absolute right-0 top-4 inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-surface px-2.5 text-ink-muted transition hover:bg-surface-muted hover:text-ink sm:hidden"
+                :aria-label="`Actions for ${proof.originalName}`"
+                @click="openMobileProofActions(proof)"
+              >
+                <EllipsisVertical :size="18" aria-hidden="true" />
+              </button>
             </li>
           </ul>
         </div>
       </section>
+
+      <RecordActionSheet
+        :open="mobileActionsOpen"
+        :record-label="activeActionProof?.originalName ?? 'proof'"
+        :actions="mobileProofActions"
+        @update:open="mobileActionsOpen = $event"
+        @select="handleMobileProofAction"
+      />
     </template>
   </section>
 </template>

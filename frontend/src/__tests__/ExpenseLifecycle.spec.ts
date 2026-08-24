@@ -110,6 +110,10 @@ function getArchivedExpenseAction(wrapper: VueWrapper, label: string) {
   return wrapper.get(`button[aria-label="${label} ${archivedFlight.description}"]`)
 }
 
+function getProofAction(wrapper: VueWrapper, label: string) {
+  return wrapper.get(`button[aria-label="${label} ${receipt.originalName}"]`)
+}
+
 function stubMobileViewport(matches = true) {
   vi.stubGlobal(
     'matchMedia',
@@ -274,9 +278,9 @@ describe('expense details and proofs', () => {
     const confirmMock = vi.fn<() => boolean>(() => true)
     vi.stubGlobal('confirm', confirmMock)
     const { wrapper } = await mountDetails()
-    const removeButton = getButton(wrapper, 'Remove')
+    const removeButton = getProofAction(wrapper, 'Remove')
 
-    expect(removeButton.attributes('aria-label')).toBe('Remove receipt.pdf')
+    expect(removeButton.attributes('title')).toBe('Remove proof')
 
     await removeButton.trigger('click')
     await flushPromises()
@@ -287,6 +291,17 @@ describe('expense details and proofs', () => {
     expect(proofsApi.removeExpenseProof).toHaveBeenCalledExactlyOnceWith('expense-1', 'proof-1')
     expect(wrapper.text()).not.toContain('receipt.pdf')
     expect(wrapper.text()).toContain('No proof documents attached.')
+  })
+
+  it('uses the shared mobile action sheet for proof actions', async () => {
+    stubMobileViewport()
+    const { wrapper } = await mountDetails()
+
+    await wrapper.get('[data-mobile-proof-actions]').trigger('click')
+
+    expect(wrapper.get('[role="dialog"]').text()).toContain('Actions for receipt.pdf')
+    expect(getButton(wrapper, 'Download proof').exists()).toBe(true)
+    expect(getButton(wrapper, 'Remove proof').exists()).toBe(true)
   })
 
   it('shows proof upload failures', async () => {
