@@ -212,7 +212,7 @@ watch(
             >
               <span
                 data-account-initials
-                class="font-figure flex size-9 shrink-0 items-center justify-center rounded-lg bg-evidence text-xs font-semibold tracking-[0.08em] text-white"
+                class="font-figure flex size-9 shrink-0 items-center justify-center rounded-full bg-evidence text-sm font-semibold tracking-[0.04em] text-white"
                 aria-hidden="true"
               >
                 {{ accountInitials }}
@@ -382,7 +382,7 @@ watch(
               class="flex min-h-14 items-center gap-3 rounded-xl border border-line bg-surface-raised px-3 py-2 text-ink"
             >
               <span
-                class="font-figure flex size-9 shrink-0 items-center justify-center rounded-lg bg-evidence text-xs font-semibold tracking-[0.08em] text-white"
+                class="font-figure flex size-9 shrink-0 items-center justify-center rounded-full bg-evidence text-sm font-semibold tracking-[0.04em] text-white"
                 aria-hidden="true"
               >
                 {{ accountInitials }}
