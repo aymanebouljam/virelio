@@ -56,6 +56,10 @@ function getVendorAction(wrapper: VueWrapper, label: string) {
   return wrapper.get(`button[aria-label="${label} Atlas Supplies"]`)
 }
 
+function getCategoryAction(wrapper: VueWrapper, label: string) {
+  return wrapper.get(`button[aria-label="${label} Travel"]`)
+}
+
 function stubMobileViewport(matches = true) {
   vi.stubGlobal(
     'matchMedia',
@@ -245,8 +249,8 @@ describe('archived category management', () => {
 
     const wrapper = await mountPage(ArchivedExpenseCategoriesPage)
 
-    expect(getButton(wrapper, 'Restore').attributes('aria-label')).toBe('Restore Travel')
-    expect(getButton(wrapper, 'Remove').attributes('aria-label')).toBe('Remove Travel')
+    expect(getCategoryAction(wrapper, 'Restore').attributes('title')).toBe('Restore category')
+    expect(getCategoryAction(wrapper, 'Remove').attributes('title')).toBe('Remove category')
   })
 
   it('restores a confirmed category', async () => {
@@ -256,7 +260,7 @@ describe('archived category management', () => {
     vi.stubGlobal('confirm', confirmMock)
     const wrapper = await mountPage(ArchivedExpenseCategoriesPage)
 
-    await getButton(wrapper, 'Restore').trigger('click')
+    await getCategoryAction(wrapper, 'Restore').trigger('click')
     await flushPromises()
 
     expect(confirmMock).toHaveBeenCalledExactlyOnceWith(
@@ -276,7 +280,7 @@ describe('archived category management', () => {
     )
     const wrapper = await mountPage(ArchivedExpenseCategoriesPage)
 
-    await getButton(wrapper, 'Remove').trigger('click')
+    await getCategoryAction(wrapper, 'Remove').trigger('click')
     await flushPromises()
 
     expect(categoriesApi.removeExpenseCategory).toHaveBeenCalledExactlyOnceWith('category-1')
@@ -295,10 +299,22 @@ describe('archived category management', () => {
     )
     const wrapper = await mountPage(ArchivedExpenseCategoriesPage)
 
-    await getButton(wrapper, 'Remove').trigger('click')
+    await getCategoryAction(wrapper, 'Remove').trigger('click')
     await flushPromises()
 
     expect(wrapper.get('[role="alert"]').text()).toBe('Category has linked expenses')
     expect(wrapper.text()).toContain('Travel')
+  })
+
+  it('uses the shared mobile action sheet for archived category actions', async () => {
+    stubMobileViewport()
+    categoriesApi.fetchArchivedExpenseCategories.mockResolvedValue([travel])
+    const wrapper = await mountPage(ArchivedExpenseCategoriesPage)
+
+    await wrapper.get('[data-mobile-archived-category-actions]').trigger('click')
+
+    expect(wrapper.get('[role="dialog"]').text()).toContain('Actions for Travel')
+    expect(getButton(wrapper, 'Restore category').exists()).toBe(true)
+    expect(getButton(wrapper, 'Remove category').exists()).toBe(true)
   })
 })
