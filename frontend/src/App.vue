@@ -106,23 +106,18 @@ watch(
   <div class="min-h-screen bg-canvas text-ink">
     <div v-if="isAuthenticated" class="min-h-screen lg:flex">
       <aside
-        class="hidden border-r border-white/10 bg-brand-strong text-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-[248px] lg:shrink-0 lg:flex-col"
+        data-workspace-index
+        class="hidden border-r border-line bg-surface-raised lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-[248px] lg:shrink-0 lg:flex-col"
       >
-        <div class="flex items-center gap-3 border-b border-white/10 px-6 py-6">
-          <span
-            class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface shadow-card"
-          >
+        <div class="flex items-center gap-3 border-b border-line px-6 py-6">
+          <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface">
             <img src="/logo-mark.svg" alt="" class="size-9" />
           </span>
-          <div class="flex items-center gap-3">
-            <div>
-              <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/45">
-                Evidence ledger
-              </p>
-              <p class="font-display mt-0.5 text-xl font-semibold tracking-[-0.025em] text-white">
-                Virelio
-              </p>
-            </div>
+          <div>
+            <p class="text-[10px] font-semibold tracking-[0.12em] text-evidence">Evidence ledger</p>
+            <p class="font-display mt-0.5 text-xl font-semibold tracking-[-0.025em] text-ink">
+              Virelio
+            </p>
           </div>
         </div>
 
@@ -131,9 +126,9 @@ watch(
             data-sidebar-scroll-region
             class="px-4 pb-2 pt-5 lg:min-h-0 lg:flex-1 lg:overflow-x-hidden lg:overflow-y-auto lg:overscroll-contain lg:[scrollbar-width:none] lg:[&::-webkit-scrollbar]:hidden"
           >
-            <nav aria-label="Primary navigation" class="space-y-5">
+            <nav aria-label="Primary navigation" class="space-y-6">
               <section v-for="group in primaryNavigationGroups" :key="group.label">
-                <p class="px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/35">
+                <p class="px-3 text-[10px] font-medium tracking-[0.1em] text-ink-muted">
                   {{ group.label }}
                 </p>
                 <div class="mt-1.5 space-y-0.5">
@@ -145,8 +140,8 @@ watch(
                     class="relative flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition"
                     :class="
                       isSectionActive(item.to)
-                        ? 'bg-white/10 text-white'
-                        : 'text-white/60 hover:bg-white/8 hover:text-white'
+                        ? 'bg-brand-soft text-brand-strong'
+                        : 'text-ink-muted hover:bg-surface-muted hover:text-ink'
                     "
                   >
                     <span
@@ -163,11 +158,11 @@ watch(
 
             <CollapsibleRoot
               v-model:open="archiveNavigationOpen"
-              class="mt-4 border-t border-white/10 pt-3"
+              class="mt-5 border-t border-line pt-4"
             >
               <CollapsibleTrigger
                 aria-label="Archived records"
-                class="flex min-h-10 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-white/55 transition hover:bg-white/8 hover:text-white"
+                class="flex min-h-10 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
               >
                 <Archive :size="18" :stroke-width="1.8" aria-hidden="true" />
                 <span class="flex-1">Archived records</span>
@@ -189,8 +184,8 @@ watch(
                     class="relative flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-sm transition"
                     :class="
                       route.path === item.to
-                        ? 'bg-white/10 font-semibold text-white'
-                        : 'text-white/50 hover:bg-white/8 hover:text-white'
+                        ? 'bg-brand-soft font-semibold text-brand-strong'
+                        : 'text-ink-muted hover:bg-surface-muted hover:text-ink'
                     "
                   >
                     <span
@@ -206,27 +201,27 @@ watch(
             </CollapsibleRoot>
           </div>
 
-          <div class="border-t border-white/10 px-4 py-4">
+          <div class="border-t border-line px-4 py-4">
             <RouterLink
               v-if="currentUser"
               to="/profile"
               aria-label="Profile settings"
               data-account-link
-              class="flex items-center gap-3 rounded-lg px-3 py-2 transition hover:bg-white/8"
-              active-class="bg-white/10 hover:bg-white/10"
+              class="flex items-center gap-3 rounded-lg px-3 py-2 transition hover:bg-surface-muted"
+              active-class="bg-brand-soft hover:bg-brand-soft"
             >
               <span
                 data-account-initials
-                class="font-figure flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent text-xs font-semibold tracking-[0.08em] text-white shadow-card"
+                class="font-figure flex size-9 shrink-0 items-center justify-center rounded-lg bg-evidence text-xs font-semibold tracking-[0.08em] text-white"
                 aria-hidden="true"
               >
                 {{ accountInitials }}
               </span>
               <span class="min-w-0">
-                <span class="block truncate text-sm font-semibold text-white">
+                <span class="block truncate text-sm font-semibold text-ink">
                   {{ currentUser.fullName }}
                 </span>
-                <span class="mt-0.5 block truncate text-xs text-white/45">
+                <span class="mt-0.5 block truncate text-xs text-ink-muted">
                   {{ currentUser.email }}
                 </span>
               </span>
@@ -234,7 +229,7 @@ watch(
 
             <button
               type="button"
-              class="mt-2 flex min-h-10 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-white/60 transition hover:bg-white/8 hover:text-white"
+              class="mt-2 flex min-h-10 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
               @click="logout"
             >
               <LogOut :size="17" aria-hidden="true" />
@@ -245,19 +240,22 @@ watch(
       </aside>
 
       <header
-        class="fixed inset-x-0 top-0 z-30 flex min-h-14 items-center border-b border-white/10 bg-brand-strong px-5 text-white shadow-card lg:hidden"
+        data-mobile-workspace-bar
+        class="fixed inset-x-0 top-0 z-30 flex min-h-14 items-center border-b border-line bg-surface/95 px-5 text-ink backdrop-blur lg:hidden"
       >
         <RouterLink to="/" class="flex items-center gap-2.5" aria-label="Virelio dashboard">
-          <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface">
+          <span
+            class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-raised"
+          >
             <img src="/logo-mark.svg" alt="" class="size-8" />
           </span>
           <span>
             <span
-              class="block text-[9px] font-semibold uppercase leading-none tracking-[0.18em] text-white/45"
+              class="block text-[9px] font-semibold leading-none tracking-[0.12em] text-evidence"
             >
               Evidence ledger
             </span>
-            <span class="font-display mt-1 block text-base font-semibold leading-none text-white">
+            <span class="font-display mt-1 block text-base font-semibold leading-none text-ink">
               Virelio
             </span>
           </span>
@@ -335,6 +333,7 @@ watch(
             <DialogClose
               class="flex size-11 shrink-0 items-center justify-center rounded-lg border border-line text-ink-muted transition hover:border-line-strong hover:text-ink"
               aria-label="Close more menu"
+              title="Close more menu"
             >
               <X :size="19" aria-hidden="true" />
             </DialogClose>
@@ -380,21 +379,21 @@ watch(
               v-if="currentUser"
               to="/profile"
               data-mobile-account-link
-              class="flex min-h-14 items-center gap-3 rounded-xl bg-brand-strong px-3 py-2 text-white"
+              class="flex min-h-14 items-center gap-3 rounded-xl border border-line bg-surface-raised px-3 py-2 text-ink"
             >
               <span
-                class="font-figure flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent text-xs font-semibold tracking-[0.08em] text-white"
+                class="font-figure flex size-9 shrink-0 items-center justify-center rounded-lg bg-evidence text-xs font-semibold tracking-[0.08em] text-white"
                 aria-hidden="true"
               >
                 {{ accountInitials }}
               </span>
               <span class="min-w-0 flex-1">
                 <span class="block truncate text-sm font-semibold">{{ currentUser.fullName }}</span>
-                <span class="mt-0.5 block truncate text-xs text-white/55">
+                <span class="mt-0.5 block truncate text-xs text-ink-muted">
                   {{ currentUser.email }}
                 </span>
               </span>
-              <span class="text-xs font-medium text-white/65">Profile</span>
+              <span class="text-xs font-medium text-ink-muted">Profile</span>
             </RouterLink>
 
             <button
