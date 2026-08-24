@@ -33,8 +33,11 @@ import { formatAmount, formatDate } from '@/lib/helpers'
 import { type Vendor, vendorSchema } from '@/lib/vendors/schema'
 import { mapZodErrors } from '@/lib/zod'
 import RecordActionSheet, { type RecordActionItem } from '@/components/ui/RecordActionSheet.vue'
+import EvidenceLedgerRow from '@/components/ui/EvidenceLedgerRow.vue'
+import LedgerSurface from '@/components/ui/LedgerSurface.vue'
 import ResponsiveFormSurface from '@/components/ui/ResponsiveFormSurface.vue'
 import ResponsiveSheet from '@/components/ui/ResponsiveSheet.vue'
+import WorkspaceHeader from '@/components/ui/WorkspaceHeader.vue'
 
 const expenses = ref<Expense[]>([])
 const PAGE_SIZE = 6
@@ -437,32 +440,24 @@ onMounted(loadExpensesPage)
 
 <template>
   <section class="min-w-0 space-y-6">
-    <header class="space-y-4 border-b border-line pb-6">
-      <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
-            Expense register
-          </p>
-          <h1
-            class="font-display mt-2 text-[2rem] font-semibold leading-tight tracking-[-0.035em] text-ink sm:text-[2.5rem]"
+    <div class="space-y-4">
+      <WorkspaceHeader
+        context="Expense ledger"
+        title="Every purchase, on the record."
+        description="Find, review, and maintain the entries behind your spending totals."
+      >
+        <template #actions>
+          <button
+            v-if="!showForm"
+            type="button"
+            class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong max-[375px]:w-full"
+            @click="openCreateForm"
           >
-            Every purchase, on the record.
-          </h1>
-          <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-[15px]">
-            Find, review, and maintain the entries behind your spending totals.
-          </p>
-        </div>
-
-        <button
-          v-if="!showForm"
-          type="button"
-          class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong max-[375px]:w-full"
-          @click="openCreateForm"
-        >
-          <Plus :size="17" aria-hidden="true" />
-          Add expense
-        </button>
-      </div>
+            <Plus :size="17" aria-hidden="true" />
+            Add expense
+          </button>
+        </template>
+      </WorkspaceHeader>
 
       <div
         v-if="actionError"
@@ -471,7 +466,7 @@ onMounted(loadExpensesPage)
       >
         {{ actionError }}
       </div>
-    </header>
+    </div>
 
     <div
       class="rounded-xl border border-line border-l-2 bg-surface p-4 shadow-card md:hidden"
@@ -915,10 +910,7 @@ onMounted(loadExpensesPage)
       </ResponsiveFormSurface>
     </div>
 
-    <section
-      data-expense-ledger
-      class="min-w-0 overflow-hidden rounded-xl border border-line bg-surface shadow-card"
-    >
+    <LedgerSurface data-expense-ledger class="overflow-hidden">
       <header
         class="flex items-center justify-between gap-4 border-b border-line px-5 py-4 sm:px-6"
       >
@@ -993,64 +985,26 @@ onMounted(loadExpensesPage)
         </button>
       </div>
 
-      <div v-else>
-        <div class="divide-y divide-line">
-          <article
-            v-for="expense in expenses"
+      <div v-else class="px-5 pb-4 pt-4 sm:px-6 sm:pb-5 sm:pt-5">
+        <div>
+          <EvidenceLedgerRow
+            v-for="(expense, index) in expenses"
             :key="expense.id"
             data-expense-record
-            class="group relative min-w-0 px-4 py-5 transition hover:bg-surface-muted/45 sm:px-6"
+            :continues="index < expenses.length - 1"
+            :tone="expense.categoryId ? 'evidence' : 'neutral'"
+            class="group transition hover:bg-surface-muted/45"
           >
-            <span
-              class="absolute inset-y-0 left-0 w-0.5 bg-transparent transition group-hover:bg-accent"
-              aria-hidden="true"
-            />
-            <div class="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div class="flex min-w-0 items-start gap-3.5">
-                <span
-                  class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand"
-                >
-                  <ReceiptText :size="18" :stroke-width="1.8" aria-hidden="true" />
-                </span>
-                <div class="min-w-0">
-                  <h4 class="truncate text-sm font-semibold text-ink sm:text-base">
-                    {{ expense.description }}
-                  </h4>
-                  <div
-                    class="mt-1.5 grid min-w-0 grid-cols-1 gap-y-1.5 text-xs text-ink-muted sm:flex sm:flex-wrap sm:gap-x-3"
-                  >
-                    <span class="inline-flex min-w-0 max-w-full items-center gap-1.5">
-                      <Store :size="13" aria-hidden="true" />
-                      <span class="truncate">{{
-                        vendorNameById.get(expense.vendorId) ?? 'Unknown vendor'
-                      }}</span>
-                    </span>
-                    <span class="inline-flex min-w-0 max-w-full items-center gap-1.5">
-                      <Tags :size="13" aria-hidden="true" />
-                      <span class="truncate">
-                        {{ categoryNameById.get(expense.categoryId ?? '') ?? 'No category' }}
-                      </span>
-                    </span>
-                    <span class="inline-flex min-w-0 max-w-full items-center gap-1.5">
-                      <CalendarDays :size="13" aria-hidden="true" />
-                      <span class="truncate">{{ formatDate(expense.expenseDate) }}</span>
-                    </span>
-                  </div>
-                  <p v-if="expense.notes" class="mt-2 line-clamp-2 text-sm text-ink-muted">
-                    {{ expense.notes }}
-                  </p>
-                </div>
-              </div>
-
-              <div
-                class="flex min-w-0 flex-wrap items-center justify-between gap-3 sm:flex-nowrap lg:justify-end"
-              >
-                <span
-                  class="font-figure mr-auto text-lg font-semibold tracking-[-0.025em] text-ink sm:mr-2"
-                >
+            <template #title>
+              <h4 class="break-words text-sm font-semibold text-ink sm:text-base">
+                {{ expense.description }}
+              </h4>
+            </template>
+            <template #amount>
+              <div class="flex min-w-0 flex-wrap items-center justify-end gap-2">
+                <span class="font-figure text-lg font-semibold tracking-[-0.025em] text-ink">
                   ${{ formatAmount(expense.amount) }}
                 </span>
-
                 <button
                   type="button"
                   class="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg bg-brand-soft px-2.5 text-brand transition hover:bg-brand hover:text-white"
@@ -1090,8 +1044,34 @@ onMounted(loadExpensesPage)
                   <EllipsisVertical :size="18" aria-hidden="true" />
                 </button>
               </div>
-            </div>
-          </article>
+            </template>
+            <template #metadata>
+              <div
+                data-expense-metadata
+                class="grid min-w-0 grid-cols-1 gap-y-1.5 sm:flex sm:flex-wrap sm:gap-x-3"
+              >
+                <span class="inline-flex min-w-0 max-w-full items-center gap-1.5">
+                  <Store :size="13" aria-hidden="true" />
+                  <span class="truncate">{{
+                    vendorNameById.get(expense.vendorId) ?? 'Unknown vendor'
+                  }}</span>
+                </span>
+                <span class="inline-flex min-w-0 max-w-full items-center gap-1.5">
+                  <Tags :size="13" aria-hidden="true" />
+                  <span class="truncate">{{
+                    categoryNameById.get(expense.categoryId ?? '') ?? 'No category'
+                  }}</span>
+                </span>
+                <span class="inline-flex min-w-0 max-w-full items-center gap-1.5">
+                  <CalendarDays :size="13" aria-hidden="true" />
+                  <span>{{ formatDate(expense.expenseDate) }}</span>
+                </span>
+              </div>
+            </template>
+            <template v-if="expense.notes" #annotation>
+              <p class="line-clamp-2">{{ expense.notes }}</p>
+            </template>
+          </EvidenceLedgerRow>
         </div>
 
         <nav
@@ -1126,7 +1106,7 @@ onMounted(loadExpensesPage)
           </div>
         </nav>
       </div>
-    </section>
+    </LedgerSurface>
 
     <RecordActionSheet
       :open="mobileActionsOpen"
