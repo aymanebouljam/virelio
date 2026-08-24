@@ -8,6 +8,8 @@ export const dashboardSummarySchema = z.object({
   activeVendors: z.number().int().nonnegative(),
   uncategorizedExpenses: z.number().int().nonnegative(),
   proofDocuments: z.number().int().nonnegative(),
+  missingProofExpenses: z.number().int().nonnegative(),
+  dueRecurringExpenses: z.number().int().nonnegative(),
   recentExpenses: z.array(
     z.object({
       id: z.string().trim().min(1),

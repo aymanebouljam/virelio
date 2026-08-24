@@ -106,6 +106,8 @@ describe('Dashboard e2e', () => {
         activeVendors: 0,
         uncategorizedExpenses: 0,
         proofDocuments: 0,
+        missingProofExpenses: 0,
+        dueRecurringExpenses: 0,
         recentExpenses: [],
         recentProofs: [],
         recentActivity: [],

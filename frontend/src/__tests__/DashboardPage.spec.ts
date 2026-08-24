@@ -13,10 +13,6 @@ const dashboardApi = vi.hoisted(() => ({
 
 vi.mock('@/lib/dashboard/api', () => dashboardApi)
 
-vi.mock('vue-chartjs', () => ({
-  Bar: { template: '<div data-chart-renderer></div>' },
-}))
-
 const routes: RouteRecordRaw[] = [
   { path: '/', name: 'dashboard', component: DashboardPage },
   {
@@ -41,6 +37,8 @@ const summary: DashboardSummary = {
   activeVendors: 3,
   uncategorizedExpenses: 1,
   proofDocuments: 2,
+  missingProofExpenses: 1,
+  dueRecurringExpenses: 2,
   recentExpenses: [],
   recentProofs: [],
   recentActivity: [
@@ -83,6 +81,8 @@ function emptySummary(): DashboardSummary {
     activeVendors: 0,
     uncategorizedExpenses: 0,
     proofDocuments: 0,
+    missingProofExpenses: 0,
+    dueRecurringExpenses: 0,
     recentExpenses: [],
     recentProofs: [],
     recentActivity: [],
@@ -104,7 +104,7 @@ describe('dashboard workflows', () => {
     dashboardApi.fetchDashboardSummary.mockResolvedValue(summary)
   })
 
-  it('shows loading before rendering metrics, category breakdown, and recent activity', async () => {
+  it('shows loading before rendering attention items and recent activity', async () => {
     let resolveSummary!: (summary: DashboardSummary) => void
     dashboardApi.fetchDashboardSummary.mockReturnValue(
       new Promise<DashboardSummary>((resolve) => {
@@ -121,23 +121,15 @@ describe('dashboard workflows', () => {
     await vi.dynamicImportSettled()
     await flushPromises()
 
-    expect(wrapper.get('h1').text()).toBe('Follow the record, not the noise.')
-    expect(wrapper.findAll('[data-summary-metric]')).toHaveLength(4)
-    expect(wrapper.text()).toContain('$425.50')
-    expect(wrapper.text()).toContain('Active vendors 3')
-    expect(wrapper.text()).toContain('Uncategorized 1')
-    expect(wrapper.text()).toContain('Proof documents 2')
-    expect(wrapper.text()).toContain('Travel')
-    expect(wrapper.text()).toContain('2 expenses')
+    expect(wrapper.get('h1').text()).toBe('See what your money is doing.')
+    expect(wrapper.find('[data-dashboard-attention]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Due this week')
+    expect(wrapper.text()).toContain('Missing receipts')
+    expect(wrapper.text()).toContain('Need a category')
     expect(wrapper.text()).toContain('Client-site flight')
     expect(wrapper.text()).toContain('receipt.pdf')
     expect(wrapper.findAll('a[href="/expenses/expense-1"]')).toHaveLength(2)
-    expect(wrapper.find('[data-chart-renderer]').exists()).toBe(true)
-    expect(wrapper.get('[aria-label="Category spending values"]').element.tagName).toBe('OL')
-    expect(wrapper.get('[data-category-value="Travel"]').text()).toContain('$300.00')
-    expect(wrapper.get('[data-category-value="Travel"]').text()).toContain('71%')
     expect(wrapper.get('[data-dashboard-recent-activity]').classes()).toContain('min-w-0')
-    expect(wrapper.get('[data-dashboard-category-spend]').classes()).toContain('min-w-0')
   })
 
   it('renders empty dashboard sections', async () => {
@@ -145,34 +137,22 @@ describe('dashboard workflows', () => {
 
     const { wrapper } = await mountPage()
 
-    expect(wrapper.text()).toContain('$0.00')
+    expect(wrapper.find('[data-dashboard-attention]').exists()).toBe(false)
     expect(wrapper.text()).toContain('No activity yet')
-    expect(wrapper.text()).toContain('No category activity yet')
     expect(wrapper.get('a[href="/expenses"]').text()).toContain('Manage expenses')
   })
 
-  it('renders the combined remaining category activity as Other', async () => {
+  it('fills the attention row when only two actions need attention', async () => {
     dashboardApi.fetchDashboardSummary.mockResolvedValue({
-      ...emptySummary(),
-      categoryBreakdown: [
-        {
-          categoryId: null,
-          categoryName: 'Other',
-          totalAmount: '300.00',
-          expenseCount: 2,
-        },
-      ],
+      ...summary,
+      dueRecurringExpenses: 0,
     })
 
     const { wrapper } = await mountPage()
-    const categorySection = wrapper
-      .findAll('section')
-      .find((section) => section.text().includes('Spend by category'))
+    const attention = wrapper.get('[data-dashboard-attention]')
 
-    expect(categorySection?.text()).toContain('Other')
-    expect(categorySection?.text()).toContain('2 expenses')
-    expect(categorySection?.text()).toContain('$300.00')
-    expect(categorySection?.get('[data-category-value="Other"]').text()).toContain('0%')
+    expect(attention.classes()).toContain('sm:grid-cols-2')
+    expect(attention.findAll('a')).toHaveLength(2)
   })
 
   it('shows API loading failures', async () => {
@@ -206,6 +186,28 @@ describe('dashboard workflows', () => {
     const filters = { dateFrom: '2026-08-01', dateTo: '2026-08-31' }
     expect(router.currentRoute.value.query).toEqual(filters)
     expect(dashboardApi.fetchDashboardSummary).toHaveBeenLastCalledWith(filters)
+  })
+
+  it('keeps the current dashboard visible while a date-range refresh is loading', async () => {
+    const { wrapper } = await mountPage()
+    let resolveRefresh!: (value: DashboardSummary) => void
+    dashboardApi.fetchDashboardSummary.mockReturnValue(
+      new Promise<DashboardSummary>((resolve) => {
+        resolveRefresh = resolve
+      }),
+    )
+
+    await wrapper.get('#dashboard-date-from').setValue('2026-08-01')
+    await flushPromises()
+
+    expect(wrapper.find('[data-dashboard-attention]').exists()).toBe(true)
+    expect(wrapper.get('[role="status"]').text()).toContain('Updating dashboard…')
+    expect(wrapper.find('[aria-label="Loading dashboard"]').exists()).toBe(false)
+
+    resolveRefresh({ ...summary, dueRecurringExpenses: 4 })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Due this week')
   })
 
   it('clears the active date range', async () => {
