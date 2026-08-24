@@ -392,6 +392,7 @@ onMounted(loadVendors)
           />
           <input
             v-model="search"
+            name="vendor-search"
             type="search"
             maxlength="120"
             placeholder="Search vendors"
