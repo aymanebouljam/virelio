@@ -175,6 +175,17 @@ async function mountActive(initialRoute = '/recurring-expenses') {
   return result
 }
 
+function stubMobileViewport(matches = true) {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn(() => ({
+      matches,
+      addEventListener: vi.fn<() => void>(),
+      removeEventListener: vi.fn<() => void>(),
+    })),
+  )
+}
+
 async function mountArchived() {
   const wrapper = mount(ArchivedRecurringExpensesPage)
   await flushPromises()
@@ -226,6 +237,21 @@ describe('recurring expense management', () => {
 
     expect(wrapper.text()).toContain('No recurring expenses yet')
     expect(wrapper.text()).toContain('Create first schedule')
+  })
+
+  it('opens the recurring expense form in a mobile sheet', async () => {
+    stubMobileViewport()
+    const { wrapper } = await mountActive()
+
+    await getButton(wrapper, 'Add recurring expense').trigger('click')
+
+    expect(wrapper.get('[role="dialog"]').text()).toContain('Create recurring expense')
+    expect(wrapper.find('form[aria-label="Recurring expense form"]').exists()).toBe(true)
+
+    await getButton(wrapper, 'Cancel').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('form[aria-label="Recurring expense form"]').exists()).toBe(false)
   })
 
   it('loads URL page queries and navigates between pages', async () => {
@@ -328,6 +354,40 @@ describe('recurring expense management', () => {
     expect(getButton(wrapper, 'Generate').attributes()).toHaveProperty('disabled')
   })
 
+  it('routes mobile record actions to edit a recurring expense', async () => {
+    stubMobileViewport()
+    recurringApi.fetchRecurringExpenses.mockResolvedValue(templatePage([monthlyTemplate]))
+    const { wrapper } = await mountActive()
+
+    await wrapper.get('[data-mobile-recurring-actions]').trigger('click')
+
+    expect(wrapper.get('[role="dialog"]').text()).toContain('Actions for Workspace subscription')
+    await getButton(wrapper, 'Edit schedule').trigger('click')
+
+    expect(wrapper.get('[data-recurring-expense-form-panel] h2').text()).toBe(
+      'Edit recurring expense',
+    )
+  })
+
+  it('generates a due recurring expense from mobile record actions', async () => {
+    const advanced = { ...monthlyTemplate, nextDueDate: '2099-09-01T00:00:00.000Z' }
+    stubMobileViewport()
+    recurringApi.fetchRecurringExpenses
+      .mockResolvedValueOnce(templatePage([monthlyTemplate]))
+      .mockResolvedValueOnce(templatePage([advanced]))
+    recurringApi.generateRecurringExpense.mockResolvedValue(generatedExpense)
+    const { wrapper } = await mountActive()
+
+    await wrapper.get('[data-mobile-recurring-actions]').trigger('click')
+    await getButton(wrapper, 'Generate expense').trigger('click')
+    await flushPromises()
+
+    expect(recurringApi.generateRecurringExpense).toHaveBeenCalledExactlyOnceWith(
+      monthlyTemplate.id,
+    )
+    expect(wrapper.get('[data-recurring-expense-record]').text()).toContain('2099')
+  })
+
   it('archives a confirmed recurring expense', async () => {
     recurringApi.fetchRecurringExpenses
       .mockResolvedValueOnce(templatePage([monthlyTemplate]))
@@ -341,6 +401,30 @@ describe('recurring expense management', () => {
     const { wrapper } = await mountActive()
 
     await getButton(wrapper, 'Archive').trigger('click')
+    await flushPromises()
+
+    expect(confirmMock).toHaveBeenCalledExactlyOnceWith(
+      'Are you sure you want to archive this recurring expense?',
+    )
+    expect(recurringApi.archiveRecurringExpense).toHaveBeenCalledExactlyOnceWith(monthlyTemplate.id)
+    expect(wrapper.text()).toContain('No recurring expenses yet')
+  })
+
+  it('archives a recurring expense from mobile record actions', async () => {
+    stubMobileViewport()
+    recurringApi.fetchRecurringExpenses
+      .mockResolvedValueOnce(templatePage([monthlyTemplate]))
+      .mockResolvedValueOnce(templatePage([]))
+    recurringApi.archiveRecurringExpense.mockResolvedValue({
+      ...templateRecord,
+      archivedAt: archivedTemplate.archivedAt,
+    })
+    const confirmMock = vi.fn<() => boolean>(() => true)
+    vi.stubGlobal('confirm', confirmMock)
+    const { wrapper } = await mountActive()
+
+    await wrapper.get('[data-mobile-recurring-actions]').trigger('click')
+    await getButton(wrapper, 'Archive schedule').trigger('click')
     await flushPromises()
 
     expect(confirmMock).toHaveBeenCalledExactlyOnceWith(
