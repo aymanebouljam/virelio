@@ -138,6 +138,17 @@ async function mountPage(initialRoute = '/expenses') {
   return result
 }
 
+function stubMobileViewport(matches = true) {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn(() => ({
+      matches,
+      addEventListener: vi.fn<() => void>(),
+      removeEventListener: vi.fn<() => void>(),
+    })),
+  )
+}
+
 describe('expense listing and filters', () => {
   beforeEach(() => {
     vi.resetAllMocks()
@@ -253,6 +264,50 @@ describe('expense listing and filters', () => {
     }
     expect(router.currentRoute.value.query).toEqual(filters)
     expect(expensesApi.fetchExpenses).toHaveBeenLastCalledWith(expenseRequest(filters))
+  })
+
+  it('opens the expense form in a mobile sheet', async () => {
+    stubMobileViewport()
+    const { wrapper } = await mountPage()
+
+    await getButton(wrapper, 'Add expense').trigger('click')
+
+    expect(wrapper.get('[role="dialog"]').text()).toContain('Create expense')
+    expect(wrapper.find('form[aria-label="Expense form"]').exists()).toBe(true)
+
+    await getButton(wrapper, 'Cancel').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('form[aria-label="Expense form"]').exists()).toBe(false)
+  })
+
+  it('applies filters from the mobile filter sheet', async () => {
+    stubMobileViewport()
+    expensesApi.fetchExpenses
+      .mockResolvedValueOnce(expensePage([]))
+      .mockResolvedValueOnce(expensePage([]))
+    const { router, wrapper } = await mountPage()
+
+    await wrapper.get('[data-mobile-filter-trigger]').trigger('click')
+    const filterForm = wrapper.get('[data-mobile-filter-form]')
+    await filterForm.get('#mobile-expense-vendor-filter').setValue(atlas.id)
+    await filterForm.get('#mobile-expense-category-filter').setValue(travel.id)
+    const dateFields = filterForm.findAll('input[type="date"]')
+    expect(dateFields).toHaveLength(2)
+    await dateFields[0]!.setValue('2026-08-01')
+    await dateFields[1]!.setValue('2026-08-31')
+    await filterForm.trigger('submit')
+    await flushPromises()
+
+    const filters = {
+      vendorId: atlas.id,
+      categoryId: travel.id,
+      dateFrom: '2026-08-01',
+      dateTo: '2026-08-31',
+    }
+    expect(router.currentRoute.value.query).toEqual(filters)
+    expect(expensesApi.fetchExpenses).toHaveBeenLastCalledWith(expenseRequest(filters))
+    expect(wrapper.find('[data-mobile-filter-form]').exists()).toBe(false)
   })
 
   it('synchronizes external route changes and clears active filters', async () => {
@@ -372,6 +427,42 @@ describe('expense listing and filters', () => {
     )
     expect(expensesApi.archiveExpense).toHaveBeenCalledExactlyOnceWith('expense-1')
     expect(wrapper.text()).not.toContain('Client-site flight')
+    expect(wrapper.text()).toContain('No expenses yet')
+  })
+
+  it('opens mobile record actions and edits an expense', async () => {
+    stubMobileViewport()
+    expensesApi.fetchExpenses.mockResolvedValue(expensePage([flight]))
+    const { wrapper } = await mountPage()
+
+    await wrapper.get('[data-mobile-record-actions]').trigger('click')
+
+    expect(wrapper.get('[role="dialog"]').text()).toContain('Actions for Client-site flight')
+    await getButton(wrapper, 'Edit expense').trigger('click')
+
+    expect(wrapper.get('[data-expense-form-panel] h2').text()).toBe('Edit expense')
+  })
+
+  it('archives an expense from mobile record actions', async () => {
+    stubMobileViewport()
+    expensesApi.fetchExpenses
+      .mockResolvedValueOnce(expensePage([flight]))
+      .mockResolvedValueOnce(expensePage([]))
+    expensesApi.archiveExpense.mockResolvedValue(
+      expense({ archivedAt: '2026-08-05T10:00:00.000Z' }),
+    )
+    const confirmMock = vi.fn<() => boolean>(() => true)
+    vi.stubGlobal('confirm', confirmMock)
+    const { wrapper } = await mountPage()
+
+    await wrapper.get('[data-mobile-record-actions]').trigger('click')
+    await getButton(wrapper, 'Archive expense').trigger('click')
+    await flushPromises()
+
+    expect(confirmMock).toHaveBeenCalledExactlyOnceWith(
+      'Are you sure you want to archive this expense?',
+    )
+    expect(expensesApi.archiveExpense).toHaveBeenCalledExactlyOnceWith('expense-1')
     expect(wrapper.text()).toContain('No expenses yet')
   })
 

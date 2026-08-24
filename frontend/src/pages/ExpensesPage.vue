@@ -6,6 +6,7 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  Ellipsis,
   Filter,
   Pencil,
   Plus,
@@ -30,6 +31,9 @@ import { fetchVendors } from '@/lib/vendors/api'
 import { formatAmount, formatDate } from '@/lib/helpers'
 import { type Vendor, vendorSchema } from '@/lib/vendors/schema'
 import { mapZodErrors } from '@/lib/zod'
+import RecordActionSheet, { type RecordActionItem } from '@/components/ui/RecordActionSheet.vue'
+import ResponsiveFormSurface from '@/components/ui/ResponsiveFormSurface.vue'
+import ResponsiveSheet from '@/components/ui/ResponsiveSheet.vue'
 
 const expenses = ref<Expense[]>([])
 const PAGE_SIZE = 6
@@ -42,6 +46,9 @@ const loading = ref(true)
 const error = ref('')
 const actionError = ref('')
 const showForm = ref(false)
+const mobileFilterOpen = ref(false)
+const mobileActionsOpen = ref(false)
+const activeActionExpense = ref<Expense | null>(null)
 const editingId = ref<string | null>(null)
 const submitting = ref(false)
 const submitError = ref('')
@@ -116,6 +123,16 @@ async function clearFilters() {
   await applyFilters()
 }
 
+async function applyMobileFilters() {
+  await applyFilters()
+  mobileFilterOpen.value = false
+}
+
+async function clearMobileFilters() {
+  await clearFilters()
+  mobileFilterOpen.value = false
+}
+
 async function changePage(page: number) {
   if (page < 1) return
 
@@ -157,6 +174,11 @@ const categoryNameById = computed(
   () => new Map(categories.value.map((category) => [category.id, category.name])),
 )
 
+const mobileExpenseActions = [
+  { id: 'edit', label: 'Edit expense', icon: Pencil },
+  { id: 'archive', label: 'Archive expense', icon: Archive, tone: 'danger' },
+] as const satisfies readonly RecordActionItem[]
+
 function resetForm() {
   const emptyState: ExpenseFormValues = {
     vendorId: '',
@@ -179,6 +201,13 @@ function openCreateForm() {
   resetForm()
   showForm.value = true
 }
+
+function updateFormOpen(open: boolean) {
+  if (!open) {
+    resetForm()
+  }
+}
+
 function openExpense(expense: Expense) {
   void router.push(`/expenses/${expense.id}`)
 }
@@ -200,6 +229,25 @@ function openEditForm(expense: Expense) {
   submitError.value = ''
   formErrors.value = {}
   actionError.value = ''
+}
+
+function openMobileActions(expense: Expense) {
+  activeActionExpense.value = expense
+  mobileActionsOpen.value = true
+}
+
+function handleMobileAction(actionId: string) {
+  const expense = activeActionExpense.value
+  if (!expense) return
+
+  mobileActionsOpen.value = false
+  activeActionExpense.value = null
+
+  if (actionId === 'edit') {
+    openEditForm(expense)
+  } else if (actionId === 'archive') {
+    void archive(expense)
+  }
 }
 
 function normalizePayload(input: ExpenseFormValues): ExpensePayload {
@@ -424,8 +472,54 @@ onMounted(loadExpensesPage)
       </div>
     </header>
 
+    <div
+      class="rounded-xl border border-line border-l-2 bg-surface p-4 shadow-card md:hidden"
+      :class="hasFilters ? 'border-l-accent' : 'border-l-line-strong'"
+    >
+      <div class="flex items-end gap-2">
+        <label class="min-w-0 flex-1">
+          <span class="mb-1.5 block text-xs font-medium text-ink-muted">Search expenses</span>
+          <span class="relative block">
+            <Search
+              :size="16"
+              aria-hidden="true"
+              class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted/65"
+            />
+            <input
+              v-model="filters.search"
+              type="search"
+              maxlength="240"
+              placeholder="Description, notes, vendor..."
+              class="min-h-11 w-full rounded-lg border border-line bg-surface-raised py-2 pl-9 pr-3 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand focus:bg-surface"
+            />
+          </span>
+        </label>
+
+        <button
+          type="button"
+          data-mobile-filter-trigger
+          class="inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-sm font-semibold text-brand transition hover:border-line-strong hover:bg-surface-muted"
+          :aria-label="
+            activeFilterCount ? `Open filters, ${activeFilterCount} active` : 'Open filters'
+          "
+          @click="mobileFilterOpen = true"
+        >
+          <Filter :size="16" aria-hidden="true" />
+          <span v-if="activeFilterCount" class="font-figure">{{ activeFilterCount }}</span>
+          <span>Filter</span>
+        </button>
+      </div>
+      <p class="mt-2 text-xs text-ink-muted">
+        {{
+          activeFilterCount
+            ? `${activeFilterCount} active filter${activeFilterCount === 1 ? '' : 's'}`
+            : 'Showing all records'
+        }}
+      </p>
+    </div>
+
     <form
-      class="rounded-xl border border-line border-l-2 bg-surface p-4 shadow-card"
+      class="hidden rounded-xl border border-line border-l-2 bg-surface p-4 shadow-card md:block"
       :class="hasFilters ? 'border-l-accent' : 'border-l-line-strong'"
       role="search"
       @submit.prevent="applyFilters"
@@ -528,216 +622,288 @@ onMounted(loadExpensesPage)
       </div>
     </form>
 
-    <section
-      v-if="showForm"
-      data-expense-form-panel
-      class="relative overflow-hidden rounded-xl border border-line bg-surface shadow-card"
+    <ResponsiveSheet
+      v-model:open="mobileFilterOpen"
+      title="Filter expenses"
+      description="Narrow the expense register by vendor, category, or date."
+      close-label="Close expense filters"
     >
-      <span class="absolute inset-y-0 left-0 w-1 bg-accent" aria-hidden="true" />
-      <header
-        class="flex items-center gap-3 border-b border-line bg-surface-raised px-5 py-4 sm:px-6"
-      >
-        <span class="flex size-9 items-center justify-center rounded-lg bg-brand-soft text-brand">
-          <Pencil v-if="editingId" :size="18" aria-hidden="true" />
-          <Plus v-else :size="18" aria-hidden="true" />
-        </span>
-        <div>
-          <p class="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
-            {{ editingId ? 'Revise record' : 'New record' }}
-          </p>
-          <h2 class="font-display mt-0.5 text-lg font-semibold tracking-[-0.02em] text-ink">
-            {{ editingId ? 'Edit expense' : 'Create expense' }}
-          </h2>
-          <p class="text-xs text-ink-muted">
-            {{
-              editingId ? 'Update the details for this record.' : 'Add a purchase to your ledger.'
-            }}
-          </p>
-        </div>
-      </header>
+      <form data-mobile-filter-form class="space-y-5" @submit.prevent="applyMobileFilters">
+        <label class="block">
+          <span class="mb-1.5 block text-sm font-medium text-ink">Vendor</span>
+          <select
+            id="mobile-expense-vendor-filter"
+            v-model="filters.vendorId"
+            class="min-h-11 w-full rounded-lg border border-line bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand focus:bg-surface"
+          >
+            <option value="">All vendors</option>
+            <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
+              {{ vendor.name }}
+            </option>
+          </select>
+        </label>
 
-      <form aria-label="Expense form" class="space-y-5 p-5 sm:p-6" @submit.prevent="submitForm">
+        <label class="block">
+          <span class="mb-1.5 block text-sm font-medium text-ink">Category</span>
+          <select
+            id="mobile-expense-category-filter"
+            v-model="filters.categoryId"
+            class="min-h-11 w-full rounded-lg border border-line bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand focus:bg-surface"
+          >
+            <option value="">All categories</option>
+            <option v-for="category in categories" :key="category.id" :value="category.id">
+              {{ category.name }}
+            </option>
+          </select>
+        </label>
+
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="block">
-            <span class="mb-1.5 block text-sm font-medium text-ink">Vendor</span>
-            <select
-              id="expense-vendor"
-              v-model="form.vendorId"
-              :aria-describedby="formErrors.vendorId ? 'expense-vendor-error' : undefined"
-              :aria-invalid="Boolean(formErrors.vendorId)"
-              :class="[
-                'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
-                formErrors.vendorId
-                  ? 'border-danger/45 focus:border-danger'
-                  : 'border-line hover:border-line-strong focus:border-brand',
-              ]"
-            >
-              <option value="">Select vendor</option>
-              <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
-                {{ vendor.name }}
-              </option>
-            </select>
-            <p
-              v-if="formErrors.vendorId"
-              id="expense-vendor-error"
-              class="mt-1.5 text-sm text-danger"
-            >
-              {{ formErrors.vendorId }}
-            </p>
-          </label>
-
-          <label class="block">
-            <span class="mb-1.5 block text-sm font-medium text-ink">Category</span>
-            <select
-              id="expense-category"
-              v-model="form.categoryId"
-              :aria-describedby="formErrors.categoryId ? 'expense-category-error' : undefined"
-              :aria-invalid="Boolean(formErrors.categoryId)"
-              :class="[
-                'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
-                formErrors.categoryId
-                  ? 'border-danger/45 focus:border-danger'
-                  : 'border-line hover:border-line-strong focus:border-brand',
-              ]"
-            >
-              <option value="">No category</option>
-              <option v-for="category in categories" :key="category.id" :value="category.id">
-                {{ category.name }}
-              </option>
-            </select>
-            <p
-              v-if="formErrors.categoryId"
-              id="expense-category-error"
-              class="mt-1.5 text-sm text-danger"
-            >
-              {{ formErrors.categoryId }}
-            </p>
-          </label>
-
-          <label class="block sm:col-span-2">
-            <span class="mb-1.5 block text-sm font-medium text-ink">Description</span>
+            <span class="mb-1.5 block text-sm font-medium text-ink">From</span>
             <input
-              id="expense-description"
-              v-model="form.description"
-              type="text"
-              maxlength="240"
-              :aria-describedby="formErrors.description ? 'expense-description-error' : undefined"
-              :aria-invalid="Boolean(formErrors.description)"
-              :class="[
-                'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
-                formErrors.description
-                  ? 'border-danger/45 focus:border-danger'
-                  : 'border-line hover:border-line-strong focus:border-brand',
-              ]"
-            />
-            <p
-              v-if="formErrors.description"
-              id="expense-description-error"
-              class="mt-1.5 text-sm text-danger"
-            >
-              {{ formErrors.description }}
-            </p>
-          </label>
-
-          <label class="block">
-            <span class="mb-1.5 block text-sm font-medium text-ink">Amount</span>
-            <input
-              id="expense-amount"
-              v-model.number="form.amount"
-              type="number"
-              min="0.01"
-              step="0.01"
-              :aria-describedby="formErrors.amount ? 'expense-amount-error' : undefined"
-              :aria-invalid="Boolean(formErrors.amount)"
-              :class="[
-                'font-figure min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
-                formErrors.amount
-                  ? 'border-danger/45 focus:border-danger'
-                  : 'border-line hover:border-line-strong focus:border-brand',
-              ]"
-            />
-            <p
-              v-if="formErrors.amount"
-              id="expense-amount-error"
-              class="mt-1.5 text-sm text-danger"
-            >
-              {{ formErrors.amount }}
-            </p>
-          </label>
-
-          <label class="block">
-            <span class="mb-1.5 block text-sm font-medium text-ink">Expense date</span>
-            <input
-              id="expense-date"
-              v-model="form.expenseDate"
+              v-model="filters.dateFrom"
               type="date"
-              :aria-describedby="formErrors.expenseDate ? 'expense-date-error' : undefined"
-              :aria-invalid="Boolean(formErrors.expenseDate)"
-              :class="[
-                'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
-                formErrors.expenseDate
-                  ? 'border-danger/45 focus:border-danger'
-                  : 'border-line hover:border-line-strong focus:border-brand',
-              ]"
+              class="min-h-11 w-full rounded-lg border border-line bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand focus:bg-surface"
             />
-            <p
-              v-if="formErrors.expenseDate"
-              id="expense-date-error"
-              class="mt-1.5 text-sm text-danger"
-            >
-              {{ formErrors.expenseDate }}
-            </p>
           </label>
 
-          <label class="block sm:col-span-2">
-            <span class="mb-1.5 block text-sm font-medium text-ink">Notes</span>
-            <textarea
-              id="expense-notes"
-              v-model="form.notes"
-              rows="4"
-              maxlength="1000"
-              :aria-describedby="formErrors.notes ? 'expense-notes-error' : undefined"
-              :aria-invalid="Boolean(formErrors.notes)"
-              :class="[
-                'w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
-                formErrors.notes
-                  ? 'border-danger/45 focus:border-danger'
-                  : 'border-line hover:border-line-strong focus:border-brand',
-              ]"
+          <label class="block">
+            <span class="mb-1.5 block text-sm font-medium text-ink">To</span>
+            <input
+              v-model="filters.dateTo"
+              type="date"
+              class="min-h-11 w-full rounded-lg border border-line bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand focus:bg-surface"
             />
-            <p v-if="formErrors.notes" id="expense-notes-error" class="mt-1.5 text-sm text-danger">
-              {{ formErrors.notes }}
-            </p>
           </label>
         </div>
 
         <div
-          v-if="submitError"
-          role="alert"
-          class="rounded-lg border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
+          class="flex flex-col-reverse gap-2 border-t border-line pt-5 sm:flex-row sm:justify-end"
         >
-          {{ submitError }}
-        </div>
-
-        <div class="flex items-center justify-end gap-3 border-t border-line pt-5">
           <button
+            v-if="hasFilters"
             type="button"
-            class="min-h-11 rounded-lg px-4 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
-            @click="resetForm"
+            class="inline-flex min-h-11 w-full items-center justify-center rounded-lg px-4 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink sm:w-auto"
+            @click="clearMobileFilters"
           >
-            Cancel
+            Clear filters
           </button>
-
           <button
             type="submit"
-            :disabled="submitting"
-            class="inline-flex min-h-11 items-center justify-center rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-line-strong"
+            class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong sm:w-auto"
           >
-            {{ submitting ? 'Saving...' : 'Save expense' }}
+            <Search :size="16" aria-hidden="true" />
+            Apply filters
           </button>
         </div>
       </form>
-    </section>
+    </ResponsiveSheet>
+
+    <div v-if="showForm" data-expense-form-panel>
+      <ResponsiveFormSurface
+        :open="showForm"
+        :eyebrow="editingId ? 'Revise record' : 'New record'"
+        :title="editingId ? 'Edit expense' : 'Create expense'"
+        :description="
+          editingId ? 'Update the details for this record.' : 'Add a purchase to your ledger.'
+        "
+        @update:open="updateFormOpen"
+      >
+        <template #icon>
+          <Pencil v-if="editingId" :size="18" aria-hidden="true" />
+          <Plus v-else :size="18" aria-hidden="true" />
+        </template>
+
+        <form aria-label="Expense form" class="space-y-5" @submit.prevent="submitForm">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label class="block">
+              <span class="mb-1.5 block text-sm font-medium text-ink">Vendor</span>
+              <select
+                id="expense-vendor"
+                v-model="form.vendorId"
+                :aria-describedby="formErrors.vendorId ? 'expense-vendor-error' : undefined"
+                :aria-invalid="Boolean(formErrors.vendorId)"
+                :class="[
+                  'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                  formErrors.vendorId
+                    ? 'border-danger/45 focus:border-danger'
+                    : 'border-line hover:border-line-strong focus:border-brand',
+                ]"
+              >
+                <option value="">Select vendor</option>
+                <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
+                  {{ vendor.name }}
+                </option>
+              </select>
+              <p
+                v-if="formErrors.vendorId"
+                id="expense-vendor-error"
+                class="mt-1.5 text-sm text-danger"
+              >
+                {{ formErrors.vendorId }}
+              </p>
+            </label>
+
+            <label class="block">
+              <span class="mb-1.5 block text-sm font-medium text-ink">Category</span>
+              <select
+                id="expense-category"
+                v-model="form.categoryId"
+                :aria-describedby="formErrors.categoryId ? 'expense-category-error' : undefined"
+                :aria-invalid="Boolean(formErrors.categoryId)"
+                :class="[
+                  'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                  formErrors.categoryId
+                    ? 'border-danger/45 focus:border-danger'
+                    : 'border-line hover:border-line-strong focus:border-brand',
+                ]"
+              >
+                <option value="">No category</option>
+                <option v-for="category in categories" :key="category.id" :value="category.id">
+                  {{ category.name }}
+                </option>
+              </select>
+              <p
+                v-if="formErrors.categoryId"
+                id="expense-category-error"
+                class="mt-1.5 text-sm text-danger"
+              >
+                {{ formErrors.categoryId }}
+              </p>
+            </label>
+
+            <label class="block sm:col-span-2">
+              <span class="mb-1.5 block text-sm font-medium text-ink">Description</span>
+              <input
+                id="expense-description"
+                v-model="form.description"
+                type="text"
+                maxlength="240"
+                :aria-describedby="formErrors.description ? 'expense-description-error' : undefined"
+                :aria-invalid="Boolean(formErrors.description)"
+                :class="[
+                  'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                  formErrors.description
+                    ? 'border-danger/45 focus:border-danger'
+                    : 'border-line hover:border-line-strong focus:border-brand',
+                ]"
+              />
+              <p
+                v-if="formErrors.description"
+                id="expense-description-error"
+                class="mt-1.5 text-sm text-danger"
+              >
+                {{ formErrors.description }}
+              </p>
+            </label>
+
+            <label class="block">
+              <span class="mb-1.5 block text-sm font-medium text-ink">Amount</span>
+              <input
+                id="expense-amount"
+                v-model.number="form.amount"
+                type="number"
+                inputmode="decimal"
+                min="0.01"
+                step="0.01"
+                :aria-describedby="formErrors.amount ? 'expense-amount-error' : undefined"
+                :aria-invalid="Boolean(formErrors.amount)"
+                :class="[
+                  'font-figure min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                  formErrors.amount
+                    ? 'border-danger/45 focus:border-danger'
+                    : 'border-line hover:border-line-strong focus:border-brand',
+                ]"
+              />
+              <p
+                v-if="formErrors.amount"
+                id="expense-amount-error"
+                class="mt-1.5 text-sm text-danger"
+              >
+                {{ formErrors.amount }}
+              </p>
+            </label>
+
+            <label class="block">
+              <span class="mb-1.5 block text-sm font-medium text-ink">Expense date</span>
+              <input
+                id="expense-date"
+                v-model="form.expenseDate"
+                type="date"
+                :aria-describedby="formErrors.expenseDate ? 'expense-date-error' : undefined"
+                :aria-invalid="Boolean(formErrors.expenseDate)"
+                :class="[
+                  'min-h-11 w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                  formErrors.expenseDate
+                    ? 'border-danger/45 focus:border-danger'
+                    : 'border-line hover:border-line-strong focus:border-brand',
+                ]"
+              />
+              <p
+                v-if="formErrors.expenseDate"
+                id="expense-date-error"
+                class="mt-1.5 text-sm text-danger"
+              >
+                {{ formErrors.expenseDate }}
+              </p>
+            </label>
+
+            <label class="block sm:col-span-2">
+              <span class="mb-1.5 block text-sm font-medium text-ink">Notes</span>
+              <textarea
+                id="expense-notes"
+                v-model="form.notes"
+                rows="4"
+                maxlength="1000"
+                :aria-describedby="formErrors.notes ? 'expense-notes-error' : undefined"
+                :aria-invalid="Boolean(formErrors.notes)"
+                :class="[
+                  'w-full rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition focus:bg-surface',
+                  formErrors.notes
+                    ? 'border-danger/45 focus:border-danger'
+                    : 'border-line hover:border-line-strong focus:border-brand',
+                ]"
+              />
+              <p
+                v-if="formErrors.notes"
+                id="expense-notes-error"
+                class="mt-1.5 text-sm text-danger"
+              >
+                {{ formErrors.notes }}
+              </p>
+            </label>
+          </div>
+
+          <div
+            v-if="submitError"
+            role="alert"
+            class="rounded-lg border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
+          >
+            {{ submitError }}
+          </div>
+
+          <div
+            class="flex flex-col-reverse gap-2 border-t border-line pt-5 sm:flex-row sm:items-center sm:justify-end sm:gap-3"
+          >
+            <button
+              type="button"
+              class="min-h-11 w-full rounded-lg px-4 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink sm:w-auto"
+              @click="resetForm"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              :disabled="submitting"
+              class="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-line-strong sm:w-auto"
+            >
+              {{ submitting ? 'Saving...' : 'Save expense' }}
+            </button>
+          </div>
+        </form>
+      </ResponsiveFormSurface>
+    </div>
 
     <section class="overflow-hidden rounded-xl border border-line bg-surface shadow-card">
       <header
@@ -876,7 +1042,7 @@ onMounted(loadExpensesPage)
 
                 <button
                   type="button"
-                  class="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
+                  class="hidden min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink md:inline-flex"
                   @click="openEditForm(expense)"
                 >
                   <Pencil :size="14" aria-hidden="true" />
@@ -885,11 +1051,21 @@ onMounted(loadExpensesPage)
 
                 <button
                   type="button"
-                  class="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-danger-soft hover:text-danger"
+                  class="hidden min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink-muted transition hover:bg-danger-soft hover:text-danger md:inline-flex"
                   @click="archive(expense)"
                 >
                   <Archive :size="14" aria-hidden="true" />
                   Archive
+                </button>
+
+                <button
+                  type="button"
+                  data-mobile-record-actions
+                  class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-line bg-surface px-2.5 text-ink-muted transition hover:border-line-strong hover:bg-surface-muted hover:text-ink md:hidden"
+                  :aria-label="`Actions for ${expense.description}`"
+                  @click="openMobileActions(expense)"
+                >
+                  <Ellipsis :size="18" aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -929,5 +1105,13 @@ onMounted(loadExpensesPage)
         </nav>
       </div>
     </section>
+
+    <RecordActionSheet
+      :open="mobileActionsOpen"
+      :record-label="activeActionExpense?.description ?? 'expense'"
+      :actions="mobileExpenseActions"
+      @update:open="mobileActionsOpen = $event"
+      @select="handleMobileAction"
+    />
   </section>
 </template>
