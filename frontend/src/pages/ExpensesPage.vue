@@ -489,6 +489,7 @@ onMounted(loadExpensesPage)
             <input
               data-mobile-expense-search
               v-model="filters.search"
+              name="expense-search"
               type="search"
               maxlength="240"
               placeholder="Search expenses"
@@ -560,6 +561,7 @@ onMounted(loadExpensesPage)
             />
             <input
               v-model="filters.search"
+              name="expense-search"
               type="search"
               maxlength="240"
               placeholder="Description, notes, vendor..."
@@ -572,6 +574,7 @@ onMounted(loadExpensesPage)
           <span class="mb-1.5 block text-xs font-medium text-ink-muted">Vendor</span>
           <select
             v-model="filters.vendorId"
+            name="vendor-id"
             class="min-h-10 w-full rounded-lg border border-line bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand focus:bg-surface"
           >
             <option value="">All vendors</option>
@@ -585,6 +588,7 @@ onMounted(loadExpensesPage)
           <span class="mb-1.5 block text-xs font-medium text-ink-muted">Category</span>
           <select
             v-model="filters.categoryId"
+            name="category-id"
             class="min-h-10 w-full rounded-lg border border-line bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand focus:bg-surface"
           >
             <option value="">All categories</option>
@@ -598,6 +602,7 @@ onMounted(loadExpensesPage)
           <span class="mb-1.5 block text-xs font-medium text-ink-muted">From</span>
           <input
             v-model="filters.dateFrom"
+            name="date-from"
             type="date"
             class="min-h-10 w-full rounded-lg border border-line bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand focus:bg-surface"
           />
@@ -607,6 +612,7 @@ onMounted(loadExpensesPage)
           <span class="mb-1.5 block text-xs font-medium text-ink-muted">To</span>
           <input
             v-model="filters.dateTo"
+            name="date-to"
             type="date"
             class="min-h-10 w-full rounded-lg border border-line bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand focus:bg-surface"
           />
@@ -664,6 +670,7 @@ onMounted(loadExpensesPage)
             <span class="mb-1.5 block text-sm font-medium text-ink">From</span>
             <input
               v-model="filters.dateFrom"
+              name="date-from"
               type="date"
               class="min-h-11 w-full rounded-lg border border-line bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand focus:bg-surface"
             />
@@ -673,6 +680,7 @@ onMounted(loadExpensesPage)
             <span class="mb-1.5 block text-sm font-medium text-ink">To</span>
             <input
               v-model="filters.dateTo"
+              name="date-to"
               type="date"
               class="min-h-11 w-full rounded-lg border border-line bg-surface-raised px-3 py-2 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand focus:bg-surface"
             />
