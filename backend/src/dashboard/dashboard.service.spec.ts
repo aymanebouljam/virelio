@@ -8,6 +8,7 @@ describe('DashboardService', () => {
   const vendorCountMock = jest.fn();
   const expenseCountMock = jest.fn();
   const proofCountMock = jest.fn();
+  const recurringExpenseTemplateCountMock = jest.fn();
   const expenseFindManyMock = jest.fn();
   const proofFindManyMock = jest.fn();
 
@@ -23,10 +24,19 @@ describe('DashboardService', () => {
       count: proofCountMock,
       findMany: proofFindManyMock,
     },
+    recurringExpenseTemplate: {
+      count: recurringExpenseTemplateCountMock,
+    },
   } as unknown as PrismaService;
 
   beforeEach(() => {
     jest.resetAllMocks();
+    vendorCountMock.mockResolvedValue(0);
+    expenseCountMock.mockResolvedValue(0);
+    proofCountMock.mockResolvedValue(0);
+    recurringExpenseTemplateCountMock.mockResolvedValue(0);
+    expenseFindManyMock.mockResolvedValue([]);
+    proofFindManyMock.mockResolvedValue([]);
     service = new DashboardService(prisma);
   });
 
@@ -70,8 +80,9 @@ describe('DashboardService', () => {
 
   it('returns dashboard summary aggregates', async () => {
     vendorCountMock.mockResolvedValueOnce(4);
-    expenseCountMock.mockResolvedValueOnce(2);
+    expenseCountMock.mockResolvedValueOnce(2).mockResolvedValueOnce(1);
     proofCountMock.mockResolvedValueOnce(3);
+    recurringExpenseTemplateCountMock.mockResolvedValueOnce(2);
     expenseFindManyMock.mockResolvedValueOnce([
       {
         id: 'expense-1',
@@ -123,6 +134,8 @@ describe('DashboardService', () => {
       activeVendors: 4,
       uncategorizedExpenses: 2,
       proofDocuments: 3,
+      missingProofExpenses: 1,
+      dueRecurringExpenses: 2,
       recentExpenses: [
         {
           id: 'expense-1',
@@ -215,7 +228,13 @@ describe('DashboardService', () => {
         },
       },
     });
-
+    expect(expenseCountMock).toHaveBeenCalledWith({
+      where: {
+        userId,
+        archivedAt: null,
+        proofs: { none: {} },
+      },
+    });
     expect(expenseFindManyMock).toHaveBeenCalledWith({
       where: { userId, archivedAt: null },
       include: {
@@ -270,6 +289,8 @@ describe('DashboardService', () => {
       activeVendors: 0,
       uncategorizedExpenses: 0,
       proofDocuments: 0,
+      missingProofExpenses: 0,
+      dueRecurringExpenses: 0,
       recentExpenses: [],
       recentProofs: [],
       recentActivity: [],

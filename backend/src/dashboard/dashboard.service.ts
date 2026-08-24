@@ -11,6 +11,8 @@ export type DashboardSummary = {
   activeVendors: number;
   uncategorizedExpenses: number;
   proofDocuments: number;
+  missingProofExpenses: number;
+  dueRecurringExpenses: number;
   recentExpenses: Array<{
     id: string;
     description: string;
@@ -59,11 +61,17 @@ export class DashboardService {
       Object.keys(dateFilter).length > 0 ? { expenseDate: dateFilter } : {};
     const proofDateFilter =
       Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
+    const dueToday = new Date();
+    dueToday.setUTCHours(0, 0, 0, 0);
+    const dueSoon = new Date(dueToday);
+    dueSoon.setUTCDate(dueSoon.getUTCDate() + 7);
 
     const [
       activeVendors,
       uncategorizedExpenses,
       proofDocuments,
+      missingProofExpenses,
+      dueRecurringExpenses,
       expenses,
       proofs,
     ] = await Promise.all([
@@ -84,6 +92,21 @@ export class DashboardService {
             userId,
             archivedAt: null,
           },
+        },
+      }),
+      this.prisma.expense.count({
+        where: {
+          userId,
+          archivedAt: null,
+          ...expenseDateFilter,
+          proofs: { none: {} },
+        },
+      }),
+      this.prisma.recurringExpenseTemplate.count({
+        where: {
+          userId,
+          archivedAt: null,
+          nextDueDate: { gte: dueToday, lte: dueSoon },
         },
       }),
       this.prisma.expense.findMany({
@@ -248,6 +271,8 @@ export class DashboardService {
       activeVendors,
       uncategorizedExpenses,
       proofDocuments,
+      missingProofExpenses,
+      dueRecurringExpenses,
       recentExpenses,
       recentProofs,
       recentActivity,
