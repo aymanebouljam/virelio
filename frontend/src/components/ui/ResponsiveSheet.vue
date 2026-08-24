@@ -37,7 +37,7 @@ function updateOpen(value: boolean) {
       class="fixed inset-0 z-40 bg-brand-strong/55 backdrop-blur-[2px] data-[state=closed]:animate-none"
     />
     <DialogContent
-      class="fixed inset-x-0 bottom-0 z-50 flex max-h-[min(90dvh,48rem)] flex-col overflow-hidden rounded-t-2xl border-t border-line bg-surface shadow-[0_-16px_48px_rgba(31,43,66,0.2)] focus:outline-none sm:inset-x-auto sm:left-1/2 sm:w-full sm:max-w-xl sm:-translate-x-1/2"
+      class="fixed inset-x-3 bottom-0 z-50 flex max-h-[min(90dvh,48rem)] flex-col overflow-hidden rounded-t-2xl border-t border-line bg-surface shadow-[0_-16px_48px_rgba(31,43,66,0.2)] focus:outline-none sm:inset-x-auto sm:left-1/2 sm:w-full sm:max-w-xl sm:-translate-x-1/2"
     >
       <div class="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-line-strong" aria-hidden="true" />
 

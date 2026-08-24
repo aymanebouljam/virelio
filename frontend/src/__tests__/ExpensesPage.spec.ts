@@ -193,6 +193,17 @@ describe('expense listing and filters', () => {
     expect(wrapper.text()).toContain('Quarterly visit')
     expect(wrapper.text()).toContain('$125.50')
     expect(wrapper.text()).toContain('1 recorded expense')
+    expect(wrapper.get('[data-expense-ledger]').classes()).toContain('min-w-0')
+    expect(wrapper.get('[data-expense-record]').classes()).toContain('min-w-0')
+    expect(wrapper.get('[data-mobile-expense-search]').attributes('placeholder')).toBe(
+      'Search expenses',
+    )
+    expect(wrapper.get('[aria-label="View Client-site flight"]').attributes('title')).toBe(
+      'View expense',
+    )
+    expect(wrapper.get('[data-expense-record] .mt-1\\.5').classes()).toEqual(
+      expect.arrayContaining(['grid-cols-1', 'sm:flex']),
+    )
   })
 
   it('loads the requested page and navigates to the previous page', async () => {
