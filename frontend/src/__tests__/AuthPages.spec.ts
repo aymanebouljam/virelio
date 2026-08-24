@@ -86,6 +86,8 @@ describe('login workflow', () => {
     expect(accountContext.text()).toContain('Proof stays attached to each expense')
     expect(accountContext.findAll('li')).toHaveLength(3)
     expect(wrapper.get('[aria-label="Virelio brand"]').text()).toContain('Virelio')
+    expect(accountContext.classes()).toEqual(expect.arrayContaining(['hidden', 'lg:flex']))
+    expect(wrapper.get('[data-auth-compact-brand]').classes()).toContain('lg:hidden')
     expect(wrapper.get('#login-email').attributes('autocomplete')).toBe('email')
     expect(wrapper.get('#login-password').attributes('autocomplete')).toBe('current-password')
     expect(wrapper.get('[aria-label="Show password"]').attributes('aria-label')).toBe(
@@ -174,6 +176,8 @@ describe('registration workflow', () => {
     expect(accountContext.text()).toContain('Expense proof stays with the original record')
     expect(accountContext.findAll('li')).toHaveLength(3)
     expect(wrapper.get('[aria-label="Virelio brand"]').text()).toContain('Virelio')
+    expect(accountContext.classes()).toEqual(expect.arrayContaining(['hidden', 'lg:flex']))
+    expect(wrapper.get('[data-auth-compact-brand]').classes()).toContain('lg:hidden')
     expect(wrapper.get('#register-full-name').attributes('autocomplete')).toBe('name')
     expect(wrapper.get('#register-email').attributes('autocomplete')).toBe('email')
     expect(wrapper.get('#register-password').attributes('autocomplete')).toBe('new-password')
