@@ -2,7 +2,16 @@
 import { onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ZodError } from 'zod'
-import { Archive, ChevronLeft, ChevronRight, Palette, Pencil, Plus, Tags } from '@lucide/vue'
+import {
+  Archive,
+  ChevronLeft,
+  ChevronRight,
+  EllipsisVertical,
+  Palette,
+  Pencil,
+  Plus,
+  Tags,
+} from '@lucide/vue'
 import { ApiError } from '@/lib/api'
 import { mapZodErrors } from '@/lib/zod'
 import {
@@ -17,6 +26,8 @@ import {
   type ExpenseCategory,
   type ExpenseCategoryFormValues,
 } from '@/lib/expense-categories/schema'
+import RecordActionSheet, { type RecordActionItem } from '@/components/ui/RecordActionSheet.vue'
+import ResponsiveFormSurface from '@/components/ui/ResponsiveFormSurface.vue'
 
 const categories = ref<ExpenseCategory[]>([])
 const PAGE_SIZE = 6
@@ -36,6 +47,8 @@ const editingId = ref<string | null>(null)
 const submitting = ref(false)
 const submitError = ref('')
 const formErrors = ref<Record<string, string>>({})
+const mobileActionsOpen = ref(false)
+const activeActionCategory = ref<ExpenseCategory | null>(null)
 
 const baseline = ref<ExpenseCategoryFormValues>({
   name: '',
@@ -46,6 +59,11 @@ const form = ref<ExpenseCategoryFormValues>({
   name: '',
   color: '#64748b',
 })
+
+const mobileCategoryActions = [
+  { id: 'edit', label: 'Edit category', icon: Pencil },
+  { id: 'archive', label: 'Archive category', icon: Archive, tone: 'danger' },
+] as const satisfies readonly RecordActionItem[]
 
 function readPageQuery() {
   const value = route.query.page
@@ -94,6 +112,31 @@ function openEditForm(category: ExpenseCategory) {
   submitError.value = ''
   formErrors.value = {}
   actionError.value = ''
+}
+
+function updateFormOpen(open: boolean) {
+  if (!open) {
+    resetForm()
+  }
+}
+
+function openMobileActions(category: ExpenseCategory) {
+  activeActionCategory.value = category
+  mobileActionsOpen.value = true
+}
+
+function handleMobileAction(actionId: string) {
+  const category = activeActionCategory.value
+  if (!category) return
+
+  mobileActionsOpen.value = false
+  activeActionCategory.value = null
+
+  if (actionId === 'edit') {
+    openEditForm(category)
+  } else if (actionId === 'archive') {
+    void archive(category)
+  }
 }
 
 function normalizePayload(input: ExpenseCategoryFormValues): ExpenseCategoryFormValues {
@@ -237,7 +280,7 @@ onMounted(loadCategoriesPage)
 </script>
 
 <template>
-  <section class="space-y-7">
+  <section class="min-w-0 space-y-7">
     <header class="space-y-4">
       <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -253,7 +296,7 @@ onMounted(loadCategoriesPage)
         <button
           v-if="!showForm"
           type="button"
-          class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white shadow-card transition hover:bg-brand-strong"
+          class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white shadow-card transition hover:bg-brand-strong max-[375px]:w-full"
           @click="openCreateForm"
         >
           <Plus :size="17" aria-hidden="true" />
@@ -270,106 +313,103 @@ onMounted(loadCategoriesPage)
       </div>
     </header>
 
-    <section
-      v-if="showForm"
-      class="overflow-hidden rounded-2xl border border-line bg-surface shadow-lifted"
-    >
-      <header
-        class="flex items-center gap-3 border-b border-line bg-brand-soft/55 px-5 py-4 sm:px-6"
+    <div v-if="showForm" data-category-form-panel>
+      <ResponsiveFormSurface
+        :open="showForm"
+        :eyebrow="editingId ? 'Revise category' : 'New category'"
+        :title="editingId ? 'Edit category' : 'Create category'"
+        description="Choose a clear name and a recognizable color."
+        @update:open="updateFormOpen"
       >
-        <span class="flex size-10 items-center justify-center rounded-xl bg-brand text-white">
+        <template #icon>
           <Pencil v-if="editingId" :size="18" aria-hidden="true" />
           <Plus v-else :size="18" aria-hidden="true" />
-        </span>
-        <div>
-          <h3 class="text-lg font-semibold tracking-tight text-ink">
-            {{ editingId ? 'Edit category' : 'Create category' }}
-          </h3>
-          <p class="text-xs text-ink-muted">Choose a clear name and a recognizable color.</p>
-        </div>
-      </header>
+        </template>
 
-      <form aria-label="Category form" class="space-y-5 p-5 sm:p-6" @submit.prevent="submitForm">
-        <div class="grid gap-4 sm:grid-cols-[1fr_10rem]">
-          <label class="block">
-            <span class="mb-1.5 block text-sm font-medium text-ink">Name</span>
-            <input
-              id="category-name"
-              v-model="form.name"
-              type="text"
-              maxlength="120"
-              :aria-describedby="formErrors.name ? 'category-name-error' : undefined"
-              :aria-invalid="Boolean(formErrors.name)"
-              :class="[
-                'min-h-11 w-full rounded-xl border bg-surface px-3 py-2 text-sm text-ink outline-none transition',
-                formErrors.name
-                  ? 'border-danger focus:border-danger'
-                  : 'border-line hover:border-line-strong focus:border-brand',
-              ]"
-            />
-            <p
-              v-if="formErrors.name"
-              id="category-name-error"
-              class="ml-3 mt-2 text-sm text-danger"
-            >
-              {{ formErrors.name }}
-            </p>
-          </label>
-
-          <label class="block">
-            <span class="mb-1.5 block text-sm font-medium text-ink">Color</span>
-            <span
-              class="flex min-h-11 items-center gap-2 rounded-xl border border-line bg-surface px-2"
-            >
+        <form aria-label="Category form" class="space-y-5" @submit.prevent="submitForm">
+          <div class="grid gap-4 sm:grid-cols-[1fr_10rem]">
+            <label class="block">
+              <span class="mb-1.5 block text-sm font-medium text-ink">Name</span>
               <input
-                id="category-color"
-                v-model="form.color"
-                type="color"
-                :aria-describedby="formErrors.color ? 'category-color-error' : undefined"
-                :aria-invalid="Boolean(formErrors.color)"
-                class="size-8 cursor-pointer rounded-lg border-0 bg-transparent p-0"
+                id="category-name"
+                v-model="form.name"
+                type="text"
+                maxlength="120"
+                :aria-describedby="formErrors.name ? 'category-name-error' : undefined"
+                :aria-invalid="Boolean(formErrors.name)"
+                :class="[
+                  'min-h-11 w-full rounded-xl border bg-surface px-3 py-2 text-sm text-ink outline-none transition',
+                  formErrors.name
+                    ? 'border-danger focus:border-danger'
+                    : 'border-line hover:border-line-strong focus:border-brand',
+                ]"
               />
-              <span class="font-mono text-xs uppercase text-ink-muted">{{ form.color }}</span>
-            </span>
-            <p
-              v-if="formErrors.color"
-              id="category-color-error"
-              class="ml-3 mt-2 text-sm text-danger"
+              <p
+                v-if="formErrors.name"
+                id="category-name-error"
+                class="ml-3 mt-2 text-sm text-danger"
+              >
+                {{ formErrors.name }}
+              </p>
+            </label>
+
+            <label class="block">
+              <span class="mb-1.5 block text-sm font-medium text-ink">Color</span>
+              <span
+                class="flex min-h-11 items-center gap-2 rounded-xl border border-line bg-surface px-2"
+              >
+                <input
+                  id="category-color"
+                  v-model="form.color"
+                  type="color"
+                  :aria-describedby="formErrors.color ? 'category-color-error' : undefined"
+                  :aria-invalid="Boolean(formErrors.color)"
+                  class="size-8 cursor-pointer rounded-lg border-0 bg-transparent p-0"
+                />
+                <span class="font-mono text-xs uppercase text-ink-muted">{{ form.color }}</span>
+              </span>
+              <p
+                v-if="formErrors.color"
+                id="category-color-error"
+                class="ml-3 mt-2 text-sm text-danger"
+              >
+                {{ formErrors.color }}
+              </p>
+            </label>
+          </div>
+
+          <div
+            v-if="submitError"
+            role="alert"
+            class="rounded-2xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
+          >
+            {{ submitError }}
+          </div>
+
+          <div
+            class="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3"
+          >
+            <button
+              type="button"
+              class="min-h-11 w-full rounded-xl px-4 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink sm:w-auto"
+              @click="resetForm"
             >
-              {{ formErrors.color }}
-            </p>
-          </label>
-        </div>
+              Cancel
+            </button>
 
-        <div
-          v-if="submitError"
-          role="alert"
-          class="rounded-2xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
-        >
-          {{ submitError }}
-        </div>
+            <button
+              type="submit"
+              :disabled="submitting"
+              class="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-line-strong sm:w-auto"
+            >
+              {{ submitting ? 'Saving...' : 'Save category' }}
+            </button>
+          </div>
+        </form>
+      </ResponsiveFormSurface>
+    </div>
 
-        <div class="flex items-center justify-end gap-3">
-          <button
-            type="button"
-            class="min-h-11 rounded-xl px-4 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
-            @click="resetForm"
-          >
-            Cancel
-          </button>
-
-          <button
-            type="submit"
-            :disabled="submitting"
-            class="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-line-strong"
-          >
-            {{ submitting ? 'Saving...' : 'Save category' }}
-          </button>
-        </div>
-      </form>
-    </section>
-
-    <section class="overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
+    <section class="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
       <header class="border-b border-line px-5 py-4 sm:px-6">
         <h3 class="text-base font-semibold text-ink">Active categories</h3>
         <p class="mt-0.5 text-xs text-ink-muted">
@@ -431,45 +471,54 @@ onMounted(loadCategoriesPage)
             :style="{ backgroundColor: category.color ?? undefined }"
             aria-hidden="true"
           />
-          <div class="flex items-start justify-between gap-3 pt-1">
-            <div class="flex min-w-0 items-center gap-3">
+          <div class="flex min-w-0 items-center gap-3 pt-1 pr-12 sm:pr-0">
+            <span
+              class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface-muted"
+            >
               <span
-                class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface-muted"
-              >
-                <span
-                  class="size-4 rounded-full bg-line-strong ring-2 ring-surface shadow-sm"
-                  :style="{ backgroundColor: category.color ?? undefined }"
-                />
-              </span>
-              <div class="min-w-0">
-                <h4 class="truncate text-sm font-semibold text-ink sm:text-base">
-                  {{ category.name }}
-                </h4>
-                <p class="mt-0.5 flex items-center gap-1 text-xs text-ink-muted">
-                  <Tags :size="12" aria-hidden="true" />
-                  Expense category
-                </p>
-              </div>
+                class="size-4 rounded-full bg-line-strong ring-2 ring-surface shadow-sm"
+                :style="{ backgroundColor: category.color ?? undefined }"
+              />
+            </span>
+            <div class="min-w-0">
+              <h4 class="truncate text-sm font-semibold text-ink sm:text-base">
+                {{ category.name }}
+              </h4>
+              <p class="mt-0.5 flex items-center gap-1 text-xs text-ink-muted">
+                <Tags :size="12" aria-hidden="true" />
+                Expense category
+              </p>
             </div>
           </div>
 
-          <div class="mt-5 flex items-center gap-2 border-t border-line pt-3">
+          <div class="mt-5 flex items-center justify-end gap-2 border-t border-line pt-3">
             <button
               type="button"
-              class="inline-flex min-h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
+              class="hidden min-h-11 min-w-11 items-center justify-center rounded-xl bg-surface-muted px-2.5 text-ink-muted transition hover:bg-surface-muted hover:text-ink sm:inline-flex"
+              :aria-label="`Edit ${category.name}`"
+              title="Edit category"
               @click="openEditForm(category)"
             >
-              <Pencil :size="14" aria-hidden="true" />
-              Edit
+              <Pencil :size="17" :stroke-width="1.8" aria-hidden="true" />
             </button>
 
             <button
               type="button"
-              class="inline-flex min-h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-ink-muted transition hover:bg-danger-soft hover:text-danger"
+              class="hidden min-h-11 min-w-11 items-center justify-center rounded-xl bg-danger-soft px-2.5 text-danger transition hover:bg-danger hover:text-white sm:inline-flex"
+              :aria-label="`Archive ${category.name}`"
+              title="Archive category"
               @click="archive(category)"
             >
-              <Archive :size="14" aria-hidden="true" />
-              Archive
+              <Archive :size="17" :stroke-width="1.8" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              data-mobile-category-actions
+              class="absolute right-4 top-4 inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-surface px-2.5 text-ink-muted transition hover:bg-surface-muted hover:text-ink sm:hidden"
+              :aria-label="`Actions for ${category.name}`"
+              @click="openMobileActions(category)"
+            >
+              <EllipsisVertical :size="18" aria-hidden="true" />
             </button>
           </div>
         </article>
@@ -507,5 +556,13 @@ onMounted(loadCategoriesPage)
         </div>
       </nav>
     </section>
+
+    <RecordActionSheet
+      :open="mobileActionsOpen"
+      :record-label="activeActionCategory?.name ?? 'category'"
+      :actions="mobileCategoryActions"
+      @update:open="mobileActionsOpen = $event"
+      @select="handleMobileAction"
+    />
   </section>
 </template>

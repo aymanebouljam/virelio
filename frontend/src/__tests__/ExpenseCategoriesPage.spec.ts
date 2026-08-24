@@ -87,6 +87,17 @@ async function mountPage(initialRoute = '/expense-categories') {
   return result
 }
 
+function stubMobileViewport(matches = true) {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn(() => ({
+      matches,
+      addEventListener: vi.fn<() => void>(),
+      removeEventListener: vi.fn<() => void>(),
+    })),
+  )
+}
+
 describe('expense category management', () => {
   beforeEach(() => {
     vi.resetAllMocks()
@@ -211,7 +222,7 @@ describe('expense category management', () => {
     categoriesApi.updateExpenseCategory.mockResolvedValue(updatedTravel)
     const { wrapper } = await mountPage()
 
-    await getButton(wrapper, 'Edit').trigger('click')
+    await wrapper.get('button[aria-label="Edit Travel"]').trigger('click')
     await getFormField(wrapper, 'Name').setValue('Business travel')
     await getFormField(wrapper, 'Color').setValue('#0f766e')
     await getCategoryForm(wrapper).trigger('submit')
@@ -225,6 +236,41 @@ describe('expense category management', () => {
     expect(wrapper.find('form[aria-label="Category form"]').exists()).toBe(false)
   })
 
+  it('uses the shared mobile action sheet to edit a category', async () => {
+    stubMobileViewport()
+    categoriesApi.fetchExpenseCategoriesPage.mockResolvedValue(categoryPage([travel]))
+    const { wrapper } = await mountPage()
+
+    await wrapper.get('[data-mobile-category-actions]').trigger('click')
+
+    expect(wrapper.get('[role="dialog"]').text()).toContain('Actions for Travel')
+    await getButton(wrapper, 'Edit category').trigger('click')
+    expect(wrapper.get('[data-category-form-panel] h2').text()).toBe('Edit category')
+  })
+
+  it('archives a category from the shared mobile action sheet', async () => {
+    stubMobileViewport()
+    categoriesApi.fetchExpenseCategoriesPage
+      .mockResolvedValueOnce(categoryPage([travel]))
+      .mockResolvedValueOnce(categoryPage([]))
+    categoriesApi.archiveExpenseCategory.mockResolvedValue(
+      category({ archivedAt: '2026-08-04T10:00:00.000Z' }),
+    )
+    const confirmMock = vi.fn<() => boolean>(() => true)
+    vi.stubGlobal('confirm', confirmMock)
+    const { wrapper } = await mountPage()
+
+    await wrapper.get('[data-mobile-category-actions]').trigger('click')
+    await getButton(wrapper, 'Archive category').trigger('click')
+    await flushPromises()
+
+    expect(confirmMock).toHaveBeenCalledExactlyOnceWith(
+      'Are you sure you want to archive this category?',
+    )
+    expect(categoriesApi.archiveExpenseCategory).toHaveBeenCalledExactlyOnceWith('category-1')
+    expect(wrapper.text()).toContain('No categories yet')
+  })
+
   it('archives a confirmed category', async () => {
     categoriesApi.fetchExpenseCategoriesPage
       .mockResolvedValueOnce(categoryPage([travel]))
@@ -236,7 +282,7 @@ describe('expense category management', () => {
     vi.stubGlobal('confirm', confirmMock)
     const { wrapper } = await mountPage()
 
-    await getButton(wrapper, 'Archive').trigger('click')
+    await wrapper.get('button[aria-label="Archive Travel"]').trigger('click')
     await flushPromises()
 
     expect(confirmMock).toHaveBeenCalledExactlyOnceWith(
