@@ -67,7 +67,7 @@ async function submit() {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <section class="min-w-0 space-y-6">
     <header class="space-y-3 border-b border-line pb-6">
       <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
         Account record
@@ -82,28 +82,30 @@ async function submit() {
       </p>
     </header>
 
-    <div class="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
+    <div class="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
       <form
         aria-label="Profile settings form"
         data-profile-record
-        class="overflow-hidden rounded-xl border border-line bg-surface shadow-card"
+        class="min-w-0 overflow-hidden rounded-xl border border-line bg-surface shadow-card"
         @submit.prevent="submit"
       >
         <header
-          class="flex items-center gap-3 border-b border-line bg-brand-soft/55 px-5 py-4 sm:px-6"
+          class="flex min-w-0 items-center gap-3 border-b border-line bg-brand-soft/55 px-5 py-4 sm:px-6"
         >
           <span
             data-profile-initials
-            class="font-figure flex size-10 items-center justify-center rounded-xl bg-accent text-xs font-semibold tracking-[0.08em] text-white shadow-card"
+            class="font-figure flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent text-xs font-semibold tracking-[0.08em] text-white shadow-card"
             aria-hidden="true"
           >
             {{ profileInitials }}
           </span>
-          <div>
-            <h2 class="font-display text-lg font-semibold tracking-[-0.02em] text-ink">
+          <div class="min-w-0">
+            <h2 class="font-display break-words text-lg font-semibold tracking-[-0.02em] text-ink">
               Identity details
             </h2>
-            <p class="text-xs text-ink-muted">Used to identify you throughout your workspace.</p>
+            <p class="text-xs leading-5 text-ink-muted">
+              Used to identify you throughout your workspace.
+            </p>
           </div>
         </header>
 
@@ -169,11 +171,13 @@ async function submit() {
           </p>
         </div>
 
-        <footer class="flex justify-end border-t border-line bg-surface-raised px-5 py-4 sm:px-6">
+        <footer
+          class="flex flex-col gap-2 border-t border-line bg-surface-raised px-5 py-4 sm:flex-row sm:justify-end sm:px-6"
+        >
           <button
             type="submit"
             :disabled="submitting || unchanged"
-            class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-45"
+            class="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-45 sm:min-h-10 sm:w-auto"
           >
             <Save :size="15" aria-hidden="true" />
             {{ submitting ? 'Saving...' : 'Save changes' }}
@@ -183,21 +187,23 @@ async function submit() {
 
       <aside
         v-if="currentUser"
-        class="relative overflow-hidden rounded-xl border border-line bg-surface p-5 shadow-card sm:p-6"
+        class="relative min-w-0 overflow-hidden rounded-xl border border-line bg-surface p-5 shadow-card sm:p-6"
       >
         <span class="absolute inset-y-0 left-0 w-1 bg-accent" aria-hidden="true" />
-        <header class="border-b border-line pb-5">
+        <header class="min-w-0 border-b border-line pb-5">
           <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-accent">
             Membership ledger
           </p>
-          <h2 class="font-display mt-1 text-lg font-semibold tracking-[-0.02em] text-ink">
+          <h2
+            class="font-display mt-1 break-words text-lg font-semibold tracking-[-0.02em] text-ink"
+          >
             Account history
           </h2>
         </header>
 
         <div class="border-b border-line py-5">
           <p class="text-xs font-medium text-ink-muted">Current identity</p>
-          <p class="mt-2 text-sm font-semibold text-ink">{{ currentUser.fullName }}</p>
+          <p class="mt-2 break-words text-sm font-semibold text-ink">{{ currentUser.fullName }}</p>
           <p class="mt-1 break-words text-sm text-ink-muted">{{ currentUser.email }}</p>
           <span
             class="mt-3 inline-flex border-l-2 border-success pl-2 text-xs font-semibold text-success"
