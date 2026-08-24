@@ -50,12 +50,14 @@ describe('profile settings workflow', () => {
   it('loads the current profile and disables unchanged submissions', () => {
     const wrapper = mount(ProfileSettingsPage)
 
-    expect(wrapper.get('h1').text()).toBe('Keep your account record current.')
+    expect(wrapper.get('h1').text()).toBe('Profile settings')
     expect(wrapper.findAll('[data-profile-record]')).toHaveLength(1)
     expect(wrapper.get('#profile-full-name').element).toHaveProperty('value', 'Local Owner')
     expect(wrapper.get('#profile-email').element).toHaveProperty('value', 'owner@example.test')
     expect(wrapper.get('#profile-full-name').attributes('autocomplete')).toBe('name')
     expect(wrapper.get('#profile-email').attributes('autocomplete')).toBe('email')
+    expect(wrapper.get('#profile-full-name').attributes('name')).toBe('fullName')
+    expect(wrapper.get('#profile-email').attributes('name')).toBe('email')
     expect(wrapper.get('button[type="submit"]').attributes()).toHaveProperty('disabled')
     expect(wrapper.get('[data-profile-initials]').text()).toBe('LO')
     expect(wrapper.get('[data-profile-initials]').attributes('aria-hidden')).toBe('true')
