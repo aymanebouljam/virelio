@@ -39,6 +39,11 @@ describe('ledger design system', () => {
 
     expect(surface.classes()).toContain('bg-brand-strong')
     expect(surface.classes()).toContain('rounded-xl')
+    expect(row.classes()).toContain('py-4')
+    expect(row.classes()).not.toContain('last:pb-0')
+    expect(row.get('.flex.min-w-0.flex-col').classes()).toEqual(
+      expect.arrayContaining(['sm:flex-row', 'sm:justify-between']),
+    )
     expect(row.get('[aria-hidden="true"] span').classes()).toContain('bg-evidence')
     expect(row.text()).toContain('Atlas · 12 Aug')
   })

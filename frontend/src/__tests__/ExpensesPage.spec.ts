@@ -201,7 +201,7 @@ describe('expense listing and filters', () => {
     expect(wrapper.get('[aria-label="View Client-site flight"]').attributes('title')).toBe(
       'View expense',
     )
-    expect(wrapper.get('[data-expense-record] .mt-1\\.5').classes()).toEqual(
+    expect(wrapper.get('[data-expense-record] [data-expense-metadata]').classes()).toEqual(
       expect.arrayContaining(['grid-cols-1', 'sm:flex']),
     )
   })

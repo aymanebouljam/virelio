@@ -4,7 +4,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { ZodError } from 'zod'
 import {
   Archive,
-  CalendarClock,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
@@ -40,7 +39,10 @@ import { fetchVendors } from '@/lib/vendors/api'
 import { vendorSchema, type Vendor } from '@/lib/vendors/schema'
 import { mapZodErrors } from '@/lib/zod'
 import RecordActionSheet, { type RecordActionItem } from '@/components/ui/RecordActionSheet.vue'
+import EvidenceLedgerRow from '@/components/ui/EvidenceLedgerRow.vue'
+import LedgerSurface from '@/components/ui/LedgerSurface.vue'
 import ResponsiveFormSurface from '@/components/ui/ResponsiveFormSurface.vue'
+import WorkspaceHeader from '@/components/ui/WorkspaceHeader.vue'
 
 const PAGE_SIZE = 6
 const route = useRoute()
@@ -364,33 +366,24 @@ onMounted(loadPage)
 
 <template>
   <section class="space-y-6">
-    <header class="space-y-4 border-b border-line pb-6">
-      <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
-            Repeat-cost schedule
-          </p>
-          <h1
-            class="font-display mt-2 text-[2rem] font-semibold leading-tight tracking-[-0.035em] text-ink sm:text-[2.5rem]"
+    <div class="space-y-4">
+      <WorkspaceHeader
+        context="Recurring ledger"
+        title="Know what comes due next."
+        description="Maintain repeat costs and turn each due schedule into an expense when the record is ready."
+      >
+        <template #actions>
+          <button
+            v-if="!showForm"
+            type="button"
+            class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
+            @click="openCreateForm"
           >
-            Know what comes due next.
-          </h1>
-          <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-[15px]">
-            Maintain repeat costs and turn each due schedule into an expense when the record is
-            ready.
-          </p>
-        </div>
-
-        <button
-          v-if="!showForm"
-          type="button"
-          class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
-          @click="openCreateForm"
-        >
-          <Plus :size="17" aria-hidden="true" />
-          Add recurring expense
-        </button>
-      </div>
+            <Plus :size="17" aria-hidden="true" />
+            Add recurring expense
+          </button>
+        </template>
+      </WorkspaceHeader>
 
       <div
         v-if="actionError"
@@ -399,7 +392,7 @@ onMounted(loadPage)
       >
         {{ actionError }}
       </div>
-    </header>
+    </div>
 
     <div v-if="showForm" data-recurring-expense-form-panel>
       <ResponsiveFormSurface
@@ -635,7 +628,7 @@ onMounted(loadPage)
       </ResponsiveFormSurface>
     </div>
 
-    <section class="overflow-hidden rounded-xl border border-line bg-surface shadow-card">
+    <LedgerSurface class="overflow-hidden">
       <header class="border-b border-line px-5 py-4 sm:px-6">
         <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-accent">
           Scheduled records
@@ -688,66 +681,31 @@ onMounted(loadPage)
         </button>
       </div>
 
-      <div v-else>
-        <div class="divide-y divide-line">
-          <article
-            v-for="template in templates"
+      <div v-else class="px-5 pb-4 pt-4 sm:px-6 sm:pb-5 sm:pt-5">
+        <div>
+          <EvidenceLedgerRow
+            v-for="(template, index) in templates"
             :key="template.id"
             data-recurring-expense-record
-            class="relative px-5 py-5 transition hover:bg-surface-muted/45 sm:px-6"
+            :continues="index < templates.length - 1"
+            :tone="isDue(template) ? 'evidence' : 'neutral'"
+            class="transition hover:bg-surface-muted/45"
           >
-            <span
-              class="absolute inset-y-0 left-0 w-0.5"
-              :class="isDue(template) ? 'bg-accent' : 'bg-line-strong'"
-              aria-hidden="true"
-            />
-            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div class="flex min-w-0 items-start gap-3.5">
+            <template #title>
+              <div class="flex flex-wrap items-center gap-2">
+                <h4 class="break-words text-sm font-semibold text-ink sm:text-base">
+                  {{ template.description }}
+                </h4>
                 <span
-                  class="flex size-9 shrink-0 items-center justify-center rounded-lg"
-                  :class="
-                    isDue(template) ? 'bg-accent-soft text-accent' : 'bg-brand-soft text-brand'
-                  "
+                  v-if="isDue(template)"
+                  class="border-l-2 border-evidence bg-evidence-soft/60 px-2 py-0.5 text-[10px] font-semibold tracking-[0.1em] text-evidence"
+                  >Due</span
                 >
-                  <CalendarClock :size="18" :stroke-width="1.8" aria-hidden="true" />
-                </span>
-                <div class="min-w-0">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <h4 class="truncate text-sm font-semibold text-ink sm:text-base">
-                      {{ template.description }}
-                    </h4>
-                    <span
-                      v-if="isDue(template)"
-                      class="border-l-2 border-accent bg-accent-soft/60 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-accent"
-                      >Due</span
-                    >
-                  </div>
-                  <div class="mt-1.5 flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-ink-muted">
-                    <span class="inline-flex items-center gap-1.5">
-                      <Store :size="13" aria-hidden="true" />
-                      {{ template.vendor.name }}
-                    </span>
-                    <span class="inline-flex items-center gap-1.5">
-                      <Tags :size="13" aria-hidden="true" />
-                      {{ template.category?.name ?? 'No category' }}
-                    </span>
-                    <span class="inline-flex items-center gap-1.5 capitalize">
-                      <Repeat2 :size="13" aria-hidden="true" />
-                      {{ template.frequency.toLowerCase() }}
-                    </span>
-                    <span class="inline-flex items-center gap-1.5">
-                      <CalendarDays :size="13" aria-hidden="true" />
-                      Next {{ formatDate(template.nextDueDate) }}
-                    </span>
-                  </div>
-                  <p v-if="template.notes" class="mt-2 line-clamp-2 text-sm text-ink-muted">
-                    {{ template.notes }}
-                  </p>
-                </div>
               </div>
-
-              <div class="flex flex-wrap items-center justify-between gap-2 lg:justify-end">
-                <span class="font-figure mr-auto text-base font-semibold text-ink sm:mr-1">
+            </template>
+            <template #amount>
+              <div class="flex flex-wrap items-center justify-end gap-2">
+                <span class="font-figure text-base font-semibold text-ink">
                   {{ formatAmount(template.amount) }} {{ template.currency }}
                 </span>
                 <button
@@ -787,8 +745,34 @@ onMounted(loadPage)
                   <EllipsisVertical :size="18" aria-hidden="true" />
                 </button>
               </div>
-            </div>
-          </article>
+            </template>
+            <template #metadata>
+              <div class="flex flex-wrap gap-x-3 gap-y-1.5">
+                <span class="inline-flex min-w-0 items-center gap-1.5"
+                  ><Store :size="13" aria-hidden="true" /><span class="truncate">{{
+                    template.vendor.name
+                  }}</span></span
+                >
+                <span class="inline-flex min-w-0 items-center gap-1.5"
+                  ><Tags :size="13" aria-hidden="true" /><span class="truncate">{{
+                    template.category?.name ?? 'No category'
+                  }}</span></span
+                >
+                <span class="inline-flex items-center gap-1.5 capitalize"
+                  ><Repeat2 :size="13" aria-hidden="true" />{{
+                    template.frequency.toLowerCase()
+                  }}</span
+                >
+                <span class="inline-flex items-center gap-1.5"
+                  ><CalendarDays :size="13" aria-hidden="true" />Next
+                  {{ formatDate(template.nextDueDate) }}</span
+                >
+              </div>
+            </template>
+            <template v-if="template.notes" #annotation
+              ><p class="line-clamp-2">{{ template.notes }}</p></template
+            >
+          </EvidenceLedgerRow>
         </div>
 
         <nav
@@ -822,7 +806,7 @@ onMounted(loadPage)
           </div>
         </nav>
       </div>
-    </section>
+    </LedgerSurface>
 
     <RecordActionSheet
       :open="mobileActionsOpen"

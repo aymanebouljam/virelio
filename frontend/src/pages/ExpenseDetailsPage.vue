@@ -3,6 +3,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Download, EllipsisVertical, FileText, Trash2, Upload } from '@lucide/vue'
 import RecordActionSheet, { type RecordActionItem } from '@/components/ui/RecordActionSheet.vue'
+import LedgerSurface from '@/components/ui/LedgerSurface.vue'
+import WorkspaceHeader from '@/components/ui/WorkspaceHeader.vue'
 import { ApiError } from '@/lib/api'
 import { fetchExpense } from '@/lib/expenses/api'
 import { expenseDetailSchema, type ExpenseDetail } from '@/lib/expenses/schema'
@@ -155,7 +157,7 @@ onMounted(loadExpense)
 
 <template>
   <section class="min-w-0 space-y-6">
-    <header class="space-y-5 border-b border-line pb-6">
+    <div class="space-y-5">
       <button
         type="button"
         class="inline-flex min-h-10 items-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm font-medium text-ink-muted transition hover:border-line-strong hover:text-ink"
@@ -165,17 +167,12 @@ onMounted(loadExpense)
         Back
       </button>
 
-      <div>
-        <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
-          Expense record
-        </p>
-        <h1
-          class="font-display mt-2 text-[2rem] font-semibold leading-tight tracking-[-0.035em] text-ink sm:text-[2.5rem]"
-        >
-          {{ expense?.description ?? 'Expense' }}
-        </h1>
-      </div>
-    </header>
+      <WorkspaceHeader
+        context="Expense record"
+        :title="expense?.description ?? 'Expense'"
+        description="The amount, record context, and supporting evidence in one place."
+      />
+    </div>
 
     <section v-if="loading" class="space-y-3" role="status" aria-label="Loading expense details">
       <div class="h-8 w-56 animate-pulse rounded bg-surface-muted"></div>
@@ -196,18 +193,13 @@ onMounted(loadExpense)
 
     <template v-else-if="expense">
       <section class="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
-        <article
-          data-expense-record-summary
-          class="relative min-w-0 overflow-hidden rounded-xl border border-line bg-surface p-5 shadow-card sm:p-6"
-        >
+        <LedgerSurface data-expense-record-summary class="relative overflow-hidden p-5 sm:p-6">
           <span class="absolute inset-y-0 left-0 w-1 bg-accent" aria-hidden="true" />
           <div
             class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
           >
             <div class="min-w-0">
-              <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
-                Recorded amount
-              </p>
+              <p class="text-xs font-medium tracking-[0.08em] text-ink-muted">Recorded amount</p>
               <p
                 class="font-figure mt-3 text-[2rem] font-semibold tracking-[-0.04em] text-ink sm:text-[2.25rem]"
               >
@@ -259,13 +251,11 @@ onMounted(loadExpense)
               {{ expense.notes }}
             </p>
           </div>
-        </article>
+        </LedgerSurface>
 
-        <aside class="min-w-0 rounded-xl border border-line bg-surface p-5 shadow-card sm:p-6">
+        <LedgerSurface class="p-5 sm:p-6">
           <div class="border-b border-line pb-5">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-accent">
-              Record context
-            </p>
+            <p class="text-xs font-medium tracking-[0.08em] text-evidence">Record context</p>
             <h2 class="font-display mt-1 text-lg font-semibold tracking-[-0.02em] text-ink">
               Vendor and category
             </h2>
@@ -323,17 +313,15 @@ onMounted(loadExpense)
 
             <p v-else class="mt-3 text-sm text-ink-muted">No category assigned.</p>
           </section>
-        </aside>
+        </LedgerSurface>
       </section>
 
-      <section class="min-w-0 overflow-hidden rounded-xl border border-line bg-surface shadow-card">
+      <LedgerSurface class="overflow-hidden">
         <header
           class="flex flex-col gap-4 border-b border-line px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"
         >
           <div>
-            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-accent">
-              Evidence trail
-            </p>
+            <p class="text-xs font-medium tracking-[0.08em] text-evidence">Evidence trail</p>
             <h2 class="font-display mt-1 text-lg font-semibold tracking-[-0.02em] text-ink">
               Proof documents
             </h2>
@@ -458,7 +446,7 @@ onMounted(loadExpense)
             </li>
           </ul>
         </div>
-      </section>
+      </LedgerSurface>
 
       <RecordActionSheet
         :open="mobileActionsOpen"
