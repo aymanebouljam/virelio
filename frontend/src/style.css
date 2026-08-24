@@ -21,6 +21,8 @@
   --color-brand-soft: #e7ecf3;
   --color-accent: #a84f2a;
   --color-accent-soft: #f6e7df;
+  --color-evidence: #a84f2a;
+  --color-evidence-soft: #f6e7df;
   --color-success: #176044;
   --color-success-soft: #e8f5ef;
   --color-warning: #805619;
@@ -34,8 +36,8 @@
   --radius-2xl: 0.75rem;
   --radius-3xl: 1.125rem;
 
-  --shadow-card: 0 1px 2px rgb(31 43 66 / 0.05);
-  --shadow-lifted: 0 16px 40px rgb(31 43 66 / 0.12);
+  --shadow-card: 0 1px 1px rgb(31 43 66 / 0.035);
+  --shadow-lifted: 0 14px 34px rgb(31 43 66 / 0.1);
 }
 
 @layer base {
@@ -78,6 +80,12 @@
   ::selection {
     background: var(--color-brand-soft);
     color: var(--color-brand-strong);
+  }
+}
+
+@layer components {
+  .ledger-rule {
+    border-color: color-mix(in srgb, var(--color-line) 86%, transparent);
   }
 }
 
