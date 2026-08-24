@@ -81,6 +81,8 @@ describe('vendor details', () => {
     expect(wrapper.findAll('[data-vendor-record]')).toHaveLength(1)
     expect(wrapper.text()).toContain('hello@atlas.example')
     expect(wrapper.text()).toContain('+212600000001')
+    expect(wrapper.get('a[href="mailto:hello@atlas.example"]').text()).toBe('hello@atlas.example')
+    expect(wrapper.get('a[href="tel:+212600000001"]').text()).toBe('+212600000001')
     expect(wrapper.get('a[href="https://atlas.example"]').attributes()).toMatchObject({
       rel: 'noopener',
       target: '_blank',

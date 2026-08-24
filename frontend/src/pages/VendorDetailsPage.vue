@@ -2,6 +2,8 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Archive, ArrowLeft, Building2, ExternalLink, Mail, Phone } from '@lucide/vue'
+import LedgerSurface from '@/components/ui/LedgerSurface.vue'
+import WorkspaceHeader from '@/components/ui/WorkspaceHeader.vue'
 import { fetchVendor, archiveVendor } from '@/lib/vendors/api'
 import { ApiError } from '@/lib/api'
 import { formatDateTime } from '@/lib/helpers'
@@ -71,7 +73,7 @@ watch(vendorId, () => {
 
 <template>
   <section class="min-w-0 space-y-6">
-    <header class="space-y-5 border-b border-line pb-6">
+    <div class="space-y-5">
       <button
         type="button"
         class="inline-flex min-h-10 items-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm font-medium text-ink-muted transition hover:border-line-strong hover:text-ink"
@@ -81,33 +83,25 @@ watch(vendorId, () => {
         Back
       </button>
 
-      <div class="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div class="min-w-0">
-          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
-            Vendor dossier
-          </p>
-          <h1
-            class="font-display mt-2 break-words text-[2rem] font-semibold leading-tight tracking-[-0.035em] text-ink sm:text-[2.5rem]"
+      <WorkspaceHeader
+        context="Vendor"
+        :title="vendor?.name ?? 'Vendor record'"
+        description="Contact details and notes."
+      >
+        <template #actions>
+          <button
+            v-if="vendor"
+            type="button"
+            :disabled="archiving"
+            class="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-danger-soft px-3 text-sm font-medium text-danger transition hover:bg-danger hover:text-white disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-10 sm:w-auto sm:bg-transparent sm:text-ink-muted sm:hover:bg-danger-soft sm:hover:text-danger"
+            @click="archiveCurrentVendor"
           >
-            {{ vendor?.name ?? 'Vendor record' }}
-          </h1>
-          <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-[15px]">
-            Contact coordinates, working notes, and lifecycle evidence for this vendor.
-          </p>
-        </div>
-
-        <button
-          v-if="vendor"
-          type="button"
-          :disabled="archiving"
-          class="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-danger-soft px-3 text-sm font-medium text-danger transition hover:bg-danger hover:text-white disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-10 sm:w-auto sm:bg-transparent sm:text-ink-muted sm:hover:bg-danger-soft sm:hover:text-danger"
-          @click="archiveCurrentVendor"
-        >
-          <Archive :size="15" aria-hidden="true" />
-          {{ archiving ? 'Archiving...' : 'Archive vendor' }}
-        </button>
-      </div>
-    </header>
+            <Archive :size="15" aria-hidden="true" />
+            {{ archiving ? 'Archiving...' : 'Archive vendor' }}
+          </button>
+        </template>
+      </WorkspaceHeader>
+    </div>
 
     <div
       v-if="actionError"
@@ -133,10 +127,7 @@ watch(vendorId, () => {
       <p class="mt-1">{{ error }}</p>
     </div>
 
-    <div
-      v-else-if="!vendor"
-      class="rounded-xl border border-line bg-surface px-5 py-14 text-center shadow-card"
-    >
+    <LedgerSurface v-else-if="!vendor" class="px-5 py-14 text-center">
       <span
         class="mx-auto flex size-11 items-center justify-center rounded-lg bg-surface-muted text-ink-muted"
       >
@@ -146,28 +137,16 @@ watch(vendorId, () => {
       <p class="mt-1 text-sm text-ink-muted">
         This vendor may have been archived or is no longer available from the active list.
       </p>
-    </div>
+    </LedgerSurface>
 
     <section v-else class="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(300px,0.85fr)]">
-      <article
-        data-vendor-record
-        class="relative min-w-0 overflow-hidden rounded-xl border border-line bg-surface p-5 shadow-card sm:p-6"
-      >
+      <LedgerSurface data-vendor-record class="relative overflow-hidden p-5 sm:p-6">
         <span class="absolute inset-y-0 left-0 w-1 bg-accent" aria-hidden="true" />
-        <header class="flex min-w-0 items-start justify-between gap-3 border-b border-line pb-5">
-          <div class="min-w-0">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
-              Contact coordinates
-            </p>
-            <h2
-              class="font-display mt-1 break-words text-lg font-semibold tracking-[-0.02em] text-ink"
-            >
-              Vendor directory record
-            </h2>
-          </div>
-          <span class="shrink-0 border-l-2 border-accent pl-2 text-xs font-semibold text-accent">
-            Active
-          </span>
+        <header class="border-b border-line pb-5">
+          <p class="text-xs font-semibold tracking-[0.08em] text-evidence">Contact</p>
+          <h2 class="font-display mt-1 text-lg font-semibold tracking-[-0.02em] text-ink">
+            How to reach this vendor
+          </h2>
         </header>
 
         <dl class="mt-1 divide-y divide-line">
@@ -177,7 +156,14 @@ watch(vendorId, () => {
               Email
             </dt>
             <dd class="min-w-0 break-words text-sm text-ink">
-              {{ vendor.email || 'Not provided' }}
+              <a
+                v-if="vendor.email"
+                :href="`mailto:${vendor.email}`"
+                class="font-medium text-brand underline decoration-line-strong underline-offset-4 hover:text-brand-strong"
+              >
+                {{ vendor.email }}
+              </a>
+              <span v-else>Not provided</span>
             </dd>
           </div>
 
@@ -187,7 +173,14 @@ watch(vendorId, () => {
               Phone
             </dt>
             <dd class="text-sm text-ink">
-              {{ vendor.phone || 'Not provided' }}
+              <a
+                v-if="vendor.phone"
+                :href="`tel:${vendor.phone}`"
+                class="font-medium text-brand underline decoration-line-strong underline-offset-4 hover:text-brand-strong"
+              >
+                {{ vendor.phone }}
+              </a>
+              <span v-else>Not provided</span>
             </dd>
           </div>
 
@@ -210,13 +203,11 @@ watch(vendorId, () => {
             </dd>
           </div>
         </dl>
-      </article>
+      </LedgerSurface>
 
-      <aside class="min-w-0 rounded-xl border border-line bg-surface p-5 shadow-card sm:p-6">
+      <LedgerSurface tone="quiet" class="p-5 sm:p-6">
         <header class="border-b border-line pb-5">
-          <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-accent">
-            Record context
-          </p>
+          <p class="text-xs font-semibold tracking-[0.08em] text-evidence">Record notes</p>
           <h2 class="font-display mt-1 text-lg font-semibold tracking-[-0.02em] text-ink">
             Notes and history
           </h2>
@@ -244,7 +235,7 @@ watch(vendorId, () => {
             </dd>
           </div>
         </dl>
-      </aside>
+      </LedgerSurface>
     </section>
   </section>
 </template>
