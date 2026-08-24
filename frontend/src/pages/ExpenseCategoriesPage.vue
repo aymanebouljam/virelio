@@ -27,7 +27,9 @@ import {
   type ExpenseCategoryFormValues,
 } from '@/lib/expense-categories/schema'
 import RecordActionSheet, { type RecordActionItem } from '@/components/ui/RecordActionSheet.vue'
+import LedgerSurface from '@/components/ui/LedgerSurface.vue'
 import ResponsiveFormSurface from '@/components/ui/ResponsiveFormSurface.vue'
+import WorkspaceHeader from '@/components/ui/WorkspaceHeader.vue'
 
 const categories = ref<ExpenseCategory[]>([])
 const PAGE_SIZE = 6
@@ -280,38 +282,32 @@ onMounted(loadCategoriesPage)
 </script>
 
 <template>
-  <section class="min-w-0 space-y-7">
-    <header class="space-y-4">
-      <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.24em] text-accent">Organization</p>
-          <h2 class="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-            Expense categories
-          </h2>
-          <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-base">
-            Build a simple, recognizable system for understanding where money goes.
-          </p>
-        </div>
-
+  <section class="min-w-0 space-y-6">
+    <WorkspaceHeader
+      context="Expense organization"
+      title="Categories"
+      description="Use clear names and colors to keep records easy to recognize."
+    >
+      <template #actions>
         <button
           v-if="!showForm"
           type="button"
-          class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white shadow-card transition hover:bg-brand-strong max-[375px]:w-full"
+          class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong max-[375px]:w-full"
           @click="openCreateForm"
         >
           <Plus :size="17" aria-hidden="true" />
           Add category
         </button>
-      </div>
+      </template>
+    </WorkspaceHeader>
 
-      <div
-        v-if="actionError"
-        role="alert"
-        class="rounded-2xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
-      >
-        {{ actionError }}
-      </div>
-    </header>
+    <div
+      v-if="actionError"
+      role="alert"
+      class="rounded-xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
+    >
+      {{ actionError }}
+    </div>
 
     <div v-if="showForm" data-category-form-panel>
       <ResponsiveFormSurface
@@ -409,7 +405,7 @@ onMounted(loadCategoriesPage)
       </ResponsiveFormSurface>
     </div>
 
-    <section class="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
+    <LedgerSurface class="overflow-hidden">
       <header class="border-b border-line px-5 py-4 sm:px-6">
         <h3 class="text-base font-semibold text-ink">Active categories</h3>
         <p class="mt-0.5 text-xs text-ink-muted">
@@ -556,7 +552,7 @@ onMounted(loadCategoriesPage)
           </button>
         </div>
       </nav>
-    </section>
+    </LedgerSurface>
 
     <RecordActionSheet
       :open="mobileActionsOpen"

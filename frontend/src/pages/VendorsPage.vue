@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   Archive,
@@ -27,7 +27,9 @@ import {
 import { ZodError } from 'zod'
 import { mapZodErrors } from '@/lib/zod'
 import RecordActionSheet, { type RecordActionItem } from '@/components/ui/RecordActionSheet.vue'
+import LedgerSurface from '@/components/ui/LedgerSurface.vue'
 import ResponsiveFormSurface from '@/components/ui/ResponsiveFormSurface.vue'
+import WorkspaceHeader from '@/components/ui/WorkspaceHeader.vue'
 
 const vendors = ref<Vendor[]>([])
 const PAGE_SIZE = 6
@@ -57,6 +59,7 @@ const editingVendorId = ref<string | null>(null)
 const submitting = ref(false)
 const submitError = ref('')
 const actionError = ref('')
+let searchTimer: ReturnType<typeof setTimeout> | undefined
 const mobileActionsOpen = ref(false)
 const activeActionVendor = ref<Vendor | null>(null)
 
@@ -89,6 +92,11 @@ function readPageQuery() {
 }
 
 async function applySearch() {
+  if (searchTimer) {
+    clearTimeout(searchTimer)
+    searchTimer = undefined
+  }
+
   const normalizedSearch = search.value.trim()
   const query = { ...route.query }
 
@@ -105,6 +113,17 @@ async function applySearch() {
 async function clearSearch() {
   search.value = ''
   await applySearch()
+}
+
+function scheduleSearch() {
+  if (searchTimer) {
+    clearTimeout(searchTimer)
+  }
+
+  searchTimer = setTimeout(() => {
+    searchTimer = undefined
+    void applySearch()
+  }, 250)
 }
 
 async function changePage(page: number) {
@@ -342,43 +361,44 @@ watch([() => route.query.search, () => route.query.page], () => {
 })
 
 onMounted(loadVendors)
+
+onBeforeUnmount(() => {
+  if (searchTimer) {
+    clearTimeout(searchTimer)
+  }
+})
 </script>
 
 <template>
-  <section class="min-w-0 space-y-7">
-    <header class="space-y-4">
-      <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.24em] text-accent">Directory</p>
-          <h2 class="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-            Vendor directory
-          </h2>
-          <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-base">
-            Keep supplier details organized and ready for every expense.
-          </p>
-        </div>
-
+  <section class="min-w-0 space-y-6">
+    <WorkspaceHeader
+      context="Supplier directory"
+      title="Vendors"
+      description="Keep supplier details ready for every expense."
+    >
+      <template #actions>
         <button
           v-if="!showVendorForm"
           type="button"
-          class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white shadow-card transition hover:bg-brand-strong max-[375px]:w-full"
+          class="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong max-[375px]:w-full"
           @click="openCreateForm"
         >
           <Plus :size="17" aria-hidden="true" />
           Add vendor
         </button>
-      </div>
-      <div
-        v-if="actionError"
-        role="alert"
-        class="rounded-2xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
-      >
-        {{ actionError }}
-      </div>
-    </header>
+      </template>
+    </WorkspaceHeader>
+
+    <div
+      v-if="actionError"
+      role="alert"
+      class="rounded-xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
+    >
+      {{ actionError }}
+    </div>
 
     <form
-      class="flex min-w-0 flex-col gap-3 rounded-2xl border border-line bg-surface p-4 shadow-card sm:flex-row sm:items-end"
+      class="flex min-w-0 flex-col gap-3 rounded-xl border border-line bg-surface-raised p-4 sm:flex-row sm:items-end"
       role="search"
       @submit.prevent="applySearch"
     >
@@ -397,17 +417,10 @@ onMounted(loadVendors)
             maxlength="120"
             placeholder="Search vendors"
             class="min-h-10 w-full rounded-xl border border-line bg-surface py-2 pl-9 pr-3 text-sm text-ink outline-none transition hover:border-line-strong focus:border-brand"
+            @input="scheduleSearch"
           />
         </span>
       </label>
-
-      <button
-        type="submit"
-        class="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
-      >
-        <Search :size="16" aria-hidden="true" />
-        Search
-      </button>
 
       <button
         v-if="hasSearch"
@@ -599,7 +612,7 @@ onMounted(loadVendors)
       </ResponsiveFormSurface>
     </div>
 
-    <section class="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
+    <LedgerSurface class="overflow-hidden">
       <header
         class="flex items-center justify-between gap-4 border-b border-line px-5 py-4 sm:px-6"
       >
@@ -798,7 +811,7 @@ onMounted(loadVendors)
           </div>
         </nav>
       </div>
-    </section>
+    </LedgerSurface>
 
     <RecordActionSheet
       :open="mobileActionsOpen"
