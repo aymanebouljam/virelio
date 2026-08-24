@@ -170,7 +170,7 @@ onMounted(loadExpense)
       <WorkspaceHeader
         context="Expense record"
         :title="expense?.description ?? 'Expense'"
-        description="The amount, record context, and supporting evidence in one place."
+        description="Record details and supporting proof."
       />
     </div>
 
@@ -257,7 +257,7 @@ onMounted(loadExpense)
           <div class="border-b border-line pb-5">
             <p class="text-xs font-medium tracking-[0.08em] text-evidence">Record context</p>
             <h2 class="font-display mt-1 text-lg font-semibold tracking-[-0.02em] text-ink">
-              Vendor and category
+              Context
             </h2>
           </div>
 
