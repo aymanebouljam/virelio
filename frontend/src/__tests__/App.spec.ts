@@ -49,6 +49,7 @@ describe('App', () => {
     )
     const accountLink = wrapper.get('[data-account-link]')
     const scrollRegion = wrapper.get('[data-sidebar-scroll-region]')
+    const workspaceIndex = wrapper.get('[data-workspace-index]')
     expect(accountLink.get('[data-account-initials]').text()).toBe('LO')
     expect(accountLink.get('[data-account-initials]').attributes('aria-hidden')).toBe('true')
     expect(accountLink.text()).toContain(user.fullName)
@@ -58,6 +59,9 @@ describe('App', () => {
     expect(scrollRegion.classes()).toContain('lg:overscroll-contain')
     expect(scrollRegion.classes()).not.toContain('overflow-y-auto')
     expect(scrollRegion.classes()).not.toContain('overscroll-contain')
+    expect(workspaceIndex.classes()).toContain('bg-surface-raised')
+    expect(workspaceIndex.classes()).not.toContain('bg-brand-strong')
+    expect(wrapper.get('[data-mobile-workspace-bar]').classes()).toContain('bg-surface/95')
   })
 
   it('uses a single initial for a one-word account name', async () => {
@@ -116,6 +120,9 @@ describe('App', () => {
     )
     expect(wrapper.get('[role="dialog"]').classes()).toContain('inset-x-3')
     expect(wrapper.get('[role="dialog"]').classes()).toContain('min-w-0')
+    expect(wrapper.get('[aria-label="Close more menu"]').attributes('title')).toBe(
+      'Close more menu',
+    )
     const moreNavigation = wrapper.get('nav[aria-label="More navigation"]')
     const archivedNavigation = wrapper.get('nav[aria-label="Mobile archived records"]')
     expect(moreNavigation.text()).toContain('Vendors')
