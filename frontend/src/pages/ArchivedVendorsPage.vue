@@ -5,7 +5,9 @@ import { fetchArchivedVendors, removeVendor, restoreVendor } from '@/lib/vendors
 import { ApiError } from '@/lib/api'
 import { formatDateTime } from '@/lib/helpers'
 import { vendorSchema, type Vendor } from '@/lib/vendors/schema'
+import LedgerSurface from '@/components/ui/LedgerSurface.vue'
 import RecordActionSheet, { type RecordActionItem } from '@/components/ui/RecordActionSheet.vue'
+import WorkspaceHeader from '@/components/ui/WorkspaceHeader.vue'
 
 const vendors = ref<Vendor[]>([])
 const loading = ref(true)
@@ -103,34 +105,21 @@ onMounted(loadArchivedVendors)
 
 <template>
   <section class="min-w-0 space-y-6">
-    <header class="space-y-4 border-b border-line pb-6">
-      <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
-        Vendor archive
-      </p>
+    <WorkspaceHeader
+      context="Archive"
+      title="Archived vendors"
+      description="Restore a supplier when it becomes active again, or remove it permanently."
+    />
 
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1
-            class="font-display text-[2rem] font-semibold leading-tight tracking-[-0.035em] text-ink sm:text-[2.5rem]"
-          >
-            Vendors held outside active records.
-          </h1>
-          <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-[15px]">
-            Restore a vendor to active records, or permanently remove one that is no longer needed.
-          </p>
-        </div>
-      </div>
+    <div
+      v-if="actionError"
+      role="alert"
+      class="rounded-xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
+    >
+      {{ actionError }}
+    </div>
 
-      <div
-        v-if="actionError"
-        role="alert"
-        class="rounded-xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
-      >
-        {{ actionError }}
-      </div>
-    </header>
-
-    <section class="min-w-0 overflow-hidden rounded-xl border border-line bg-surface shadow-card">
+    <LedgerSurface class="overflow-hidden">
       <header class="border-b border-line px-5 py-4 sm:px-6">
         <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
           Inactive vendors
@@ -269,7 +258,7 @@ onMounted(loadArchivedVendors)
           </div>
         </article>
       </div>
-    </section>
+    </LedgerSurface>
 
     <RecordActionSheet
       :open="mobileActionsOpen"

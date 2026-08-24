@@ -9,7 +9,9 @@ import {
   removeExpenseCategory,
 } from '@/lib/expense-categories/api'
 import { expenseCategorySchema, type ExpenseCategory } from '@/lib/expense-categories/schema'
+import LedgerSurface from '@/components/ui/LedgerSurface.vue'
 import RecordActionSheet, { type RecordActionItem } from '@/components/ui/RecordActionSheet.vue'
+import WorkspaceHeader from '@/components/ui/WorkspaceHeader.vue'
 
 const categories = ref<ExpenseCategory[]>([])
 const loading = ref(true)
@@ -110,33 +112,21 @@ onMounted(loadArchivedCategories)
 
 <template>
   <section class="min-w-0 space-y-6">
-    <header class="space-y-4 border-b border-line pb-6">
-      <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
-        Category archive
-      </p>
+    <WorkspaceHeader
+      context="Archive"
+      title="Archived categories"
+      description="Restore a category for future records, or remove it permanently."
+    />
 
-      <div>
-        <h1
-          class="font-display text-[2rem] font-semibold leading-tight tracking-[-0.035em] text-ink sm:text-[2.5rem]"
-        >
-          Categories held outside active records.
-        </h1>
-        <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-[15px]">
-          Restore a category for future expenses, or permanently remove one that is no longer
-          needed.
-        </p>
-      </div>
+    <div
+      v-if="actionError"
+      role="alert"
+      class="rounded-xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
+    >
+      {{ actionError }}
+    </div>
 
-      <div
-        v-if="actionError"
-        role="alert"
-        class="rounded-xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
-      >
-        {{ actionError }}
-      </div>
-    </header>
-
-    <section class="min-w-0 overflow-hidden rounded-xl border border-line bg-surface shadow-card">
+    <LedgerSurface class="overflow-hidden">
       <header class="border-b border-line px-5 py-4 sm:px-6">
         <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
           Inactive categories
@@ -258,7 +248,7 @@ onMounted(loadArchivedCategories)
           </div>
         </article>
       </div>
-    </section>
+    </LedgerSurface>
 
     <RecordActionSheet
       :open="mobileActionsOpen"
