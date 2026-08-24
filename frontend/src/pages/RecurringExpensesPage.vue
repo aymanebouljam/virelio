@@ -781,6 +781,7 @@ onMounted(loadPage)
                   data-mobile-recurring-actions
                   class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-line bg-surface px-2.5 text-ink-muted transition hover:border-line-strong hover:bg-surface-muted hover:text-ink md:hidden"
                   :aria-label="`Actions for ${template.description}`"
+                  title="More actions"
                   @click="openMobileActions(template)"
                 >
                   <EllipsisVertical :size="18" aria-hidden="true" />

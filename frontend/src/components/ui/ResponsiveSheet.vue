@@ -63,6 +63,7 @@ function updateOpen(value: boolean) {
             type="button"
             class="flex size-11 shrink-0 items-center justify-center rounded-lg border border-line text-ink-muted transition hover:border-line-strong hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
             :aria-label="closeLabel"
+            :title="closeLabel"
           >
             <X :size="19" aria-hidden="true" />
           </button>

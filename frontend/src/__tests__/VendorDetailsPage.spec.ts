@@ -1,11 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
+import type { VueWrapper } from '@vue/test-utils'
 import type { RouteRecordRaw } from 'vue-router'
 import { ApiError } from '@/lib/api'
 import { formatDateTime } from '@/lib/helpers'
 import type { Vendor } from '@/lib/vendors/schema'
 import VendorDetailsPage from '@/pages/VendorDetailsPage.vue'
 import { mountWithRouter } from './test-mount'
+import { createTestRouter } from './test-router'
 
 const vendorsApi = vi.hoisted(() => ({
   archiveVendor: vi.fn<(id: string) => Promise<Vendor>>(),
@@ -32,6 +34,12 @@ const routes: RouteRecordRaw[] = [
   { path: '/vendors/:id', name: 'vendorDetails', component: VendorDetailsPage },
 ]
 
+function getButton(wrapper: VueWrapper, text: string) {
+  const button = wrapper.findAll('button').find((candidate) => candidate.text() === text)
+  if (!button) throw new Error(`${text} button not found`)
+  return button
+}
+
 async function mountPage() {
   const result = await mountWithRouter(VendorDetailsPage, routes, '/vendors/vendor-1')
   await flushPromises()
@@ -48,6 +56,22 @@ afterEach(() => {
 })
 
 describe('vendor details', () => {
+  it('returns to the previous page', async () => {
+    const router = await createTestRouter(routes, '/vendors')
+    await router.push('/vendors/vendor-1')
+    const wrapper = mount(VendorDetailsPage, {
+      global: {
+        plugins: [router],
+      },
+    })
+    await flushPromises()
+
+    await getButton(wrapper, 'Back').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.fullPath).toBe('/vendors')
+  })
+
   it('presents the active vendor dossier', async () => {
     const { wrapper } = await mountPage()
     const timestamps = wrapper.findAll('time')
@@ -92,7 +116,7 @@ describe('vendor details', () => {
     vi.stubGlobal('confirm', confirmMock)
     const { router, wrapper } = await mountPage()
 
-    await wrapper.get('button').trigger('click')
+    await getButton(wrapper, 'Archive vendor').trigger('click')
     await flushPromises()
 
     expect(confirmMock).toHaveBeenCalledExactlyOnceWith(
@@ -110,7 +134,7 @@ describe('vendor details', () => {
     )
     const { wrapper } = await mountPage()
 
-    await wrapper.get('button').trigger('click')
+    await getButton(wrapper, 'Archive vendor').trigger('click')
     await flushPromises()
 
     expect(wrapper.get('[role="alert"]').text()).toBe('Vendor has linked expenses')

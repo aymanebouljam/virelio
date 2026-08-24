@@ -249,6 +249,7 @@ onMounted(loadArchivedCategories)
                 data-mobile-archived-category-actions
                 class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-line bg-surface px-2.5 text-ink-muted transition hover:border-line-strong hover:bg-surface-muted hover:text-ink sm:hidden"
                 :aria-label="`Actions for ${category.name}`"
+                title="More actions"
                 @click="openMobileActions(category)"
               >
                 <EllipsisVertical :size="18" aria-hidden="true" />

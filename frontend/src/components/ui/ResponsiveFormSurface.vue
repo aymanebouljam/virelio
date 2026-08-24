@@ -70,6 +70,7 @@ function updateOpen(value: boolean) {
         type="button"
         class="flex size-10 shrink-0 items-center justify-center rounded-lg text-ink-muted transition hover:bg-surface-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
         :aria-label="closeLabel"
+        :title="closeLabel"
         @click="updateOpen(false)"
       >
         <X :size="18" aria-hidden="true" />

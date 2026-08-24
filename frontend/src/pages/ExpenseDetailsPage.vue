@@ -450,6 +450,7 @@ onMounted(loadExpense)
                 data-mobile-proof-actions
                 class="absolute bottom-0 right-0 inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-line bg-surface px-2.5 text-ink-muted transition hover:border-line-strong hover:bg-surface-muted hover:text-ink sm:hidden"
                 :aria-label="`Actions for ${proof.originalName}`"
+                title="More actions"
                 @click="openMobileProofActions(proof)"
               >
                 <EllipsisVertical :size="18" aria-hidden="true" />
