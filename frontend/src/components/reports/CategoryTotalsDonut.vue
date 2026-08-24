@@ -77,7 +77,7 @@ function categoryShare(amount: string) {
         >
           <span class="text-[10px] font-semibold tracking-[0.12em] text-ink-muted">RECORDED</span>
           <span class="font-figure mt-1 text-lg font-semibold tracking-[-0.03em] text-ink">
-            ${{ formatAmount(totalAmount) }}
+            ${{ formatAmount(totalAmount.toFixed(2)) }}
           </span>
         </div>
       </div>
