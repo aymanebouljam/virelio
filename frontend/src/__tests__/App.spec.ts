@@ -115,11 +115,18 @@ describe('App', () => {
       'Organization, archives, and account settings.',
     )
     expect(wrapper.get('[role="dialog"]').classes()).toContain('inset-x-3')
-    expect(wrapper.get('nav[aria-label="More navigation"]').text()).toContain('Vendors')
-    expect(wrapper.get('nav[aria-label="More navigation"]').text()).toContain('Categories')
-    expect(wrapper.get('nav[aria-label="Mobile archived records"]').text()).toContain(
-      'Recurring expenses',
-    )
+    expect(wrapper.get('[role="dialog"]').classes()).toContain('min-w-0')
+    const moreNavigation = wrapper.get('nav[aria-label="More navigation"]')
+    const archivedNavigation = wrapper.get('nav[aria-label="Mobile archived records"]')
+    expect(moreNavigation.text()).toContain('Vendors')
+    expect(moreNavigation.text()).toContain('Categories')
+    expect(moreNavigation.classes()).toContain('grid-cols-1')
+    expect(moreNavigation.get('a[href="/vendors"] span').classes()).toContain('break-words')
+    expect(archivedNavigation.text()).toContain('Recurring expenses')
+    expect(archivedNavigation.classes()).toContain('grid-cols-1')
+    expect(
+      archivedNavigation.get('a[href="/recurring-expenses/archived"] span').classes(),
+    ).toContain('break-words')
     expect(wrapper.get('[data-mobile-account-link]').text()).toContain(user.email)
   })
 

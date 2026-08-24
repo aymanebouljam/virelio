@@ -471,7 +471,7 @@ onMounted(loadCategoriesPage)
             :style="{ backgroundColor: category.color ?? undefined }"
             aria-hidden="true"
           />
-          <div class="flex min-w-0 items-center gap-3 pt-1 pr-12 sm:pr-0">
+          <div class="flex min-w-0 items-center gap-3 pt-1">
             <span
               class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface-muted"
             >
@@ -514,7 +514,7 @@ onMounted(loadCategoriesPage)
             <button
               type="button"
               data-mobile-category-actions
-              class="absolute right-4 top-4 inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-surface px-2.5 text-ink-muted transition hover:bg-surface-muted hover:text-ink sm:hidden"
+              class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-line bg-surface px-2.5 text-ink-muted transition hover:border-line-strong hover:bg-surface-muted hover:text-ink sm:hidden"
               :aria-label="`Actions for ${category.name}`"
               @click="openMobileActions(category)"
             >

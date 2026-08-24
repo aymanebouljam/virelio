@@ -63,7 +63,7 @@ function selectAction(action: RecordActionItem) {
           :stroke-width="1.8"
           aria-hidden="true"
         />
-        <span>{{ action.label }}</span>
+        <span class="min-w-0 break-words">{{ action.label }}</span>
       </button>
     </div>
   </ResponsiveSheet>

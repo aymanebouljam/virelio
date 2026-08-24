@@ -43,11 +43,13 @@ function updateOpen(value: boolean) {
 
   <section
     v-else-if="isDesktopSurface"
-    class="relative overflow-hidden rounded-xl border border-line bg-surface shadow-card"
+    class="relative min-w-0 overflow-hidden rounded-xl border border-line bg-surface shadow-card"
   >
     <span class="absolute inset-y-0 left-0 w-1 bg-accent" aria-hidden="true" />
 
-    <header class="flex items-start gap-3 border-b border-line bg-surface-raised px-5 py-4 sm:px-6">
+    <header
+      class="flex min-w-0 items-start gap-3 border-b border-line bg-surface-raised px-5 py-4 sm:px-6"
+    >
       <span
         class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand"
       >
@@ -57,10 +59,12 @@ function updateOpen(value: boolean) {
         <p class="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
           {{ eyebrow }}
         </p>
-        <h2 class="font-display mt-0.5 text-lg font-semibold tracking-[-0.02em] text-ink">
+        <h2
+          class="font-display mt-0.5 break-words text-lg font-semibold tracking-[-0.02em] text-ink"
+        >
           {{ title }}
         </h2>
-        <p class="text-xs text-ink-muted">{{ description }}</p>
+        <p class="break-words text-xs text-ink-muted">{{ description }}</p>
       </div>
       <button
         type="button"

@@ -41,12 +41,19 @@ function updateOpen(value: boolean) {
     >
       <div class="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-line-strong" aria-hidden="true" />
 
-      <header class="flex shrink-0 items-start justify-between gap-4 px-5 pb-4 pt-4 sm:px-6">
+      <header
+        class="flex min-w-0 shrink-0 items-start justify-between gap-4 px-5 pb-4 pt-4 sm:px-6"
+      >
         <div class="min-w-0">
-          <DialogTitle class="font-display text-xl font-semibold tracking-tight text-ink">
+          <DialogTitle
+            class="font-display break-words text-xl font-semibold tracking-tight text-ink"
+          >
             {{ title }}
           </DialogTitle>
-          <DialogDescription v-if="description" class="mt-1 text-sm leading-5 text-ink-muted">
+          <DialogDescription
+            v-if="description"
+            class="mt-1 break-words text-sm leading-5 text-ink-muted"
+          >
             {{ description }}
           </DialogDescription>
         </div>
