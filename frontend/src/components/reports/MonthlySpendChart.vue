@@ -79,9 +79,9 @@ const chartOptions: ChartOptions<'line'> = {
 </script>
 
 <template>
-  <figure data-monthly-spend-chart aria-labelledby="monthly-spend-chart-caption">
-    <div class="h-56" aria-hidden="true">
-      <Line :data="chartData" :options="chartOptions" />
+  <figure data-monthly-spend-chart aria-labelledby="monthly-spend-chart-caption" class="min-w-0">
+    <div class="h-48 min-w-0 sm:h-56" aria-hidden="true">
+      <Line class="block !h-full !w-full" :data="chartData" :options="chartOptions" />
     </div>
 
     <figcaption id="monthly-spend-chart-caption" class="sr-only">
@@ -96,10 +96,10 @@ const chartOptions: ChartOptions<'line'> = {
       <li
         v-for="month in monthlyTotals"
         :key="month.month"
-        class="flex items-start justify-between gap-4 rounded-xl bg-surface-muted px-4 py-4"
+        class="flex min-w-0 items-start justify-between gap-4 rounded-xl bg-surface-muted px-4 py-4"
       >
-        <div>
-          <p class="text-sm font-semibold text-ink">{{ month.month }}</p>
+        <div class="min-w-0">
+          <p class="truncate text-sm font-semibold text-ink">{{ month.month }}</p>
           <p class="mt-1 text-xs text-ink-muted">
             {{ month.expenseCount }} expense{{ month.expenseCount === 1 ? '' : 's' }}
           </p>

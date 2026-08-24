@@ -70,23 +70,27 @@ const chartOptions: ChartOptions<'bar'> = {
 </script>
 
 <template>
-  <figure data-vendor-spend-chart aria-labelledby="vendor-spend-chart-caption">
-    <div class="h-60" aria-hidden="true">
-      <Bar :data="chartData" :options="chartOptions" />
+  <figure data-vendor-spend-chart aria-labelledby="vendor-spend-chart-caption" class="min-w-0">
+    <div class="hidden h-60 min-w-0 sm:block" aria-hidden="true">
+      <Bar class="block !h-full !w-full" :data="chartData" :options="chartOptions" />
     </div>
 
     <figcaption id="vendor-spend-chart-caption" class="sr-only">
       Vendor spending is ranked from highest to lowest and listed with exact values below the chart.
     </figcaption>
 
-    <ol data-vendor-values class="mt-5 divide-y divide-line" aria-label="Vendor spending values">
+    <ol
+      data-vendor-values
+      class="mt-0 divide-y divide-line sm:mt-5"
+      aria-label="Vendor spending values"
+    >
       <li
         v-for="vendor in vendorTotals"
         :key="vendor.vendorId"
-        class="flex items-start justify-between gap-4 px-1 py-4 first:pt-0 last:pb-0"
+        class="flex min-w-0 items-start justify-between gap-4 px-1 py-4 first:pt-0 last:pb-0"
       >
-        <div>
-          <p class="text-sm font-semibold text-ink">{{ vendor.vendorName }}</p>
+        <div class="min-w-0">
+          <p class="truncate text-sm font-semibold text-ink">{{ vendor.vendorName }}</p>
           <p class="mt-1 text-xs text-ink-muted">
             {{ vendor.expenseCount }} expense{{ vendor.expenseCount === 1 ? '' : 's' }}
           </p>

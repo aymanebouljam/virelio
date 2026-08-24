@@ -263,6 +263,10 @@ describe('report workflows', () => {
     expect(getMetric(wrapper, 'Expense count').text()).toContain('3')
     expect(getMetric(wrapper, 'Categories').text()).toContain('2')
     expect(wrapper.get('[aria-label="Report overview"]').findAll('article')).toHaveLength(3)
+    expect(wrapper.get('[data-report-category-comparison]').classes()).toContain('min-w-0')
+    expect(wrapper.get('[data-report-monthly-spending]').classes()).toContain('min-w-0')
+    expect(wrapper.get('[data-report-vendor-spending]').classes()).toContain('min-w-0')
+    expect(wrapper.get('[data-report-expense-rows]').classes()).toContain('min-w-0')
     expect(wrapper.text()).toContain('Travel')
     expect(wrapper.text()).toContain('Uncategorized')
     expect(wrapper.text()).toContain('Client-site flight')
@@ -275,6 +279,9 @@ describe('report workflows', () => {
     expect(wrapper.text()).toContain('2026-07')
     expect(wrapper.text()).toContain('Vendor spending')
     expect(wrapper.findAll('[data-vendor-spend-chart]')).toHaveLength(1)
+    expect(wrapper.get('[data-vendor-spend-chart] > div').classes()).toEqual(
+      expect.arrayContaining(['hidden', 'sm:block']),
+    )
     expect(wrapper.text()).toContain('Nova Services')
   })
 

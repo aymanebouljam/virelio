@@ -354,9 +354,12 @@ onMounted(() => loadReport(true))
     </section>
 
     <template v-else-if="report">
-      <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Report overview">
+      <section
+        class="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+        aria-label="Report overview"
+      >
         <article
-          class="relative overflow-hidden rounded-2xl bg-brand-strong p-5 text-white shadow-lifted"
+          class="relative min-w-0 overflow-hidden rounded-2xl bg-brand-strong p-4 text-white shadow-lifted sm:p-5"
         >
           <div
             class="absolute -right-8 -top-10 size-28 rounded-full border-[20px] border-white/5"
@@ -373,7 +376,7 @@ onMounted(() => loadReport(true))
           </p>
         </article>
 
-        <article class="rounded-2xl border border-line bg-surface p-5 shadow-card">
+        <article class="min-w-0 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-5">
           <span
             class="flex size-10 items-center justify-center rounded-xl bg-brand-soft text-brand"
           >
@@ -387,7 +390,7 @@ onMounted(() => loadReport(true))
           </p>
         </article>
 
-        <article class="rounded-2xl border border-line bg-surface p-5 shadow-card">
+        <article class="min-w-0 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-5">
           <span
             class="flex size-10 items-center justify-center rounded-xl bg-accent-soft text-accent"
           >
@@ -402,7 +405,10 @@ onMounted(() => loadReport(true))
         </article>
       </section>
 
-      <section class="rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6">
+      <section
+        data-report-category-comparison
+        class="min-w-0 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6"
+      >
         <div class="flex items-start gap-3">
           <span
             class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent"
@@ -466,8 +472,11 @@ onMounted(() => loadReport(true))
         </template>
       </section>
 
-      <div class="grid gap-5 xl:grid-cols-[0.85fr_1.25fr]">
-        <section class="rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6">
+      <div class="grid min-w-0 gap-5 xl:grid-cols-[0.85fr_1.25fr]">
+        <section
+          data-report-monthly-spending
+          class="min-w-0 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6"
+        >
           <h3 class="text-lg font-semibold tracking-tight text-ink">Monthly spending</h3>
           <p class="mt-1 text-sm text-ink-muted">
             Spending totals by calendar month for the current report period.
@@ -483,7 +492,10 @@ onMounted(() => loadReport(true))
           <MonthlySpendChart v-else class="mt-6" :monthly-totals="visibleMonthlyTotals" />
         </section>
 
-        <section class="rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6">
+        <section
+          data-report-vendor-spending
+          class="min-w-0 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6"
+        >
           <div class="flex items-start gap-3">
             <span
               class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand"
@@ -508,7 +520,10 @@ onMounted(() => loadReport(true))
           <VendorSpendChart v-else class="mt-6" :vendor-totals="visibleVendorTotals" />
         </section>
 
-        <section class="rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6">
+        <section
+          data-report-category-totals
+          class="min-w-0 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6"
+        >
           <div class="flex items-start gap-3">
             <span
               class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent"
@@ -539,9 +554,9 @@ onMounted(() => loadReport(true))
               :key="category.categoryId ?? category.categoryName"
               class="rounded-xl bg-surface-muted px-4 py-4"
             >
-              <div class="flex items-start justify-between gap-4">
-                <div>
-                  <p class="text-sm font-semibold text-ink">
+              <div class="flex min-w-0 items-start justify-between gap-4">
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-semibold text-ink">
                     {{ category.categoryName }}
                   </p>
                   <p class="mt-1 text-xs text-ink-muted">
@@ -557,7 +572,10 @@ onMounted(() => loadReport(true))
           </div>
         </section>
 
-        <section class="rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6">
+        <section
+          data-report-expense-rows
+          class="min-w-0 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6"
+        >
           <div class="flex items-start gap-3">
             <span
               class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand"
@@ -587,16 +605,18 @@ onMounted(() => loadReport(true))
               v-for="expense in report.expenses.items"
               :key="expense.id"
               :to="`/expenses/${expense.id}`"
-              class="group flex items-center justify-between gap-4 border-b border-line px-1 py-4 transition last:border-b-0 hover:bg-surface-muted/45"
+              class="group flex min-w-0 items-center justify-between gap-3 border-b border-line px-1 py-4 transition last:border-b-0 hover:bg-surface-muted/45 sm:gap-4"
             >
               <div class="min-w-0">
-                <p class="text-sm font-semibold text-ink">
+                <p class="truncate text-sm font-semibold text-ink">
                   {{ expense.description }}
                 </p>
-                <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-muted">
-                  <span>{{ expense.vendorName }}</span>
-                  <span>{{ expense.categoryName }}</span>
-                  <span>{{ formatDate(expense.expenseDate) }}</span>
+                <div
+                  class="mt-1 grid grid-cols-1 gap-y-1 text-xs text-ink-muted sm:flex sm:flex-wrap sm:gap-x-4"
+                >
+                  <span class="truncate">{{ expense.vendorName }}</span>
+                  <span class="truncate">{{ expense.categoryName }}</span>
+                  <span class="truncate">{{ formatDate(expense.expenseDate) }}</span>
                 </div>
                 <p v-if="expense.notes" class="mt-2 text-xs text-ink-muted">
                   {{ expense.notes }}
