@@ -2,10 +2,8 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  Archive,
   Building2,
   ChartNoAxesCombined,
-  ChevronDown,
   LayoutDashboard,
   LogOut,
   Menu as MenuIcon,
@@ -15,9 +13,6 @@ import {
   X,
 } from '@lucide/vue'
 import {
-  CollapsibleContent,
-  CollapsibleRoot,
-  CollapsibleTrigger,
   DialogClose,
   DialogContent,
   DialogDescription,
@@ -32,14 +27,16 @@ import { getInitials } from '@/lib/helpers'
 const route = useRoute()
 const router = useRouter()
 const mobileMoreOpen = ref(false)
-const archiveNavigationOpen = ref(route.path.endsWith('/archived'))
 const accountInitials = computed(() => getInitials(currentUser.value?.fullName ?? ''))
 
 const primaryNavigationGroups = [
   {
-    label: 'Daily ledger',
+    label: 'Overview',
+    items: [{ to: '/', label: 'Dashboard', icon: LayoutDashboard }],
+  },
+  {
+    label: 'Expense records',
     items: [
-      { to: '/', label: 'Dashboard', icon: LayoutDashboard },
       { to: '/expenses', label: 'Expenses', icon: ReceiptText },
       { to: '/recurring-expenses', label: 'Recurring expenses', icon: Repeat2 },
     ],
@@ -57,12 +54,8 @@ const primaryNavigationGroups = [
   },
 ]
 
-const archiveNavigation = [
-  { to: '/expenses/archived', label: 'Expenses', icon: ReceiptText },
-  { to: '/recurring-expenses/archived', label: 'Recurring expenses', icon: Repeat2 },
-  { to: '/vendors/archived', label: 'Vendors', icon: Building2 },
-  { to: '/expense-categories/archived', label: 'Categories', icon: Tags },
-]
+const organizationNavigation =
+  primaryNavigationGroups.find((group) => group.label === 'Organization')?.items ?? []
 
 const mobileNavigation = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -95,9 +88,6 @@ watch(
   () => route.fullPath,
   () => {
     mobileMoreOpen.value = false
-    if (route.path.endsWith('/archived')) {
-      archiveNavigationOpen.value = true
-    }
   },
 )
 </script>
@@ -155,50 +145,6 @@ watch(
                 </div>
               </section>
             </nav>
-
-            <CollapsibleRoot
-              v-model:open="archiveNavigationOpen"
-              class="mt-5 border-t border-line pt-4"
-            >
-              <CollapsibleTrigger
-                aria-label="Archived records"
-                class="flex min-h-10 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-ink-muted transition hover:bg-surface-muted hover:text-ink"
-              >
-                <Archive :size="18" :stroke-width="1.8" aria-hidden="true" />
-                <span class="flex-1">Archived records</span>
-                <ChevronDown
-                  :size="16"
-                  aria-hidden="true"
-                  class="transition-transform duration-200"
-                  :class="archiveNavigationOpen ? 'rotate-180' : ''"
-                />
-              </CollapsibleTrigger>
-
-              <CollapsibleContent>
-                <nav aria-label="Archived records" class="mt-1 space-y-0.5 pb-2 pl-3">
-                  <RouterLink
-                    v-for="item in archiveNavigation"
-                    :key="item.to"
-                    :to="item.to"
-                    :aria-current="route.path === item.to ? 'page' : undefined"
-                    class="relative flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-sm transition"
-                    :class="
-                      route.path === item.to
-                        ? 'bg-brand-soft font-semibold text-brand-strong'
-                        : 'text-ink-muted hover:bg-surface-muted hover:text-ink'
-                    "
-                  >
-                    <span
-                      class="absolute inset-y-2 left-0 w-0.5 rounded-full"
-                      :class="route.path === item.to ? 'bg-accent' : 'bg-transparent'"
-                      aria-hidden="true"
-                    />
-                    <component :is="item.icon" :size="16" :stroke-width="1.8" aria-hidden="true" />
-                    <span>{{ item.label }}</span>
-                  </RouterLink>
-                </nav>
-              </CollapsibleContent>
-            </CollapsibleRoot>
           </div>
 
           <div class="border-t border-line px-4 py-4">
@@ -327,7 +273,7 @@ watch(
                 More
               </DialogTitle>
               <DialogDescription class="mt-1 break-words text-sm text-ink-muted">
-                Organization, archives, and account settings.
+                Organization and account settings.
               </DialogDescription>
             </div>
             <DialogClose
@@ -344,7 +290,7 @@ watch(
             class="mt-5 grid grid-cols-1 gap-2 min-[375px]:grid-cols-2"
           >
             <RouterLink
-              v-for="item in primaryNavigationGroups[1]?.items ?? []"
+              v-for="item in organizationNavigation"
               :key="item.to"
               :to="item.to"
               class="flex min-h-12 min-w-0 items-center gap-3 rounded-xl border border-line bg-canvas px-3 text-sm font-medium text-ink transition hover:border-line-strong"
@@ -353,26 +299,6 @@ watch(
               <span class="min-w-0 break-words">{{ item.label }}</span>
             </RouterLink>
           </nav>
-
-          <section class="mt-5 border-t border-line pt-4">
-            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
-              Archived records
-            </p>
-            <nav
-              aria-label="Mobile archived records"
-              class="mt-2 grid grid-cols-1 gap-x-3 min-[375px]:grid-cols-2"
-            >
-              <RouterLink
-                v-for="item in archiveNavigation"
-                :key="item.to"
-                :to="item.to"
-                class="flex min-h-11 min-w-0 items-center gap-2 text-sm text-ink-muted transition-colors hover:text-ink"
-              >
-                <component :is="item.icon" :size="16" :stroke-width="1.8" aria-hidden="true" />
-                <span class="min-w-0 break-words">{{ item.label }}</span>
-              </RouterLink>
-            </nav>
-          </section>
 
           <div class="mt-4 border-t border-line pt-4">
             <RouterLink

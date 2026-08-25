@@ -377,6 +377,13 @@ onBeforeUnmount(() => {
       description="Keep supplier details ready for every expense."
     >
       <template #actions>
+        <RouterLink
+          to="/vendors/archived"
+          class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm font-semibold text-ink-muted transition hover:border-line-strong hover:bg-surface-muted hover:text-ink"
+        >
+          <Archive :size="16" aria-hidden="true" />
+          Archived vendors
+        </RouterLink>
         <button
           v-if="!showVendorForm"
           type="button"

@@ -99,6 +99,14 @@ function stubMobileViewport(matches = true) {
 }
 
 describe('expense category management', () => {
+  it('links to archived categories from the active workspace', async () => {
+    const { wrapper } = await mountPage()
+
+    expect(wrapper.get('a[href="/expense-categories/archived"]').text()).toContain(
+      'Archived categories',
+    )
+  })
+
   beforeEach(() => {
     vi.resetAllMocks()
     categoriesApi.fetchExpenseCategoriesPage.mockResolvedValue(categoryPage([]))

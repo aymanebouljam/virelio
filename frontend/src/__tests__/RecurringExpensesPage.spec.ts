@@ -209,6 +209,14 @@ afterEach(() => {
 })
 
 describe('recurring expense management', () => {
+  it('links to archived schedules from the active ledger', async () => {
+    const { wrapper } = await mountActive()
+
+    expect(wrapper.get('a[href="/recurring-expenses/archived"]').text()).toContain(
+      'Archived schedules',
+    )
+  })
+
   it('shows loading before rendering recurring expenses and their relations', async () => {
     let resolveTemplates!: (page: PaginatedResponse<RecurringExpenseTemplate>) => void
     recurringApi.fetchRecurringExpenses.mockReturnValue(
