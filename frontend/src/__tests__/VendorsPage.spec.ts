@@ -101,6 +101,12 @@ function stubMobileViewport(matches = true) {
 }
 
 describe('vendor management', () => {
+  it('links to archived vendors from the active directory', async () => {
+    const { wrapper } = await mountPage()
+
+    expect(wrapper.get('a[href="/vendors/archived"]').text()).toContain('Archived vendors')
+  })
+
   beforeEach(() => {
     vi.resetAllMocks()
     vendorsApi.fetchVendorsPage.mockResolvedValue(vendorPage([]))

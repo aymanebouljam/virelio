@@ -447,6 +447,13 @@ onMounted(loadExpensesPage)
         description="Find, review, and maintain the entries behind your spending totals."
       >
         <template #actions>
+          <RouterLink
+            to="/expenses/archived"
+            class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm font-semibold text-ink-muted transition hover:border-line-strong hover:bg-surface-muted hover:text-ink"
+          >
+            <Archive :size="16" aria-hidden="true" />
+            Archived expenses
+          </RouterLink>
           <button
             v-if="!showForm"
             type="button"

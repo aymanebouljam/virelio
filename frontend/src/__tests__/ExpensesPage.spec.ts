@@ -150,6 +150,12 @@ function stubMobileViewport(matches = true) {
 }
 
 describe('expense listing and filters', () => {
+  it('links to archived expenses from the active ledger', async () => {
+    const { wrapper } = await mountPage()
+
+    expect(wrapper.get('a[href="/expenses/archived"]').text()).toContain('Archived expenses')
+  })
+
   beforeEach(() => {
     vi.resetAllMocks()
     expensesApi.fetchExpenses.mockResolvedValue(expensePage([]))

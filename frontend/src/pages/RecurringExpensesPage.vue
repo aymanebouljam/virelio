@@ -373,6 +373,13 @@ onMounted(loadPage)
         description="Maintain repeat costs and turn each due schedule into an expense when the record is ready."
       >
         <template #actions>
+          <RouterLink
+            to="/recurring-expenses/archived"
+            class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm font-semibold text-ink-muted transition hover:border-line-strong hover:bg-surface-muted hover:text-ink"
+          >
+            <Archive :size="16" aria-hidden="true" />
+            Archived schedules
+          </RouterLink>
           <button
             v-if="!showForm"
             type="button"

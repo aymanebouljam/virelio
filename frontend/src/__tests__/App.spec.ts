@@ -43,10 +43,9 @@ describe('App', () => {
 
     expect(wrapper.get('nav[aria-label="Primary navigation"]').text()).toContain('Dashboard')
     expect(wrapper.get('nav[aria-label="Primary navigation"]').text()).toContain('Expenses')
+    expect(wrapper.get('nav[aria-label="Primary navigation"]').text()).toContain('Expense records')
     expect(wrapper.find('nav[aria-label="Archived records"]').exists()).toBe(false)
-    expect(wrapper.get('button[aria-label="Archived records"]').attributes('aria-expanded')).toBe(
-      'false',
-    )
+    expect(wrapper.find('button[aria-label="Archived records"]').exists()).toBe(false)
     const accountLink = wrapper.get('[data-account-link]')
     const scrollRegion = wrapper.get('[data-sidebar-scroll-region]')
     const workspaceIndex = wrapper.get('[data-workspace-index]')
@@ -70,23 +69,6 @@ describe('App', () => {
     const { wrapper } = await mountWithRouter(App, routes)
 
     expect(wrapper.get('[data-account-initials]').text()).toBe('O')
-  })
-
-  it('expands archived navigation on demand', async () => {
-    setAccessToken('test-token')
-    currentUser.value = user
-    const { wrapper } = await mountWithRouter(App, routes)
-    const archiveTrigger = wrapper.get('button[aria-label="Archived records"]')
-
-    expect(archiveTrigger.attributes('aria-expanded')).toBe('false')
-
-    await archiveTrigger.trigger('click')
-
-    expect(archiveTrigger.attributes('aria-expanded')).toBe('true')
-    const archiveNavigation = wrapper.get('nav[aria-label="Archived records"]')
-    expect(archiveNavigation.text()).toContain('Vendors')
-    expect(archiveNavigation.text()).toContain('Expenses')
-    expect(archiveNavigation.classes()).toContain('pb-2')
   })
 
   it('keeps frequent destinations in the mobile navigation', async () => {
@@ -115,25 +97,18 @@ describe('App', () => {
     await moreButton.trigger('click')
 
     expect(moreButton.attributes('aria-expanded')).toBe('true')
-    expect(wrapper.get('[role="dialog"]').text()).toContain(
-      'Organization, archives, and account settings.',
-    )
+    expect(wrapper.get('[role="dialog"]').text()).toContain('Organization and account settings.')
     expect(wrapper.get('[role="dialog"]').classes()).toContain('inset-x-3')
     expect(wrapper.get('[role="dialog"]').classes()).toContain('min-w-0')
     expect(wrapper.get('[aria-label="Close more menu"]').attributes('title')).toBe(
       'Close more menu',
     )
     const moreNavigation = wrapper.get('nav[aria-label="More navigation"]')
-    const archivedNavigation = wrapper.get('nav[aria-label="Mobile archived records"]')
     expect(moreNavigation.text()).toContain('Vendors')
     expect(moreNavigation.text()).toContain('Categories')
     expect(moreNavigation.classes()).toContain('grid-cols-1')
     expect(moreNavigation.get('a[href="/vendors"] span').classes()).toContain('break-words')
-    expect(archivedNavigation.text()).toContain('Recurring expenses')
-    expect(archivedNavigation.classes()).toContain('grid-cols-1')
-    expect(
-      archivedNavigation.get('a[href="/recurring-expenses/archived"] span').classes(),
-    ).toContain('break-words')
+    expect(wrapper.find('nav[aria-label="Mobile archived records"]').exists()).toBe(false)
     expect(wrapper.get('[data-mobile-account-link]').text()).toContain(user.email)
   })
 

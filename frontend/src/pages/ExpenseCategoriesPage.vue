@@ -289,6 +289,13 @@ onMounted(loadCategoriesPage)
       description="Use clear names and colors to keep records easy to recognize."
     >
       <template #actions>
+        <RouterLink
+          to="/expense-categories/archived"
+          class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm font-semibold text-ink-muted transition hover:border-line-strong hover:bg-surface-muted hover:text-ink"
+        >
+          <Archive :size="16" aria-hidden="true" />
+          Archived categories
+        </RouterLink>
         <button
           v-if="!showForm"
           type="button"
