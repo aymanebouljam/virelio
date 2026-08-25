@@ -72,7 +72,13 @@ function stubMobileViewport(matches = true) {
 }
 
 async function mountPage(component: Component) {
-  const wrapper = mount(component)
+  const wrapper = mount(component, {
+    global: {
+      stubs: {
+        RouterLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
+      },
+    },
+  })
   await flushPromises()
   return wrapper
 }
@@ -122,6 +128,7 @@ describe('archived vendor management', () => {
     const archiveTime = wrapper.get('time')
 
     expect(wrapper.get('h1').text()).toBe('Archived vendors')
+    expect(wrapper.get('a[href="/vendors"]').text()).toContain('Active vendors')
     expect(wrapper.findAll('[data-archived-vendor-record]')).toHaveLength(1)
     expect(archiveTime.attributes('datetime')).toBe(archivedAt)
     expect(archiveTime.text()).toBe(formatDateTime(archivedAt))
@@ -239,6 +246,7 @@ describe('archived category management', () => {
     const archiveTime = wrapper.get('time')
 
     expect(wrapper.get('h1').text()).toBe('Archived categories')
+    expect(wrapper.get('a[href="/expense-categories"]').text()).toContain('Active categories')
     expect(wrapper.findAll('[data-archived-category-record]')).toHaveLength(1)
     expect(archiveTime.attributes('datetime')).toBe(archivedAt)
     expect(archiveTime.text()).toBe(formatDateTime(archivedAt))

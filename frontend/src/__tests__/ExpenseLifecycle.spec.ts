@@ -138,7 +138,13 @@ async function mountDetails() {
 }
 
 async function mountArchivedExpenses() {
-  const wrapper = mount(ArchivedExpensesPage)
+  const wrapper = mount(ArchivedExpensesPage, {
+    global: {
+      stubs: {
+        RouterLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
+      },
+    },
+  })
   await flushPromises()
   return wrapper
 }
@@ -357,7 +363,8 @@ describe('archived expense management', () => {
 
     const wrapper = await mountArchivedExpenses()
 
-    expect(wrapper.get('h1').text()).toBe('Records held outside the ledger.')
+    expect(wrapper.get('h1').text()).toBe('Archived expenses')
+    expect(wrapper.get('a[href="/expenses"]').text()).toContain('Active expenses')
     expect(wrapper.findAll('[data-archived-expense-record]')).toHaveLength(1)
     expect(wrapper.text()).toContain('Client-site flight')
     expect(wrapper.text()).toContain('Atlas Supplies')

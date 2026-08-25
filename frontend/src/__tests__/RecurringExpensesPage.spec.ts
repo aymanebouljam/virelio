@@ -191,7 +191,13 @@ function stubMobileViewport(matches = true) {
 }
 
 async function mountArchived() {
-  const wrapper = mount(ArchivedRecurringExpensesPage)
+  const wrapper = mount(ArchivedRecurringExpensesPage, {
+    global: {
+      stubs: {
+        RouterLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
+      },
+    },
+  })
   await flushPromises()
   return wrapper
 }
@@ -471,7 +477,8 @@ describe('archived recurring expense management', () => {
     recurringApi.fetchArchivedRecurringExpenses.mockResolvedValue([archivedTemplate])
     const wrapper = await mountArchived()
 
-    expect(wrapper.get('h1').text()).toBe('Schedules held outside the cycle.')
+    expect(wrapper.get('h1').text()).toBe('Archived schedules')
+    expect(wrapper.get('a[href="/recurring-expenses"]').text()).toContain('Active schedules')
     expect(wrapper.findAll('[data-archived-recurring-record]')).toHaveLength(1)
     expect(wrapper.text()).toContain(archivedTemplate.description)
     expect(wrapper.text()).toContain(atlas.name)

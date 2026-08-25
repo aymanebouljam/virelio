@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { ArchiveRestore, Building2, EllipsisVertical, Trash2 } from '@lucide/vue'
+import { ArchiveRestore, ArrowLeft, Building2, EllipsisVertical, Trash2 } from '@lucide/vue'
 import { fetchArchivedVendors, removeVendor, restoreVendor } from '@/lib/vendors/api'
 import { ApiError } from '@/lib/api'
 import { formatDateTime } from '@/lib/helpers'
@@ -109,7 +109,17 @@ onMounted(loadArchivedVendors)
       context="Archive"
       title="Archived vendors"
       description="Restore a supplier when it becomes active again, or remove it permanently."
-    />
+    >
+      <template #actions>
+        <RouterLink
+          to="/vendors"
+          class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm font-semibold text-ink-muted transition hover:border-line-strong hover:bg-surface-muted hover:text-ink"
+        >
+          <ArrowLeft :size="16" aria-hidden="true" />
+          Active vendors
+        </RouterLink>
+      </template>
+    </WorkspaceHeader>
 
     <div
       v-if="actionError"

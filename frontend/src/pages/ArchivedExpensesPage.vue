@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { ArchiveRestore, EllipsisVertical, ReceiptText, Trash2 } from '@lucide/vue'
+import { ArchiveRestore, ArrowLeft, EllipsisVertical, ReceiptText, Trash2 } from '@lucide/vue'
+import LedgerSurface from '@/components/ui/LedgerSurface.vue'
 import RecordActionSheet, { type RecordActionItem } from '@/components/ui/RecordActionSheet.vue'
+import WorkspaceHeader from '@/components/ui/WorkspaceHeader.vue'
 import { ApiError } from '@/lib/api'
 import { fetchExpenseCategories } from '@/lib/expense-categories/api'
 import { expenseCategorySchema, type ExpenseCategory } from '@/lib/expense-categories/schema'
@@ -133,32 +135,31 @@ onMounted(loadArchivedExpensesPage)
 
 <template>
   <section class="min-w-0 space-y-6">
-    <header class="space-y-4 border-b border-line pb-6">
-      <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
-        Expense archive
-      </p>
-
-      <div>
-        <h1
-          class="font-display text-[2rem] font-semibold leading-tight tracking-[-0.035em] text-ink sm:text-[2.5rem]"
+    <WorkspaceHeader
+      context="Archive"
+      title="Archived expenses"
+      description="Restore an expense to active reporting, or permanently remove a record you no longer need."
+    >
+      <template #actions>
+        <RouterLink
+          to="/expenses"
+          class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm font-semibold text-ink-muted transition hover:border-line-strong hover:bg-surface-muted hover:text-ink"
         >
-          Records held outside the ledger.
-        </h1>
-        <p class="mt-2 max-w-2xl text-sm leading-6 text-ink-muted sm:text-[15px]">
-          Restore an expense to active reporting, or permanently remove a record you no longer need.
-        </p>
-      </div>
+          <ArrowLeft :size="16" aria-hidden="true" />
+          Active expenses
+        </RouterLink>
+      </template>
+    </WorkspaceHeader>
 
-      <div
-        v-if="actionError"
-        role="alert"
-        class="rounded-xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
-      >
-        {{ actionError }}
-      </div>
-    </header>
+    <div
+      v-if="actionError"
+      role="alert"
+      class="rounded-xl border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
+    >
+      {{ actionError }}
+    </div>
 
-    <section class="min-w-0 overflow-hidden rounded-xl border border-line bg-surface shadow-card">
+    <LedgerSurface class="overflow-hidden">
       <header class="border-b border-line px-5 py-4 sm:px-6">
         <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
           Inactive records
@@ -291,7 +292,7 @@ onMounted(loadArchivedExpensesPage)
           </div>
         </article>
       </div>
-    </section>
+    </LedgerSurface>
 
     <RecordActionSheet
       :open="mobileActionsOpen"

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { ArchiveRestore, EllipsisVertical, Tags, Trash2 } from '@lucide/vue'
+import { ArchiveRestore, ArrowLeft, EllipsisVertical, Tags, Trash2 } from '@lucide/vue'
 import { ApiError } from '@/lib/api'
 import { formatDateTime } from '@/lib/helpers'
 import {
@@ -116,7 +116,17 @@ onMounted(loadArchivedCategories)
       context="Archive"
       title="Archived categories"
       description="Restore a category for future records, or remove it permanently."
-    />
+    >
+      <template #actions>
+        <RouterLink
+          to="/expense-categories"
+          class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm font-semibold text-ink-muted transition hover:border-line-strong hover:bg-surface-muted hover:text-ink"
+        >
+          <ArrowLeft :size="16" aria-hidden="true" />
+          Active categories
+        </RouterLink>
+      </template>
+    </WorkspaceHeader>
 
     <div
       v-if="actionError"
