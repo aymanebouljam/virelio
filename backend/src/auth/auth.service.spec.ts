@@ -8,6 +8,8 @@ import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthService } from './auth.service';
 import { JwtService } from '@nestjs/jwt';
+import { AuthMailService } from './auth-mail.service';
+import { ConfigService } from '@nestjs/config';
 
 jest.mock('bcrypt', () => ({
   hash: jest.fn(),
@@ -27,6 +29,11 @@ describe('AuthService', () => {
   const userFindUniqueMock = jest.fn();
   const userCreateMock = jest.fn();
   const userUpdateMock = jest.fn();
+  const authTokenUpsertMock = jest.fn();
+  const authTokenFindUniqueMock = jest.fn();
+  const authTokenDeleteMock = jest.fn();
+  const transactionMock = jest.fn();
+  const sendMailMock = jest.fn();
 
   const prisma = {
     user: {
@@ -34,11 +41,31 @@ describe('AuthService', () => {
       create: userCreateMock,
       update: userUpdateMock,
     },
+    authToken: {
+      upsert: authTokenUpsertMock,
+      findUnique: authTokenFindUniqueMock,
+      delete: authTokenDeleteMock,
+    },
+    $transaction: transactionMock,
   } as unknown as PrismaService;
+
+  const authMailService = {
+    send: sendMailMock,
+  } as unknown as AuthMailService;
+  const configGetOrThrowMock = jest.fn();
+  const configService = {
+    getOrThrow: configGetOrThrowMock,
+  } as unknown as ConfigService;
 
   beforeEach(() => {
     jest.resetAllMocks();
-    service = new AuthService(prisma, jwtService);
+    configGetOrThrowMock.mockReturnValue('http://localhost:5173');
+    service = new AuthService(
+      prisma,
+      jwtService,
+      authMailService,
+      configService,
+    );
   });
 
   it('registers a new user', async () => {
@@ -209,5 +236,95 @@ describe('AuthService', () => {
     await expect(
       service.updateProfile('user-1', { email: 'taken@local.dev' }),
     ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('does not reveal whether a password reset email exists', async () => {
+    userFindUniqueMock.mockResolvedValueOnce(null);
+
+    await expect(
+      service.requestPasswordReset({ email: 'unknown@example.com' }),
+    ).resolves.toEqual({
+      message:
+        'If an account exists for that email, a password reset link has been sent.',
+    });
+
+    expect(sendMailMock).not.toHaveBeenCalled();
+    expect(authTokenUpsertMock).not.toHaveBeenCalled();
+  });
+
+  it('stores a hash and emails the raw password reset token', async () => {
+    userFindUniqueMock.mockResolvedValueOnce({
+      id: 'user-1',
+      email: 'owner@example.com',
+    });
+
+    await service.requestPasswordReset({ email: 'owner@example.com' });
+
+    expect(authTokenUpsertMock).toHaveBeenCalled();
+    expect(sendMailMock).toHaveBeenCalled();
+  });
+
+  it('resets a password and consumes a valid reset token', async () => {
+    authTokenFindUniqueMock.mockResolvedValueOnce({
+      id: 'token-1',
+      userId: 'user-1',
+      type: 'PASSWORD_RESET',
+      expiresAt: new Date('2026-12-01T00:00:00.000Z'),
+    });
+    (bcrypt.hash as jest.Mock).mockResolvedValueOnce('new-hashed-password');
+    transactionMock.mockResolvedValueOnce([]);
+
+    await expect(
+      service.confirmPasswordReset({
+        token: 'valid-reset-token',
+        password: 'new-password',
+      }),
+    ).resolves.toEqual({ message: 'Password reset successfully' });
+
+    expect(userUpdateMock).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: { passwordHash: 'new-hashed-password' },
+    });
+    expect(authTokenDeleteMock).toHaveBeenCalledWith({
+      where: { id: 'token-1' },
+    });
+  });
+
+  it('rejects an expired password reset token', async () => {
+    authTokenFindUniqueMock.mockResolvedValueOnce({
+      id: 'token-1',
+      userId: 'user-1',
+      type: 'PASSWORD_RESET',
+      expiresAt: new Date('2026-01-01T00:00:00.000Z'),
+    });
+
+    await expect(
+      service.confirmPasswordReset({
+        token: 'expired-reset-token',
+        password: 'new-password',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(userUpdateMock).not.toHaveBeenCalled();
+    expect(authTokenDeleteMock).not.toHaveBeenCalled();
+  });
+
+  it('marks an email as verified and consumes the token', async () => {
+    authTokenFindUniqueMock.mockResolvedValueOnce({
+      id: 'token-1',
+      userId: 'user-1',
+      type: 'EMAIL_VERIFICATION',
+      expiresAt: new Date('2026-12-01T00:00:00.000Z'),
+    });
+    transactionMock.mockResolvedValueOnce([]);
+
+    await expect(
+      service.confirmEmailVerification({ token: 'verification-token' }),
+    ).resolves.toEqual({ message: 'Email verified successfully' });
+
+    expect(userUpdateMock).toHaveBeenCalledWith();
+    expect(authTokenDeleteMock).toHaveBeenCalledWith({
+      where: { id: 'token-1' },
+    });
   });
 });

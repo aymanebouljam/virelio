@@ -14,6 +14,11 @@ enum RecurrenceFrequency {
   YEARLY
 }
 
+enum AuthTokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
 // Models
 model Vendor {
   id         String    @id @default(uuid()) @db.Uuid
@@ -114,15 +119,31 @@ model ProofDocument {
 }
 
 model User {
-  id           String   @id @default(uuid()) @db.Uuid
-  email        String   @unique
-  passwordHash String
-  fullName     String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String    @id @default(uuid()) @db.Uuid
+  email           String    @unique
+  passwordHash    String
+  fullName        String
+  emailVerifiedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   vendors                   Vendor[]
   expenses                  Expense[]
   recurringExpenseTemplates RecurringExpenseTemplate[]
   ExpenseCategories         ExpenseCategory[]
+  authTokens                AuthToken[]
+}
+
+model AuthToken {
+  id        String        @id @default(uuid()) @db.Uuid
+  userId    String        @db.Uuid
+  tokenHash String        @unique
+  type      AuthTokenType
+  expiresAt DateTime
+  createdAt DateTime      @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@index([expiresAt])
 }
