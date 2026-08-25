@@ -22,7 +22,7 @@
     "format:check": "oxfmt --check src/"
   },
   "dependencies": {
-    "@lucide/vue": "^1.31.0",
+    "@lucide/vue": "^1.33.0",
     "chart.js": "^4.5.1",
     "pinia": "^3.0.4",
     "reka-ui": "^2.10.3",
@@ -41,20 +41,20 @@
     "@vue/eslint-config-typescript": "^14.9.0",
     "@vue/test-utils": "^2.4.11",
     "@vue/tsconfig": "^0.9.1",
-    "eslint": "^10.8.1",
+    "eslint": "^10.9.0",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-oxlint": "~1.76.0",
+    "eslint-plugin-oxlint": "~1.79.0",
     "eslint-plugin-vue": "~10.10.0",
     "jiti": "^2.7.0",
     "jsdom": "^29.1.1",
     "npm-run-all2": "^8.0.4",
     "oxfmt": "^0.45.0",
-    "oxlint": "~1.76.0",
+    "oxlint": "~1.79.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.3",
-    "vite": "^8.2.1",
+    "vite": "^8.2.2",
     "vite-plugin-vue-devtools": "^8.2.1",
-    "vitest": "^4.1.10",
-    "vue-tsc": "^3.3.10"
+    "vitest": "^4.1.11",
+    "vue-tsc": "^3.3.11"
   }
 }
