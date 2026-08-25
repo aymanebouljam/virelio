@@ -13,6 +13,10 @@ import { CurrentUser } from './current-user.decorator';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
+import { ConfirmPasswordResetDto } from './dto/confirm-password-reset.dto';
+import { ConfirmEmailVerificationDto } from './dto/confirm-email-verification.dto';
+import { ResendEmailVerificationDto } from './dto/resend-email-verification.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import type { JwtUser } from './auth.types';
 
@@ -29,6 +33,30 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   login(@Body() body: LoginDto) {
     return this.authService.login(body);
+  }
+
+  @Post('password-reset/request')
+  @HttpCode(HttpStatus.OK)
+  requestPasswordReset(@Body() body: RequestPasswordResetDto) {
+    return this.authService.requestPasswordReset(body);
+  }
+
+  @Post('password-reset/confirm')
+  @HttpCode(HttpStatus.OK)
+  confirmPasswordReset(@Body() body: ConfirmPasswordResetDto) {
+    return this.authService.confirmPasswordReset(body);
+  }
+
+  @Post('email-verification/resend')
+  @HttpCode(HttpStatus.OK)
+  resendEmailVerification(@Body() body: ResendEmailVerificationDto) {
+    return this.authService.resendEmailVerification(body);
+  }
+
+  @Post('email-verification/confirm')
+  @HttpCode(HttpStatus.OK)
+  confirmEmailVerification(@Body() body: ConfirmEmailVerificationDto) {
+    return this.authService.confirmEmailVerification(body);
   }
 
   @Get('me')
