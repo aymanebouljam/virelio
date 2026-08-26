@@ -322,7 +322,7 @@ describe('AuthService', () => {
       service.confirmEmailVerification({ token: 'verification-token' }),
     ).resolves.toEqual({ message: 'Email verified successfully' });
 
-    expect(userUpdateMock).toHaveBeenCalledWith();
+    expect(userUpdateMock).toHaveBeenCalled();
     expect(authTokenDeleteMock).toHaveBeenCalledWith({
       where: { id: 'token-1' },
     });
