@@ -52,6 +52,12 @@ export const passwordResetConfirmFormSchema = z
 
 export type PasswordResetConfirmFormValues = z.infer<typeof passwordResetConfirmFormSchema>
 
+export const emailVerificationConfirmFormSchema = z.object({
+  token: z.string().trim().min(1, 'Verification token is required'),
+})
+
+export type EmailVerificationConfirmFormValues = z.infer<typeof emailVerificationConfirmFormSchema>
+
 export const authMessageSchema = z.object({
   message: z.string().trim().min(1),
 })

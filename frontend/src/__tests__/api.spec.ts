@@ -7,6 +7,7 @@ describe('apiConfig', () => {
   let fetchMock: ReturnType<typeof installFetchMock>
   let apiConfig: typeof import('@/lib/api').apiConfig
   let confirmPasswordReset: typeof import('@/lib/auth/api').confirmPasswordReset
+  let confirmEmailVerification: typeof import('@/lib/auth/api').confirmEmailVerification
   let setAccessToken: typeof import('@/lib/auth/storage').setAccessToken
 
   beforeEach(async () => {
@@ -19,6 +20,7 @@ describe('apiConfig', () => {
     const authStorage = await import('@/lib/auth/storage')
     apiConfig = apiModule.apiConfig
     confirmPasswordReset = authApi.confirmPasswordReset
+    confirmEmailVerification = authApi.confirmEmailVerification
     setAccessToken = authStorage.setAccessToken
   })
 
@@ -90,6 +92,26 @@ describe('apiConfig', () => {
           token: 'reset-token',
           password: 'new-password',
         }),
+      },
+    )
+  })
+
+  it('sends the verification token', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ message: 'Email verified successfully' }))
+
+    await expect(confirmEmailVerification({ token: 'verification-token' })).resolves.toEqual({
+      message: 'Email verified successfully',
+    })
+
+    expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
+      new URL('auth/email-verification/confirm', testUrl),
+      {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token: 'verification-token' }),
       },
     )
   })
