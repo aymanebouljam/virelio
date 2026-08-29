@@ -1,3 +1,4 @@
+import { JwtService } from '@nestjs/jwt';
 import request from 'supertest';
 import type { Server } from 'node:http';
 
@@ -11,21 +12,24 @@ export async function createAuth(http: Server, input: AuthInput = {}) {
   const password = input.password ?? 'password123';
   const fullName = input.fullName ?? 'Local Owner';
 
-  await request(http).post('/auth/register').send({
+  const registration = (await request(http).post('/auth/register').send({
     email,
     password,
     fullName,
+  })) as { body: { id: string } };
+
+  const jwtService = new JwtService({
+    secret: process.env.AUTH_JWT_SECRET,
+  });
+  const accessToken = await jwtService.signAsync({
+    sub: registration.body.id,
+    email,
   });
 
-  const response = (await request(http).post('/auth/login').send({
-    email,
-    password,
-  })) as { body: { id: string; accessToken: string } };
-
   return {
-    userId: response.body.id,
+    userId: registration.body.id,
     authHeaders: {
-      Authorization: `Bearer ${response.body.accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
     },
   };
 }

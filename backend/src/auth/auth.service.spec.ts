@@ -68,7 +68,7 @@ describe('AuthService', () => {
     );
   });
 
-  it('registers a new user', async () => {
+  it('registers a new user and sends an email verification link', async () => {
     userFindUniqueMock.mockResolvedValueOnce(null);
     (bcrypt.hash as jest.Mock).mockResolvedValueOnce('hashed-password');
     userCreateMock.mockResolvedValueOnce({
@@ -110,6 +110,34 @@ describe('AuthService', () => {
         updatedAt: true,
       },
     });
+    expect(authTokenUpsertMock).toHaveBeenCalledWith({
+      where: {
+        userId_type: {
+          userId: 'user-1',
+          type: 'EMAIL_VERIFICATION',
+        },
+      },
+      create: {
+        userId: 'user-1',
+        tokenHash: expect.any(String) as unknown,
+        type: 'EMAIL_VERIFICATION',
+        expiresAt: expect.any(Date) as unknown,
+      },
+      update: {
+        tokenHash: expect.any(String) as unknown,
+        expiresAt: expect.any(Date) as unknown,
+      },
+    });
+    expect(sendMailMock).toHaveBeenCalledWith({
+      to: 'owner@local.dev',
+      subject: 'Verify your Virelio email',
+      text: expect.stringMatching(
+        /^Verify your email: http:\/\/localhost:5173\/verify-email\?token=/,
+      ) as unknown,
+      html: expect.stringContaining(
+        'href="http://localhost:5173/verify-email?token=',
+      ) as unknown,
+    });
   });
 
   it('rejects register when email already exists', async () => {
@@ -132,6 +160,7 @@ describe('AuthService', () => {
       email: 'owner@local.dev',
       fullName: 'Local Owner',
       passwordHash: 'hashed-password',
+      emailVerifiedAt: new Date('2026-06-27T10:00:00.000Z'),
       createdAt: new Date('2026-06-27T10:00:00.000Z'),
       updatedAt: new Date('2026-06-27T10:00:00.000Z'),
     });
@@ -152,6 +181,32 @@ describe('AuthService', () => {
       'password123',
       'hashed-password',
     );
+  });
+
+  it('rejects login when email has not been verified', async () => {
+    userFindUniqueMock.mockResolvedValueOnce({
+      id: 'user-1',
+      email: 'owner@local.dev',
+      fullName: 'Local Owner',
+      passwordHash: 'hashed-password',
+      emailVerifiedAt: null,
+      createdAt: new Date('2026-06-27T10:00:00.000Z'),
+      updatedAt: new Date('2026-06-27T10:00:00.000Z'),
+    });
+    (bcrypt.compare as jest.Mock).mockResolvedValueOnce(true);
+
+    await expect(
+      service.login({
+        email: 'owner@local.dev',
+        password: 'password123',
+      }),
+    ).rejects.toMatchObject({
+      response: {
+        message: 'Email address must be verified',
+      },
+    });
+
+    expect(signAsyncMock).not.toHaveBeenCalled();
   });
 
   it('rejects login when user does not exist', async () => {
