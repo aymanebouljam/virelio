@@ -6,6 +6,7 @@ import {
   type AuthMessage,
   type AuthSession,
   type AuthUser,
+  type PasswordResetConfirmFormValues,
   type LoginFormValues,
   type PasswordResetRequestFormValues,
   type ProfileFormValues,
@@ -45,6 +46,20 @@ export async function requestPasswordReset(input: PasswordResetRequestFormValues
       action: 'request',
       method: 'POST',
       input,
+    }),
+  ) as AuthMessage
+}
+
+export async function confirmPasswordReset(input: PasswordResetConfirmFormValues) {
+  return authMessageSchema.parse(
+    await apiConfig({
+      path: 'auth/password-reset',
+      action: 'confirm',
+      method: 'POST',
+      input: {
+        token: input.token,
+        password: input.password,
+      },
     }),
   ) as AuthMessage
 }

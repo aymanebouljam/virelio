@@ -6,6 +6,7 @@ const testUrl = 'https://api.example.test/'
 describe('apiConfig', () => {
   let fetchMock: ReturnType<typeof installFetchMock>
   let apiConfig: typeof import('@/lib/api').apiConfig
+  let confirmPasswordReset: typeof import('@/lib/auth/api').confirmPasswordReset
   let setAccessToken: typeof import('@/lib/auth/storage').setAccessToken
 
   beforeEach(async () => {
@@ -14,8 +15,10 @@ describe('apiConfig', () => {
     localStorage.clear()
     fetchMock = installFetchMock()
     const apiModule = await import('@/lib/api')
+    const authApi = await import('@/lib/auth/api')
     const authStorage = await import('@/lib/auth/storage')
     apiConfig = apiModule.apiConfig
+    confirmPasswordReset = authApi.confirmPasswordReset
     setAccessToken = authStorage.setAccessToken
   })
 
@@ -60,6 +63,33 @@ describe('apiConfig', () => {
       {
         method: 'PATCH',
         headers: { Accept: 'application/json' },
+      },
+    )
+  })
+
+  it('sends the reset token and new password', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ message: 'Password reset successfully' }))
+
+    await expect(
+      confirmPasswordReset({
+        token: 'reset-token',
+        password: 'new-password',
+        passwordConfirmation: 'new-password',
+      }),
+    ).resolves.toEqual({ message: 'Password reset successfully' })
+
+    expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
+      new URL('auth/password-reset/confirm', testUrl),
+      {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token: 'reset-token',
+          password: 'new-password',
+        }),
       },
     )
   })
