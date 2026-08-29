@@ -24,9 +24,9 @@ jobs:
     env:
       CI: true
       FRONTEND_ORIGIN: http://localhost:5173
-      # Ephemeral CI-only Postgres service; not a shared or production database.
       DATABASE_URL: postgresql://postgres:password@localhost:5432/virelio_test?schema=public
       AUTH_JWT_SECRET: ci-test-jwt-secret
+      AUTH_APP_URL: http://localhost:5173
 
     services:
       postgres:
