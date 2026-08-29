@@ -4,16 +4,30 @@ import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
 import type { Server } from 'node:http';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  AuthMailService,
+  type AuthMailMessage,
+} from '../src/auth/auth-mail.service';
 
 export interface TestApp {
   app: NestExpressApplication;
   http: Server;
   prisma: PrismaService;
+  authMailMessages: AuthMailMessage[];
 }
 export async function createTestApp(): Promise<TestApp> {
+  const authMailMessages: AuthMailMessage[] = [];
   const moduleRef = await Test.createTestingModule({
     imports: [AppModule],
-  }).compile();
+  })
+    .overrideProvider(AuthMailService)
+    .useValue({
+      send(message: AuthMailMessage) {
+        authMailMessages.push(message);
+        return Promise.resolve();
+      },
+    })
+    .compile();
 
   const app = moduleRef.createNestApplication<NestExpressApplication>();
   configureApp(app);
@@ -24,6 +38,7 @@ export async function createTestApp(): Promise<TestApp> {
     app,
     http: app.getHttpServer(),
     prisma: app.get(PrismaService),
+    authMailMessages,
   };
 }
 

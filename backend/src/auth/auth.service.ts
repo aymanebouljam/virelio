@@ -99,6 +99,12 @@ export class AuthService {
       });
     }
 
+    if (user.emailVerifiedAt === null) {
+      throw new UnauthorizedException({
+        message: 'Email address must be verified',
+      });
+    }
+
     const accessToken = await this.jwtService.signAsync({
       sub: user.id,
       email: user.email,

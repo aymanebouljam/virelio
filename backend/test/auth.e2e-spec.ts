@@ -2,6 +2,7 @@ import { HttpStatus, type INestApplication } from '@nestjs/common';
 import type { Server } from 'node:http';
 import request from 'supertest';
 import type { PrismaService } from '../prisma/prisma.service';
+import type { AuthMailMessage } from '../src/auth/auth-mail.service';
 import { createTestApp, resetDatabase } from './test-app';
 import { createAuth } from './test-auth';
 
@@ -23,13 +24,15 @@ describe('Auth e2e', () => {
   let app: INestApplication;
   let http: Server;
   let prisma: PrismaService;
+  let authMailMessages: AuthMailMessage[];
 
   beforeAll(async () => {
-    ({ app, http, prisma } = await createTestApp());
+    ({ app, http, prisma, authMailMessages } = await createTestApp());
   });
 
   beforeEach(async () => {
     await resetDatabase(prisma);
+    authMailMessages.length = 0;
   });
 
   afterAll(async () => {
@@ -98,6 +101,76 @@ describe('Auth e2e', () => {
           fullName: 'Local Owner',
         })
         .expect(HttpStatus.CREATED);
+
+      await prisma.user.update({
+        where: { email: 'owner@local.dev' },
+        data: { emailVerifiedAt: new Date() },
+      });
+
+      const response = await request(http)
+        .post('/auth/login')
+        .send({
+          email: 'owner@local.dev',
+          password: 'password123',
+        })
+        .expect(HttpStatus.OK);
+
+      expect(response.body).toMatchObject({
+        email: 'owner@local.dev',
+        fullName: 'Local Owner',
+      });
+    });
+
+    it('returns 401 when email has not been verified', async () => {
+      await request(http)
+        .post('/auth/register')
+        .send({
+          email: 'owner@local.dev',
+          password: 'password123',
+          fullName: 'Local Owner',
+        })
+        .expect(HttpStatus.CREATED);
+
+      const response = await request(http)
+        .post('/auth/login')
+        .send({
+          email: 'owner@local.dev',
+          password: 'password123',
+        })
+        .expect(HttpStatus.UNAUTHORIZED);
+
+      expect(response.body).toEqual({
+        message: 'Email address must be verified',
+      });
+    });
+
+    it('logs in after confirming the token from the verification email', async () => {
+      await request(http)
+        .post('/auth/register')
+        .send({
+          email: 'owner@local.dev',
+          password: 'password123',
+          fullName: 'Local Owner',
+        })
+        .expect(HttpStatus.CREATED);
+
+      expect(authMailMessages).toHaveLength(1);
+      expect(authMailMessages[0].to).toBe('owner@local.dev');
+      const verificationUrl = new URL(
+        authMailMessages[0].text.replace('Verify your email: ', ''),
+      );
+      const token = verificationUrl.searchParams.get('token');
+      expect(token).not.toBeNull();
+
+      if (token === null) {
+        throw new Error('Verification email did not include a token');
+      }
+
+      await request(http)
+        .post('/auth/email-verification/confirm')
+        .send({ token })
+        .expect(HttpStatus.OK)
+        .expect({ message: 'Email verified successfully' });
 
       const response = await request(http)
         .post('/auth/login')
