@@ -3,13 +3,22 @@ import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import type { Component } from 'vue'
 import type { RouteRecordRaw } from 'vue-router'
 import { ApiError } from '@/lib/api'
-import type { AuthSession, AuthUser, LoginFormValues, RegisterFormValues } from '@/lib/auth/schema'
+import type {
+  AuthMessage,
+  AuthSession,
+  AuthUser,
+  LoginFormValues,
+  PasswordResetConfirmFormValues,
+  RegisterFormValues,
+} from '@/lib/auth/schema'
 import { clearAccessToken, getAccessToken, isAuthenticated } from '@/lib/auth/storage'
 import LoginPage from '@/pages/LoginPage.vue'
+import PasswordResetConfirmPage from '@/pages/PasswordResetConfirmPage.vue'
 import RegisterPage from '@/pages/RegisterPage.vue'
 import { mountWithRouter } from './test-mount'
 
 const authApi = vi.hoisted(() => ({
+  confirmPasswordReset: vi.fn<(input: PasswordResetConfirmFormValues) => Promise<AuthMessage>>(),
   login: vi.fn<(input: LoginFormValues) => Promise<AuthSession>>(),
   register: vi.fn<(input: RegisterFormValues) => Promise<AuthUser>>(),
 }))
@@ -20,6 +29,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/', name: 'dashboard', component: { template: '<p>Dashboard</p>' } },
   { path: '/expenses', name: 'expenses', component: { template: '<p>Expenses</p>' } },
   { path: '/login', name: 'login', component: LoginPage },
+  { path: '/reset-password', name: 'passwordResetConfirm', component: PasswordResetConfirmPage },
   { path: '/register', name: 'register', component: RegisterPage },
 ]
 
@@ -64,6 +74,11 @@ async function fillRegistrationForm(wrapper: VueWrapper) {
   await wrapper.get('#register-email').setValue('owner@example.test')
   await wrapper.get('#register-password').setValue('test-password')
   await wrapper.get('#register-password-confirmation').setValue('test-password')
+}
+
+async function fillPasswordResetConfirmationForm(wrapper: VueWrapper) {
+  await wrapper.get('#password-reset-password').setValue('new-password')
+  await wrapper.get('#password-reset-password-confirmation').setValue('new-password')
 }
 
 beforeEach(() => {
@@ -256,5 +271,36 @@ describe('registration workflow', () => {
 
     expectInvalidField(wrapper, '#register-email', 'register-email-error')
     expect(wrapper.get('#register-email-error').text()).toBe('Email is already registered')
+  })
+})
+
+describe('password reset confirmation workflow', () => {
+  it('resets the password from a valid link and returns to sign-in', async () => {
+    authApi.confirmPasswordReset.mockResolvedValue({ message: 'Password reset successfully' })
+    const { router, wrapper } = await mountPage(
+      PasswordResetConfirmPage,
+      '/reset-password?token=reset-token',
+    )
+
+    await fillPasswordResetConfirmationForm(wrapper)
+    await getForm(wrapper, 'Password reset confirmation form').trigger('submit')
+    await flushPromises()
+
+    expect(authApi.confirmPasswordReset).toHaveBeenCalledExactlyOnceWith({
+      token: 'reset-token',
+      password: 'new-password',
+      passwordConfirmation: 'new-password',
+    })
+    expect(router.currentRoute.value.path).toBe('/login')
+  })
+
+  it('shows an error when the reset link has no token', async () => {
+    const { wrapper } = await mountPage(PasswordResetConfirmPage, '/reset-password')
+
+    await fillPasswordResetConfirmationForm(wrapper)
+    await getForm(wrapper, 'Password reset confirmation form').trigger('submit')
+
+    expect(wrapper.get('[role="alert"]').text()).toBe('Reset token is required')
+    expect(authApi.confirmPasswordReset).not.toHaveBeenCalled()
   })
 })

@@ -12,6 +12,7 @@ import ReportsPage from '@/pages/ReportsPage.vue'
 import RegisterPage from '@/pages/RegisterPage.vue'
 import LoginPage from '@/pages/LoginPage.vue'
 import PasswordResetRequestPage from '@/pages/PasswordResetRequestPage.vue'
+import PasswordResetConfirmPage from '@/pages/PasswordResetConfirmPage.vue'
 import ProfileSettingsPage from '@/pages/ProfileSettingsPage.vue'
 import RecurringExpensesPage from '@/pages/RecurringExpensesPage.vue'
 import ArchivedRecurringExpensesPage from '@/pages/ArchivedRecurringExpensesPage.vue'
@@ -116,6 +117,12 @@ const router = createRouter({
       path: '/password-reset',
       name: 'passwordResetRequest',
       component: PasswordResetRequestPage,
+      meta: { guestOnly: true },
+    },
+    {
+      path: '/reset-password',
+      name: 'passwordResetConfirm',
+      component: PasswordResetConfirmPage,
       meta: { guestOnly: true },
     },
   ],

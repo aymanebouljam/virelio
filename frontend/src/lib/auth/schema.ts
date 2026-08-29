@@ -39,6 +39,19 @@ export const passwordResetRequestFormSchema = z.object({
 
 export type PasswordResetRequestFormValues = z.infer<typeof passwordResetRequestFormSchema>
 
+export const passwordResetConfirmFormSchema = z
+  .object({
+    token: z.string().trim().min(1, 'Reset token is required'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+    passwordConfirmation: z.string().min(1, 'Password confirmation is required'),
+  })
+  .refine((input) => input.password === input.passwordConfirmation, {
+    message: 'Passwords do not match',
+    path: ['passwordConfirmation'],
+  })
+
+export type PasswordResetConfirmFormValues = z.infer<typeof passwordResetConfirmFormSchema>
+
 export const authMessageSchema = z.object({
   message: z.string().trim().min(1),
 })
