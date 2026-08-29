@@ -131,6 +131,13 @@ async function submit() {
         </p>
       </div>
 
+      <RouterLink
+        to="/password-reset"
+        class="block w-fit text-sm font-medium text-brand underline-offset-4 hover:text-brand-strong hover:underline"
+      >
+        Forgot your password?
+      </RouterLink>
+
       <div
         v-if="submitError"
         role="alert"

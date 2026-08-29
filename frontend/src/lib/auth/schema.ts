@@ -33,6 +33,18 @@ export const loginFormSchema = z.object({
 
 export type LoginFormValues = z.infer<typeof loginFormSchema>
 
+export const passwordResetRequestFormSchema = z.object({
+  email: emailSchema,
+})
+
+export type PasswordResetRequestFormValues = z.infer<typeof passwordResetRequestFormSchema>
+
+export const authMessageSchema = z.object({
+  message: z.string().trim().min(1),
+})
+
+export type AuthMessage = z.infer<typeof authMessageSchema>
+
 export const profileFormSchema = z.object({
   fullName: fullNameSchema,
   email: emailSchema,
