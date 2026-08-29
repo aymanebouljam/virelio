@@ -1,10 +1,13 @@
 import { apiConfig } from '../api'
 import {
+  authMessageSchema,
   authSessionSchema,
   authUserSchema,
+  type AuthMessage,
   type AuthSession,
   type AuthUser,
   type LoginFormValues,
+  type PasswordResetRequestFormValues,
   type ProfileFormValues,
   type RegisterFormValues,
 } from './schema'
@@ -33,6 +36,17 @@ export async function login(input: LoginFormValues) {
       input,
     }),
   ) as AuthSession
+}
+
+export async function requestPasswordReset(input: PasswordResetRequestFormValues) {
+  return authMessageSchema.parse(
+    await apiConfig({
+      path: 'auth/password-reset',
+      action: 'request',
+      method: 'POST',
+      input,
+    }),
+  ) as AuthMessage
 }
 
 export async function fetchCurrentUser() {
