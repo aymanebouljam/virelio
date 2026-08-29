@@ -61,7 +61,7 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(body.password, 10);
 
-    return this.prisma.user.create({
+    const user = await this.prisma.user.create({
       data: {
         email: body.email,
         passwordHash,
@@ -69,6 +69,10 @@ export class AuthService {
       },
       select: userProfileSelect,
     });
+
+    await this.sendEmailVerification(user);
+
+    return user;
   }
 
   async login(body: LoginDto) {

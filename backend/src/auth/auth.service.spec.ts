@@ -68,7 +68,7 @@ describe('AuthService', () => {
     );
   });
 
-  it('registers a new user', async () => {
+  it('registers a new user and sends an email verification link', async () => {
     userFindUniqueMock.mockResolvedValueOnce(null);
     (bcrypt.hash as jest.Mock).mockResolvedValueOnce('hashed-password');
     userCreateMock.mockResolvedValueOnce({
@@ -109,6 +109,34 @@ describe('AuthService', () => {
         createdAt: true,
         updatedAt: true,
       },
+    });
+    expect(authTokenUpsertMock).toHaveBeenCalledWith({
+      where: {
+        userId_type: {
+          userId: 'user-1',
+          type: 'EMAIL_VERIFICATION',
+        },
+      },
+      create: {
+        userId: 'user-1',
+        tokenHash: expect.any(String) as unknown,
+        type: 'EMAIL_VERIFICATION',
+        expiresAt: expect.any(Date) as unknown,
+      },
+      update: {
+        tokenHash: expect.any(String) as unknown,
+        expiresAt: expect.any(Date) as unknown,
+      },
+    });
+    expect(sendMailMock).toHaveBeenCalledWith({
+      to: 'owner@local.dev',
+      subject: 'Verify your Virelio email',
+      text: expect.stringMatching(
+        /^Verify your email: http:\/\/localhost:5173\/verify-email\?token=/,
+      ) as unknown,
+      html: expect.stringContaining(
+        'href="http://localhost:5173/verify-email?token=',
+      ) as unknown,
     });
   });
 
