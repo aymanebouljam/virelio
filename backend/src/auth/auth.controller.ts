@@ -8,6 +8,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './current-user.decorator';
 import { LoginDto } from './dto/login.dto';
@@ -37,6 +38,7 @@ export class AuthController {
 
   @Post('password-reset/request')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(ThrottlerGuard)
   requestPasswordReset(@Body() body: RequestPasswordResetDto) {
     return this.authService.requestPasswordReset(body);
   }
@@ -49,6 +51,7 @@ export class AuthController {
 
   @Post('email-verification/resend')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(ThrottlerGuard)
   resendEmailVerification(@Body() body: ResendEmailVerificationDto) {
     return this.authService.resendEmailVerification(body);
   }

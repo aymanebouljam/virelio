@@ -224,6 +224,25 @@ describe('Auth e2e', () => {
     });
   });
 
+  describe('recovery request throttling', () => {
+    it.each([
+      '/auth/password-reset/request',
+      '/auth/email-verification/resend',
+    ])('rejects the fourth request to %s within a minute', async (path) => {
+      for (let index = 0; index < 3; index += 1) {
+        await request(http)
+          .post(path)
+          .send({ email: 'owner@local.dev' })
+          .expect(HttpStatus.OK);
+      }
+
+      await request(http)
+        .post(path)
+        .send({ email: 'owner@local.dev' })
+        .expect(HttpStatus.TOO_MANY_REQUESTS);
+    });
+  });
+
   describe('PATCH /auth/me', () => {
     it('updates and persists the authenticated user profile', async () => {
       const { authHeaders } = await createAuth(http);
