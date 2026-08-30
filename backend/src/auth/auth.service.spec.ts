@@ -161,6 +161,7 @@ describe('AuthService', () => {
       fullName: 'Local Owner',
       passwordHash: 'hashed-password',
       emailVerifiedAt: new Date('2026-06-27T10:00:00.000Z'),
+      sessionVersion: 0,
       createdAt: new Date('2026-06-27T10:00:00.000Z'),
       updatedAt: new Date('2026-06-27T10:00:00.000Z'),
     });
@@ -181,6 +182,11 @@ describe('AuthService', () => {
       'password123',
       'hashed-password',
     );
+    expect(signAsyncMock).toHaveBeenCalledWith({
+      sub: 'user-1',
+      email: 'owner@local.dev',
+      sessionVersion: 0,
+    });
   });
 
   it('rejects login when email has not been verified', async () => {
@@ -381,7 +387,10 @@ describe('AuthService', () => {
 
     expect(userUpdateMock).toHaveBeenCalledWith({
       where: { id: 'user-1' },
-      data: { passwordHash: 'new-hashed-password' },
+      data: {
+        passwordHash: 'new-hashed-password',
+        sessionVersion: { increment: 1 },
+      },
     });
     expect(authTokenDeleteMock).toHaveBeenCalledWith({
       where: { id: 'token-1' },

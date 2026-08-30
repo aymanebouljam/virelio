@@ -108,6 +108,7 @@ export class AuthService {
     const accessToken = await this.jwtService.signAsync({
       sub: user.id,
       email: user.email,
+      sessionVersion: user.sessionVersion,
     });
 
     return {
@@ -151,7 +152,10 @@ export class AuthService {
     await this.prisma.$transaction([
       this.prisma.user.update({
         where: { id: authToken.userId },
-        data: { passwordHash },
+        data: {
+          passwordHash,
+          sessionVersion: { increment: 1 },
+        },
       }),
       this.prisma.authToken.delete({ where: { id: authToken.id } }),
     ]);

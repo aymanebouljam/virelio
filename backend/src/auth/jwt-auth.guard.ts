@@ -6,15 +6,23 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
+import { PrismaService } from '../../prisma/prisma.service';
 import type { JwtUser } from './auth.types';
 
 type AuthenticatedRequest = Request & {
   user?: JwtUser;
 };
 
+type JwtPayload = JwtUser & {
+  sessionVersion?: number;
+};
+
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
@@ -25,9 +33,24 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     try {
-      const payload = await this.jwtService.verifyAsync<JwtUser>(token);
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(token);
 
       if (!payload.sub || !payload.email) {
+        throw new UnauthorizedException({ message: 'Invalid token' });
+      }
+
+      const sessionVersion = payload.sessionVersion ?? 0;
+
+      if (!Number.isInteger(sessionVersion)) {
+        throw new UnauthorizedException({ message: 'Invalid token' });
+      }
+
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+        select: { sessionVersion: true },
+      });
+
+      if (!user || user.sessionVersion !== sessionVersion) {
         throw new UnauthorizedException({ message: 'Invalid token' });
       }
 
