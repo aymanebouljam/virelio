@@ -16,6 +16,7 @@
     "start:prod": "node dist/main",
     "dev": "nest start --watch",
     "seed": "tsx ./prisma/seed.ts",
+    "cleanup:auth-tokens": "tsx ./prisma/cleanup-expired-auth-tokens-cli.ts",
     "lint": "eslint \"{src,apps,libs,test,prisma}/**/*.ts\"",
     "lint:fix": "eslint \"{src,apps,libs,test,prisma}/**/*.ts\" --fix",
     "pretest": "pnpm prisma:generate",
