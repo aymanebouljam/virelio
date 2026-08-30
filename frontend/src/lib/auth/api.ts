@@ -6,6 +6,7 @@ import {
   type AuthMessage,
   type AuthSession,
   type AuthUser,
+  type EmailVerificationConfirmFormValues,
   type PasswordResetConfirmFormValues,
   type LoginFormValues,
   type PasswordResetRequestFormValues,
@@ -60,6 +61,17 @@ export async function confirmPasswordReset(input: PasswordResetConfirmFormValues
         token: input.token,
         password: input.password,
       },
+    }),
+  ) as AuthMessage
+}
+
+export async function confirmEmailVerification(input: EmailVerificationConfirmFormValues) {
+  return authMessageSchema.parse(
+    await apiConfig({
+      path: 'auth/email-verification',
+      action: 'confirm',
+      method: 'POST',
+      input,
     }),
   ) as AuthMessage
 }
