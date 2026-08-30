@@ -95,6 +95,14 @@ pnpm prisma:migrate:deploy
 pnpm prisma:migrate:test
 ```
 
+Remove expired password-reset and email-verification tokens with:
+
+```bash
+pnpm --filter backend cleanup:auth-tokens
+```
+
+Run this command daily through your production platform's scheduler or cron job.
+
 Backend end-to-end tests use `backend/.env.test` and require its dedicated PostgreSQL database to be available. They run serially because the suites reset shared test data.
 
 ## Data and Security Model
