@@ -214,12 +214,30 @@ export class AuthService {
       });
     }
 
+    const currentUser = body.email
+      ? await this.prisma.user.findUnique({
+          where: { id: userId },
+          select: { email: true },
+        })
+      : null;
+    const emailChanged =
+      currentUser !== null && currentUser.email !== body.email;
+
     try {
-      return await this.prisma.user.update({
+      const user = await this.prisma.user.update({
         where: { id: userId },
-        data: body,
+        data: {
+          ...body,
+          ...(emailChanged ? { emailVerifiedAt: null } : {}),
+        },
         select: userProfileSelect,
       });
+
+      if (emailChanged) {
+        await this.sendEmailVerification(user);
+      }
+
+      return user;
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
