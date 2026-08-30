@@ -76,6 +76,17 @@ export async function confirmEmailVerification(input: EmailVerificationConfirmFo
   ) as AuthMessage
 }
 
+export async function resendEmailVerification(input: PasswordResetRequestFormValues) {
+  return authMessageSchema.parse(
+    await apiConfig({
+      path: 'auth/email-verification',
+      action: 'resend',
+      method: 'POST',
+      input,
+    }),
+  ) as AuthMessage
+}
+
 export async function fetchCurrentUser() {
   return authUserSchema.parse(
     await apiConfig({
