@@ -14,6 +14,7 @@ import LoginPage from '@/pages/LoginPage.vue'
 import PasswordResetRequestPage from '@/pages/PasswordResetRequestPage.vue'
 import PasswordResetConfirmPage from '@/pages/PasswordResetConfirmPage.vue'
 import EmailVerificationPage from '@/pages/EmailVerificationPage.vue'
+import ResendVerificationPage from '@/pages/ResendVerificationPage.vue'
 import ProfileSettingsPage from '@/pages/ProfileSettingsPage.vue'
 import RecurringExpensesPage from '@/pages/RecurringExpensesPage.vue'
 import ArchivedRecurringExpensesPage from '@/pages/ArchivedRecurringExpensesPage.vue'
@@ -130,6 +131,12 @@ const router = createRouter({
       path: '/verify-email',
       name: 'emailVerification',
       component: EmailVerificationPage,
+      meta: { guestOnly: true },
+    },
+    {
+      path: '/resend-verification',
+      name: 'resendVerification',
+      component: ResendVerificationPage,
       meta: { guestOnly: true },
     },
   ],

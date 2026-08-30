@@ -10,6 +10,7 @@ import type {
   EmailVerificationConfirmFormValues,
   LoginFormValues,
   PasswordResetConfirmFormValues,
+  PasswordResetRequestFormValues,
   RegisterFormValues,
 } from '@/lib/auth/schema'
 import { clearAccessToken, getAccessToken, isAuthenticated } from '@/lib/auth/storage'
@@ -17,6 +18,7 @@ import LoginPage from '@/pages/LoginPage.vue'
 import EmailVerificationPage from '@/pages/EmailVerificationPage.vue'
 import PasswordResetConfirmPage from '@/pages/PasswordResetConfirmPage.vue'
 import RegisterPage from '@/pages/RegisterPage.vue'
+import ResendVerificationPage from '@/pages/ResendVerificationPage.vue'
 import { mountWithRouter } from './test-mount'
 
 const authApi = vi.hoisted(() => ({
@@ -25,6 +27,7 @@ const authApi = vi.hoisted(() => ({
   confirmPasswordReset: vi.fn<(input: PasswordResetConfirmFormValues) => Promise<AuthMessage>>(),
   login: vi.fn<(input: LoginFormValues) => Promise<AuthSession>>(),
   register: vi.fn<(input: RegisterFormValues) => Promise<AuthUser>>(),
+  resendEmailVerification: vi.fn<(input: PasswordResetRequestFormValues) => Promise<AuthMessage>>(),
 }))
 
 vi.mock('@/lib/auth/api', () => authApi)
@@ -36,6 +39,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/verify-email', name: 'emailVerification', component: EmailVerificationPage },
   { path: '/reset-password', name: 'passwordResetConfirm', component: PasswordResetConfirmPage },
   { path: '/register', name: 'register', component: RegisterPage },
+  { path: '/resend-verification', name: 'resendVerification', component: ResendVerificationPage },
 ]
 
 const user: AuthUser = {
@@ -339,5 +343,25 @@ describe('email verification workflow', () => {
 
     expect(wrapper.get('[role="alert"]').text()).toBe('Verification token is required')
     expect(authApi.confirmEmailVerification).not.toHaveBeenCalled()
+  })
+})
+
+describe('email verification resend workflow', () => {
+  it('requests a verification link without revealing account existence', async () => {
+    authApi.resendEmailVerification.mockResolvedValue({
+      message: 'If an account exists for that email, a verification link has been sent.',
+    })
+    const { wrapper } = await mountPage(ResendVerificationPage, '/resend-verification')
+
+    await wrapper.get('#resend-verification-email').setValue('owner@example.test')
+    await getForm(wrapper, 'Resend verification form').trigger('submit')
+    await flushPromises()
+
+    expect(authApi.resendEmailVerification).toHaveBeenCalledExactlyOnceWith({
+      email: 'owner@example.test',
+    })
+    expect(wrapper.get('[role="status"]').text()).toBe(
+      'If an account exists for that email, a verification link has been sent.',
+    )
   })
 })

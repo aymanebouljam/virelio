@@ -239,7 +239,7 @@ describe('AuthService', () => {
     ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
-  it('updates the authenticated user profile', async () => {
+  it('reverifies an authenticated user when their email changes', async () => {
     const updatedUser = {
       id: 'user-1',
       email: 'updated@local.dev',
@@ -247,6 +247,7 @@ describe('AuthService', () => {
       createdAt: new Date('2026-06-27T10:00:00.000Z'),
       updatedAt: new Date('2026-08-05T10:00:00.000Z'),
     };
+    userFindUniqueMock.mockResolvedValueOnce({ email: 'owner@local.dev' });
     userUpdateMock.mockResolvedValueOnce(updatedUser);
 
     await expect(
@@ -261,6 +262,7 @@ describe('AuthService', () => {
       data: {
         email: 'updated@local.dev',
         fullName: 'Updated Owner',
+        emailVerifiedAt: null,
       },
       select: {
         id: true,
@@ -270,6 +272,46 @@ describe('AuthService', () => {
         updatedAt: true,
       },
     });
+    expect(authTokenUpsertMock).toHaveBeenCalled();
+    expect(sendMailMock).toHaveBeenCalledWith({
+      to: 'updated@local.dev',
+      subject: 'Verify your Virelio email',
+      text: expect.stringMatching(
+        /^Verify your email: http:\/\/localhost:5173\/verify-email\?token=/,
+      ) as unknown,
+      html: expect.stringContaining(
+        'href="http://localhost:5173/verify-email?token=',
+      ) as unknown,
+    });
+  });
+
+  it('does not reverify an unchanged profile email', async () => {
+    const updatedUser = {
+      id: 'user-1',
+      email: 'owner@local.dev',
+      fullName: 'Updated Owner',
+      createdAt: new Date('2026-06-27T10:00:00.000Z'),
+      updatedAt: new Date('2026-08-05T10:00:00.000Z'),
+    };
+    userUpdateMock.mockResolvedValueOnce(updatedUser);
+
+    await expect(
+      service.updateProfile('user-1', { fullName: 'Updated Owner' }),
+    ).resolves.toEqual(updatedUser);
+
+    expect(userUpdateMock).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: { fullName: 'Updated Owner' },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+    expect(authTokenUpsertMock).not.toHaveBeenCalled();
+    expect(sendMailMock).not.toHaveBeenCalled();
   });
 
   it('rejects an empty profile update', async () => {
@@ -281,6 +323,7 @@ describe('AuthService', () => {
   });
 
   it('rejects a profile email already used by another user', async () => {
+    userFindUniqueMock.mockResolvedValueOnce({ email: 'owner@local.dev' });
     userUpdateMock.mockRejectedValueOnce(
       new Prisma.PrismaClientKnownRequestError('Field already exists', {
         code: 'P2002',
