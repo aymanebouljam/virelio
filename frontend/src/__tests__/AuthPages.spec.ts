@@ -7,17 +7,21 @@ import type {
   AuthMessage,
   AuthSession,
   AuthUser,
+  EmailVerificationConfirmFormValues,
   LoginFormValues,
   PasswordResetConfirmFormValues,
   RegisterFormValues,
 } from '@/lib/auth/schema'
 import { clearAccessToken, getAccessToken, isAuthenticated } from '@/lib/auth/storage'
 import LoginPage from '@/pages/LoginPage.vue'
+import EmailVerificationPage from '@/pages/EmailVerificationPage.vue'
 import PasswordResetConfirmPage from '@/pages/PasswordResetConfirmPage.vue'
 import RegisterPage from '@/pages/RegisterPage.vue'
 import { mountWithRouter } from './test-mount'
 
 const authApi = vi.hoisted(() => ({
+  confirmEmailVerification:
+    vi.fn<(input: EmailVerificationConfirmFormValues) => Promise<AuthMessage>>(),
   confirmPasswordReset: vi.fn<(input: PasswordResetConfirmFormValues) => Promise<AuthMessage>>(),
   login: vi.fn<(input: LoginFormValues) => Promise<AuthSession>>(),
   register: vi.fn<(input: RegisterFormValues) => Promise<AuthUser>>(),
@@ -29,6 +33,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/', name: 'dashboard', component: { template: '<p>Dashboard</p>' } },
   { path: '/expenses', name: 'expenses', component: { template: '<p>Expenses</p>' } },
   { path: '/login', name: 'login', component: LoginPage },
+  { path: '/verify-email', name: 'emailVerification', component: EmailVerificationPage },
   { path: '/reset-password', name: 'passwordResetConfirm', component: PasswordResetConfirmPage },
   { path: '/register', name: 'register', component: RegisterPage },
 ]
@@ -302,5 +307,37 @@ describe('password reset confirmation workflow', () => {
 
     expect(wrapper.get('[role="alert"]').text()).toBe('Reset token is required')
     expect(authApi.confirmPasswordReset).not.toHaveBeenCalled()
+  })
+})
+
+describe('email verification workflow', () => {
+  it('confirms a valid verification link', async () => {
+    authApi.confirmEmailVerification.mockResolvedValue({ message: 'Email verified successfully' })
+    const { wrapper } = await mountPage(
+      EmailVerificationPage,
+      '/verify-email?token=verification-token',
+    )
+
+    expect(authApi.confirmEmailVerification).toHaveBeenCalledExactlyOnceWith({
+      token: 'verification-token',
+    })
+    expect(wrapper.get('[role="status"]').text()).toContain('Email verified successfully')
+    expect(wrapper.get('a[href="/login"]').text()).toBe('Go to sign in')
+  })
+
+  it('shows the backend error for an invalid or expired link', async () => {
+    authApi.confirmEmailVerification.mockRejectedValue(
+      new ApiError('This link is invalid or has expired'),
+    )
+    const { wrapper } = await mountPage(EmailVerificationPage, '/verify-email?token=invalid-token')
+
+    expect(wrapper.get('[role="alert"]').text()).toBe('This link is invalid or has expired')
+  })
+
+  it('shows an error when the verification link has no token', async () => {
+    const { wrapper } = await mountPage(EmailVerificationPage, '/verify-email')
+
+    expect(wrapper.get('[role="alert"]').text()).toBe('Verification token is required')
+    expect(authApi.confirmEmailVerification).not.toHaveBeenCalled()
   })
 })
