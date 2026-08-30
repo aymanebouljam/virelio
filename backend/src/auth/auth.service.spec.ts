@@ -323,6 +323,7 @@ describe('AuthService', () => {
   });
 
   it('rejects a profile email already used by another user', async () => {
+    userFindUniqueMock.mockResolvedValueOnce({ email: 'owner@local.dev' });
     userUpdateMock.mockRejectedValueOnce(
       new Prisma.PrismaClientKnownRequestError('Field already exists', {
         code: 'P2002',
