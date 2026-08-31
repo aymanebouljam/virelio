@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { ArrowRight, Eye, EyeOff } from '@lucide/vue'
 import AuthFrame from '@/components/auth/AuthFrame.vue'
 import { ApiError } from '@/lib/api'
@@ -8,8 +7,6 @@ import { register as registerUser } from '@/lib/auth/api'
 import { registerFormSchema, type RegisterFormValues } from '@/lib/auth/schema'
 import { ZodError } from 'zod'
 import { mapZodErrors } from '@/lib/zod'
-
-const router = useRouter()
 
 const form = ref<RegisterFormValues>({
   fullName: '',
@@ -22,6 +19,8 @@ const formErrors = ref<Record<string, string>>({})
 const submitError = ref('')
 const submitting = ref(false)
 const showPasswords = ref(false)
+const registrationComplete = ref(false)
+const registeredEmail = ref('')
 
 const accountBenefits = [
   'A private ledger scoped to your account',
@@ -62,9 +61,10 @@ async function submit() {
   submitting.value = true
   try {
     registerFormSchema.parse(form.value)
+    registeredEmail.value = form.value.email
     await registerUser(form.value)
     resetForm()
-    await router.push({ name: 'login', query: { verification: 'pending' } })
+    registrationComplete.value = true
   } catch (err) {
     normalizeError(err)
   } finally {
@@ -83,7 +83,20 @@ async function submit() {
     form-title="Create your account"
     form-description="Set up your private Virelio workspace in a moment."
   >
-    <form aria-label="Registration form" class="mt-7 space-y-4" @submit.prevent="submit">
+    <div v-if="registrationComplete" role="status" class="mt-7 space-y-5">
+      <p class="rounded-lg border border-success/25 bg-success-soft px-4 py-3 text-sm text-success">
+        Your account is ready. We sent a verification link to {{ registeredEmail }}.
+      </p>
+
+      <RouterLink
+        to="/resend-verification"
+        class="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
+      >
+        Resend verification email
+      </RouterLink>
+    </div>
+
+    <form v-else aria-label="Registration form" class="mt-7 space-y-4" @submit.prevent="submit">
       <div class="space-y-1.5">
         <label for="register-full-name" class="text-sm font-medium text-ink">Full name</label>
         <input
@@ -193,7 +206,16 @@ async function submit() {
     </form>
 
     <template #footer>
-      <p>
+      <p v-if="registrationComplete">
+        Already verified your email?
+        <RouterLink
+          to="/login"
+          class="font-semibold text-brand underline-offset-4 hover:text-brand-strong hover:underline"
+        >
+          Sign in
+        </RouterLink>
+      </p>
+      <p v-else>
         Already have an account?
         <RouterLink
           to="/login"

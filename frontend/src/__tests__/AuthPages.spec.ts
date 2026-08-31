@@ -46,6 +46,7 @@ const user: AuthUser = {
   id: 'user-1',
   email: 'owner@example.test',
   fullName: 'Local Owner',
+  emailVerifiedAt: '2026-08-05T09:00:00.000Z',
   createdAt: '2026-08-05T09:00:00.000Z',
   updatedAt: '2026-08-05T09:00:00.000Z',
 }
@@ -203,12 +204,6 @@ describe('login workflow', () => {
       'Send a new verification link',
     )
   })
-
-  it('explains that a new account needs email verification', async () => {
-    const { wrapper } = await mountPage(LoginPage, '/login?verification=pending')
-
-    expect(wrapper.get('[role="status"]').text()).toContain('Check your inbox')
-  })
 })
 
 describe('registration workflow', () => {
@@ -249,7 +244,7 @@ describe('registration workflow', () => {
     expect(wrapper.get('#register-password-confirmation').attributes('type')).toBe('password')
   })
 
-  it('registers an account and opens the login page with verification guidance', async () => {
+  it('registers an account and shows email verification guidance', async () => {
     authApi.register.mockResolvedValue(user)
     const { router, wrapper } = await mountPage(RegisterPage, '/register')
 
@@ -263,7 +258,9 @@ describe('registration workflow', () => {
       password: 'test-password',
       passwordConfirmation: 'test-password',
     })
-    expect(router.currentRoute.value.fullPath).toBe('/login?verification=pending')
+    expect(router.currentRoute.value.path).toBe('/register')
+    expect(wrapper.get('[role="status"]').text()).toContain('owner@example.test')
+    expect(wrapper.get('a[href="/resend-verification"]').text()).toBe('Resend verification email')
   })
 
   it('shows registration validation errors', async () => {
@@ -348,7 +345,7 @@ describe('email verification workflow', () => {
     })
     expect(wrapper.get('[role="status"]').text()).toContain('Email verified successfully')
     expect(wrapper.get('a[href="/login"]').text()).toBe('Go to sign in')
-    expect(wrapper.get('a[href="/resend-verification"]').text()).toBe('Resend verification email')
+    expect(wrapper.find('a[href="/resend-verification"]').exists()).toBe(false)
   })
 
   it('shows the backend error for an invalid or expired link', async () => {
@@ -357,13 +354,15 @@ describe('email verification workflow', () => {
     )
     const { wrapper } = await mountPage(EmailVerificationPage, '/verify-email?token=invalid-token')
 
-    expect(wrapper.get('[role="alert"]').text()).toBe('This link is invalid or has expired')
+    expect(wrapper.get('[role="alert"]').text()).toContain('This link is invalid or has expired')
+    expect(wrapper.find('a[href="/login"]').exists()).toBe(false)
+    expect(wrapper.get('a[href="/resend-verification"]').text()).toBe('Resend verification email')
   })
 
   it('shows an error when the verification link has no token', async () => {
     const { wrapper } = await mountPage(EmailVerificationPage, '/verify-email')
 
-    expect(wrapper.get('[role="alert"]').text()).toBe('Verification token is required')
+    expect(wrapper.get('[role="alert"]').text()).toContain('Verification token is required')
     expect(authApi.confirmEmailVerification).not.toHaveBeenCalled()
   })
 })

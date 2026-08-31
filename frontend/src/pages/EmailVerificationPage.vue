@@ -66,6 +66,13 @@ onMounted(verifyEmail)
         class="rounded-lg border border-success/25 bg-success-soft px-4 py-3 text-sm text-success"
       >
         {{ message }} You can now sign in.
+
+        <RouterLink
+          to="/login"
+          class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
+        >
+          Go to sign in
+        </RouterLink>
       </div>
 
       <div
@@ -74,26 +81,13 @@ onMounted(verifyEmail)
         class="rounded-lg border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
       >
         {{ message }}
-      </div>
-
-      <RouterLink
-        to="/login"
-        class="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
-      >
-        Go to sign in
-      </RouterLink>
-    </div>
-
-    <template #footer>
-      <p>
-        Need a new verification link?
         <RouterLink
           to="/resend-verification"
-          class="font-semibold text-brand underline-offset-4 hover:text-brand-strong hover:underline"
+          class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
         >
           Resend verification email
         </RouterLink>
-      </p>
-    </template>
+      </div>
+    </div>
   </AuthFrame>
 </template>

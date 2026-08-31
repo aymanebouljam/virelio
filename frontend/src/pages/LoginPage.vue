@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { ArrowRight, Eye, EyeOff } from '@lucide/vue'
 import AuthFrame from '@/components/auth/AuthFrame.vue'
 import { ApiError } from '@/lib/api'
@@ -11,7 +11,6 @@ import { mapZodErrors } from '@/lib/zod'
 import { setAccessToken } from '@/lib/auth/storage'
 
 const router = useRouter()
-const route = useRoute()
 
 const form = ref<LoginFormValues>({
   email: '',
@@ -23,7 +22,6 @@ const submitError = ref('')
 const submitting = ref(false)
 const showPassword = ref(false)
 const showVerificationHelp = ref(false)
-const hasVerificationNotice = computed(() => route.query.verification === 'pending')
 
 const accountBenefits = [
   'Private, account-scoped records',
@@ -92,14 +90,6 @@ async function submit() {
     form-description="Enter your details to continue to your workspace."
   >
     <form aria-label="Login form" class="mt-7 space-y-5" @submit.prevent="submit">
-      <p
-        v-if="hasVerificationNotice"
-        role="status"
-        class="rounded-lg border border-success/25 bg-success-soft px-4 py-3 text-sm text-success"
-      >
-        Your account is ready. Check your inbox for the verification link before signing in.
-      </p>
-
       <div class="space-y-1.5">
         <label for="login-email" class="text-sm font-medium text-ink">Email address</label>
         <input

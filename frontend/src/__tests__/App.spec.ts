@@ -17,6 +17,7 @@ const user = {
   id: 'user-1',
   email: 'owner@example.test',
   fullName: 'Local Owner',
+  emailVerifiedAt: '2026-08-03T00:00:00.000Z',
   createdAt: '2026-08-03T00:00:00.000Z',
   updatedAt: '2026-08-03T00:00:00.000Z',
 }
@@ -63,6 +64,16 @@ describe('App', () => {
     expect(wrapper.get('[data-mobile-workspace-bar]').classes()).toContain('bg-surface/95')
   })
 
+  it('reminds users to verify a changed email address', async () => {
+    setAccessToken('test-token')
+    currentUser.value = { ...user, emailVerifiedAt: null }
+    const { wrapper } = await mountWithRouter(App, routes)
+
+    const reminder = wrapper.get('[data-email-verification-reminder]')
+    expect(reminder.text()).toContain('needs verification')
+    expect(reminder.get('a[href="/resend-verification"]').text()).toBe('Resend email')
+  })
+
   it('uses a single initial for a one-word account name', async () => {
     setAccessToken('test-token')
     currentUser.value = { ...user, fullName: 'Owner' }
@@ -107,7 +118,7 @@ describe('App', () => {
     expect(moreNavigation.text()).toContain('Vendors')
     expect(moreNavigation.text()).toContain('Categories')
     expect(moreNavigation.classes()).toContain('grid-cols-1')
-    expect(moreNavigation.get('a[href="/vendors"] span').classes()).toContain('break-words')
+    expect(moreNavigation.get('a[href="/vendors"] span').classes()).toContain('wrap-break-word')
     expect(wrapper.find('nav[aria-label="Mobile archived records"]').exists()).toBe(false)
     expect(wrapper.get('[data-mobile-account-link]').text()).toContain(user.email)
   })
