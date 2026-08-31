@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { appendFile, mkdir } from 'node:fs/promises';
 import nodemailer from 'nodemailer';
 import { AuthMailService } from './auth-mail.service';
 
@@ -10,11 +11,20 @@ jest.mock('nodemailer', () => ({
   },
 }));
 
+jest.mock('node:fs/promises', () => ({
+  appendFile: jest.fn(),
+  mkdir: jest.fn(),
+}));
+
 describe('AuthMailService', () => {
   const getOrThrowMock = jest.fn();
+  const getMock = jest.fn();
   const sendMailMock = jest.fn();
+  const appendFileMock = appendFile as jest.Mock;
+  const mkdirMock = mkdir as jest.Mock;
   const createTransportMock = nodemailer.createTransport as jest.Mock;
   const configService = {
+    get: getMock,
     getOrThrow: getOrThrowMock,
   } as unknown as ConfigService;
 
@@ -28,15 +38,17 @@ describe('AuthMailService', () => {
     errorMock = jest.spyOn(Logger.prototype, 'error').mockImplementation();
     getOrThrowMock.mockImplementation((key: string) => {
       const values: Record<string, string> = {
-        MAILTRAP_HOST: 'sandbox.smtp.mailtrap.io',
-        MAILTRAP_PORT: '2525',
-        MAILTRAP_USERNAME: 'mailtrap-user',
-        MAILTRAP_PASSWORD: 'mailtrap-password',
+        AUTH_MAIL_LOG_PATH: './.local/auth-emails.log',
+        MAIL_HOST: 'smtp.example.com',
+        MAIL_PORT: '587',
+        MAIL_USERNAME: 'smtp-user',
+        MAIL_PASSWORD: 'smtp-password',
         MAIL_FROM: 'Virelio <noreply@virelio.test>',
       };
 
       return values[key];
     });
+    getMock.mockReturnValue(undefined);
     createTransportMock.mockReturnValue({ sendMail: sendMailMock });
     service = new AuthMailService(configService);
   });
@@ -45,7 +57,7 @@ describe('AuthMailService', () => {
     jest.restoreAllMocks();
   });
 
-  it('sends mail through the configured Mailtrap SMTP transport', async () => {
+  it('sends mail through the configured SMTP transport', async () => {
     sendMailMock.mockResolvedValueOnce({ messageId: 'message-1' });
 
     await expect(
@@ -58,12 +70,12 @@ describe('AuthMailService', () => {
     ).resolves.toEqual({ messageId: 'message-1' });
 
     expect(createTransportMock).toHaveBeenCalledWith({
-      host: 'sandbox.smtp.mailtrap.io',
-      port: 2525,
+      host: 'smtp.example.com',
+      port: 587,
       secure: false,
       auth: {
-        user: 'mailtrap-user',
-        pass: 'mailtrap-password',
+        user: 'smtp-user',
+        pass: 'smtp-password',
       },
     });
     expect(sendMailMock).toHaveBeenCalledWith({
@@ -73,6 +85,37 @@ describe('AuthMailService', () => {
       text: 'Verification text',
       html: '<p>Verification text</p>',
     });
+  });
+
+  it('writes mail to the configured local file transport', async () => {
+    getMock.mockImplementation((key: string) => {
+      if (key === 'AUTH_MAIL_TRANSPORT') {
+        return 'file';
+      }
+
+      return undefined;
+    });
+    mkdirMock.mockResolvedValueOnce(undefined);
+    appendFileMock.mockResolvedValueOnce(undefined);
+
+    await expect(
+      service.send({
+        to: 'owner@example.com',
+        subject: 'Verify your email',
+        text: 'Verification text',
+        html: '<p>Verification text</p>',
+      }),
+    ).resolves.toEqual({ messageId: 'local-file' });
+
+    expect(createTransportMock).not.toHaveBeenCalled();
+    expect(mkdirMock).toHaveBeenCalledWith('./.local', { recursive: true });
+    expect(appendFileMock).toHaveBeenCalledWith(
+      './.local/auth-emails.log',
+      expect.stringContaining(
+        'To: owner@example.com\nSubject: Verify your email',
+      ),
+      'utf8',
+    );
   });
 
   it('retries a failed send and returns the next successful result', async () => {
