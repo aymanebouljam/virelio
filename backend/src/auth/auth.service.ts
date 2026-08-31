@@ -30,6 +30,7 @@ const userProfileSelect: Prisma.UserSelect = {
   id: true,
   email: true,
   fullName: true,
+  emailVerifiedAt: true,
   createdAt: true,
   updatedAt: true,
 };
@@ -116,6 +117,7 @@ export class AuthService {
       id: user.id,
       email: user.email,
       fullName: user.fullName,
+      emailVerifiedAt: user.emailVerifiedAt,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

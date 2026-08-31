@@ -75,6 +75,7 @@ export const authUserSchema = z.object({
   id: z.string().trim().min(1),
   email: emailSchema,
   fullName: fullNameSchema,
+  emailVerifiedAt: z.iso.datetime().nullable(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 })

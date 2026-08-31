@@ -75,6 +75,7 @@ describe('AuthService', () => {
       id: 'user-1',
       email: 'owner@local.dev',
       fullName: 'Local Owner',
+      emailVerifiedAt: null,
       createdAt: new Date('2026-06-27T10:00:00.000Z'),
       updatedAt: new Date('2026-06-27T10:00:00.000Z'),
     });
@@ -106,6 +107,7 @@ describe('AuthService', () => {
         id: true,
         email: true,
         fullName: true,
+        emailVerifiedAt: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -250,6 +252,7 @@ describe('AuthService', () => {
       id: 'user-1',
       email: 'updated@local.dev',
       fullName: 'Updated Owner',
+      emailVerifiedAt: null,
       createdAt: new Date('2026-06-27T10:00:00.000Z'),
       updatedAt: new Date('2026-08-05T10:00:00.000Z'),
     };
@@ -274,6 +277,7 @@ describe('AuthService', () => {
         id: true,
         email: true,
         fullName: true,
+        emailVerifiedAt: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -296,6 +300,7 @@ describe('AuthService', () => {
       id: 'user-1',
       email: 'owner@local.dev',
       fullName: 'Updated Owner',
+      emailVerifiedAt: new Date('2026-06-27T10:00:00.000Z'),
       createdAt: new Date('2026-06-27T10:00:00.000Z'),
       updatedAt: new Date('2026-08-05T10:00:00.000Z'),
     };
@@ -312,6 +317,7 @@ describe('AuthService', () => {
         id: true,
         email: true,
         fullName: true,
+        emailVerifiedAt: true,
         createdAt: true,
         updatedAt: true,
       },

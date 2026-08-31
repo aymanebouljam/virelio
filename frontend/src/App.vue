@@ -97,7 +97,7 @@ watch(
     <div v-if="isAuthenticated" class="min-h-screen lg:flex">
       <aside
         data-workspace-index
-        class="hidden border-r border-line bg-surface-raised lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-[248px] lg:shrink-0 lg:flex-col"
+        class="hidden border-r border-line bg-surface-raised lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-62 lg:shrink-0 lg:flex-col"
       >
         <div class="flex items-center gap-3 border-b border-line px-6 py-6">
           <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface">
@@ -105,20 +105,18 @@ watch(
           </span>
           <div>
             <p class="text-[10px] font-semibold tracking-[0.12em] text-evidence">Evidence ledger</p>
-            <p class="font-display mt-0.5 text-xl font-semibold tracking-[-0.025em] text-ink">
-              Virelio
-            </p>
+            <p class="font-display mt-0.5 text-xl font-semibold tracking-tight text-ink">Virelio</p>
           </div>
         </div>
 
         <div class="flex min-h-0 flex-1 flex-col">
           <div
             data-sidebar-scroll-region
-            class="px-4 pb-2 pt-5 lg:min-h-0 lg:flex-1 lg:overflow-x-hidden lg:overflow-y-auto lg:overscroll-contain lg:[scrollbar-width:none] lg:[&::-webkit-scrollbar]:hidden"
+            class="px-4 pb-2 pt-5 lg:min-h-0 lg:flex-1 lg:overflow-x-hidden lg:overflow-y-auto lg:overscroll-contain lg:scrollbar-none lg:[&::-webkit-scrollbar]:hidden"
           >
             <nav aria-label="Primary navigation" class="space-y-6">
               <section v-for="group in primaryNavigationGroups" :key="group.label">
-                <p class="px-3 text-[10px] font-medium tracking-[0.1em] text-ink-muted">
+                <p class="px-3 text-[10px] font-medium tracking-widest text-ink-muted">
                   {{ group.label }}
                 </p>
                 <div class="mt-1.5 space-y-0.5">
@@ -211,9 +209,27 @@ watch(
       <main
         id="main-content"
         tabindex="-1"
-        class="min-w-0 flex-1 bg-canvas px-5 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-[4.5rem] sm:px-7 sm:pt-[5.25rem] lg:px-10 lg:py-10"
+        class="min-w-0 flex-1 bg-canvas px-5 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-18 sm:px-7 sm:pt-21 lg:px-10 lg:py-10"
       >
-        <div class="mx-auto w-full max-w-[1280px]">
+        <div class="mx-auto w-full max-w-7xl">
+          <section
+            v-if="currentUser?.emailVerifiedAt === null"
+            data-email-verification-reminder
+            role="status"
+            class="mb-6 flex flex-col gap-3 rounded-xl border border-evidence/25 bg-evidence-soft px-4 py-3 text-sm text-ink sm:flex-row sm:items-center sm:justify-between"
+          >
+            <p>
+              Your new email address needs verification. Check your inbox to keep your workspace
+              details up to date.
+            </p>
+            <RouterLink
+              to="/resend-verification"
+              class="shrink-0 font-semibold text-brand underline-offset-4 hover:text-brand-strong hover:underline"
+            >
+              Resend email
+            </RouterLink>
+          </section>
+
           <RouterView />
         </div>
       </main>
@@ -221,7 +237,7 @@ watch(
       <DialogRoot v-model:open="mobileMoreOpen">
         <nav
           aria-label="Mobile navigation"
-          class="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-line bg-surface/95 shadow-[0_-8px_24px_rgba(31,43,66,0.08)] backdrop-blur [padding-bottom:env(safe-area-inset-bottom)] lg:hidden"
+          class="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-line bg-surface/95 shadow-[0_-8px_24px_rgba(31,43,66,0.08)] backdrop-blur pb-[env(safe-area-inset-bottom)] lg:hidden"
         >
           <RouterLink
             v-for="item in mobileNavigation"
@@ -268,11 +284,11 @@ watch(
           <div class="mt-4 flex min-w-0 items-start justify-between gap-4">
             <div class="min-w-0">
               <DialogTitle
-                class="font-display break-words text-xl font-semibold tracking-tight text-ink"
+                class="font-display wrap-break-word text-xl font-semibold tracking-tight text-ink"
               >
                 More
               </DialogTitle>
-              <DialogDescription class="mt-1 break-words text-sm text-ink-muted">
+              <DialogDescription class="mt-1 wrap-break-word text-sm text-ink-muted">
                 Organization and account settings.
               </DialogDescription>
             </div>
@@ -296,7 +312,7 @@ watch(
               class="flex min-h-12 min-w-0 items-center gap-3 rounded-xl border border-line bg-canvas px-3 text-sm font-medium text-ink transition hover:border-line-strong"
             >
               <component :is="item.icon" :size="18" :stroke-width="1.8" aria-hidden="true" />
-              <span class="min-w-0 break-words">{{ item.label }}</span>
+              <span class="min-w-0 wrap-break-word">{{ item.label }}</span>
             </RouterLink>
           </nav>
 

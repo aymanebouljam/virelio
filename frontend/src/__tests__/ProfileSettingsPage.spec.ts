@@ -19,6 +19,7 @@ const user: AuthUser = {
   id: 'user-1',
   email: 'owner@example.test',
   fullName: 'Local Owner',
+  emailVerifiedAt: createdAt,
   createdAt,
   updatedAt,
 }

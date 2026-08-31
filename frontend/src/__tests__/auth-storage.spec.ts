@@ -36,6 +36,7 @@ describe('authentication storage', () => {
         id: 'user-1',
         email: 'owner@example.test',
         fullName: 'Local Owner',
+        emailVerifiedAt: '2026-08-03T00:00:00.000Z',
         createdAt: '2026-08-03T00:00:00.000Z',
         updatedAt: '2026-08-03T00:00:00.000Z',
       }
