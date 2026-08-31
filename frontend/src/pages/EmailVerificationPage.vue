@@ -85,7 +85,15 @@ onMounted(verifyEmail)
     </div>
 
     <template #footer>
-      <p>Need a new verification link? Contact support for help.</p>
+      <p>
+        Need a new verification link?
+        <RouterLink
+          to="/resend-verification"
+          class="font-semibold text-brand underline-offset-4 hover:text-brand-strong hover:underline"
+        >
+          Resend verification email
+        </RouterLink>
+      </p>
     </template>
   </AuthFrame>
 </template>
