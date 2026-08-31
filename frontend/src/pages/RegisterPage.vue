@@ -64,7 +64,7 @@ async function submit() {
     registerFormSchema.parse(form.value)
     await registerUser(form.value)
     resetForm()
-    await router.push('/login')
+    await router.push({ name: 'login', query: { verification: 'pending' } })
   } catch (err) {
     normalizeError(err)
   } finally {

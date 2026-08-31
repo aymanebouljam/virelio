@@ -189,6 +189,26 @@ describe('login workflow', () => {
     expect(getAccessToken()).toBeNull()
     expect(isAuthenticated.value).toBe(false)
   })
+
+  it('guides unverified users to request a new verification link', async () => {
+    authApi.login.mockRejectedValue(new ApiError('Email address must be verified'))
+    const { wrapper } = await mountPage(LoginPage, '/login')
+
+    await fillLoginForm(wrapper)
+    await getForm(wrapper, 'Login form').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.get('[role="alert"]').text()).toContain('Email address must be verified')
+    expect(wrapper.get('a[href="/resend-verification"]').text()).toBe(
+      'Send a new verification link',
+    )
+  })
+
+  it('explains that a new account needs email verification', async () => {
+    const { wrapper } = await mountPage(LoginPage, '/login?verification=pending')
+
+    expect(wrapper.get('[role="status"]').text()).toContain('Check your inbox')
+  })
 })
 
 describe('registration workflow', () => {
@@ -229,7 +249,7 @@ describe('registration workflow', () => {
     expect(wrapper.get('#register-password-confirmation').attributes('type')).toBe('password')
   })
 
-  it('registers an account and opens the login page', async () => {
+  it('registers an account and opens the login page with verification guidance', async () => {
     authApi.register.mockResolvedValue(user)
     const { router, wrapper } = await mountPage(RegisterPage, '/register')
 
@@ -243,7 +263,7 @@ describe('registration workflow', () => {
       password: 'test-password',
       passwordConfirmation: 'test-password',
     })
-    expect(router.currentRoute.value.path).toBe('/login')
+    expect(router.currentRoute.value.fullPath).toBe('/login?verification=pending')
   })
 
   it('shows registration validation errors', async () => {
