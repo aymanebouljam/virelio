@@ -47,6 +47,7 @@ TESTING_PLAN.md
 # Uploads
 backend/uploads/
 backend/test-uploads/
+backend/.local/
 opencode.json
 frontend/DESIGN_SYSTEM.md
 AUTH_RECOVERY_VERIFICATION_PLAN.md

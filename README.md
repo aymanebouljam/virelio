@@ -49,7 +49,9 @@ Configure `backend/.env` with a PostgreSQL connection string and a strong local 
 
 ### Email flows for local demos
 
-Virelio sends verification and password-reset links through a [Mailtrap](https://mailtrap.io/) testing inbox. Create an inbox, copy its SMTP credentials into the `MAILTRAP_*` variables in `backend/.env`, then open that inbox to use the generated link. No real email delivery is required.
+Virelio sends verification and password-reset links through a configurable SMTP provider. Set `AUTH_MAIL_TRANSPORT=smtp` and provide the `MAIL_*` settings in `backend/.env`; [Mailtrap](https://mailtrap.io/) is one compatible testing-inbox option.
+
+For a no-account local demo, set `AUTH_MAIL_TRANSPORT=file`. Links are then appended to `backend/.local/auth-emails.log`, so you can open that file and use the newest link. The directory is Git-ignored because those links contain authentication tokens. Use file delivery only for local development.
 
 Apply the migrations and optionally load development data:
 
