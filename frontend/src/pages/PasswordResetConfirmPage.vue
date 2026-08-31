@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { ArrowRight, Eye, EyeOff } from '@lucide/vue'
 import { ZodError } from 'zod'
 import AuthFrame from '@/components/auth/AuthFrame.vue'
@@ -13,7 +13,6 @@ import {
 import { mapZodErrors } from '@/lib/zod'
 
 const route = useRoute()
-const router = useRouter()
 const token = typeof route.query.token === 'string' ? route.query.token : ''
 
 const form = ref<PasswordResetConfirmFormValues>({
@@ -24,6 +23,7 @@ const form = ref<PasswordResetConfirmFormValues>({
 
 const formErrors = ref<Record<string, string>>({})
 const submitError = ref('')
+const successMessage = ref('')
 const submitting = ref(false)
 const showPasswords = ref(false)
 
@@ -54,12 +54,13 @@ function normalizeError(err: unknown) {
 async function submit() {
   formErrors.value = {}
   submitError.value = ''
+  successMessage.value = ''
   submitting.value = true
 
   try {
     passwordResetConfirmFormSchema.parse(form.value)
-    await confirmPasswordReset(form.value)
-    await router.push('/login')
+    const response = await confirmPasswordReset(form.value)
+    successMessage.value = response.message
   } catch (err) {
     normalizeError(err)
   } finally {
@@ -78,7 +79,24 @@ async function submit() {
     form-title="Choose a new password"
     form-description="Your new password must be at least eight characters long."
   >
+    <div v-if="successMessage" class="mt-7 space-y-5">
+      <p
+        role="status"
+        class="rounded-lg border border-success/25 bg-success-soft px-4 py-3 text-sm text-success"
+      >
+        {{ successMessage }} You can now sign in with your new password.
+      </p>
+
+      <RouterLink
+        to="/login"
+        class="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
+      >
+        Go to sign in
+      </RouterLink>
+    </div>
+
     <form
+      v-else
       aria-label="Password reset confirmation form"
       class="mt-7 space-y-5"
       @submit.prevent="submit"

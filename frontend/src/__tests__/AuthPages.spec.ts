@@ -304,9 +304,9 @@ describe('registration workflow', () => {
 })
 
 describe('password reset confirmation workflow', () => {
-  it('resets the password from a valid link and returns to sign-in', async () => {
+  it('resets the password from a valid link and confirms completion', async () => {
     authApi.confirmPasswordReset.mockResolvedValue({ message: 'Password reset successfully' })
-    const { router, wrapper } = await mountPage(
+    const { wrapper } = await mountPage(
       PasswordResetConfirmPage,
       '/reset-password?token=reset-token',
     )
@@ -320,7 +320,8 @@ describe('password reset confirmation workflow', () => {
       password: 'new-password',
       passwordConfirmation: 'new-password',
     })
-    expect(router.currentRoute.value.path).toBe('/login')
+    expect(wrapper.get('[role="status"]').text()).toContain('Password reset successfully')
+    expect(wrapper.get('a[href="/login"]').text()).toBe('Go to sign in')
   })
 
   it('shows an error when the reset link has no token', async () => {
@@ -347,6 +348,7 @@ describe('email verification workflow', () => {
     })
     expect(wrapper.get('[role="status"]').text()).toContain('Email verified successfully')
     expect(wrapper.get('a[href="/login"]').text()).toBe('Go to sign in')
+    expect(wrapper.get('a[href="/resend-verification"]').text()).toBe('Resend verification email')
   })
 
   it('shows the backend error for an invalid or expired link', async () => {

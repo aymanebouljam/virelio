@@ -47,6 +47,10 @@ cp frontend/.env.example frontend/.env
 
 Configure `backend/.env` with a PostgreSQL connection string and a strong local JWT secret. `BACKEND_ROOT` identifies the backend directory for file storage, and `UPLOADS_DIR` is resolved relative to it.
 
+### Email flows for local demos
+
+Virelio sends verification and password-reset links through a [Mailtrap](https://mailtrap.io/) testing inbox. Create an inbox, copy its SMTP credentials into the `MAILTRAP_*` variables in `backend/.env`, then open that inbox to use the generated link. No real email delivery is required.
+
 Apply the migrations and optionally load development data:
 
 ```bash
