@@ -125,19 +125,16 @@ const router = createRouter({
       path: '/reset-password',
       name: 'passwordResetConfirm',
       component: PasswordResetConfirmPage,
-      meta: { guestOnly: true },
     },
     {
       path: '/verify-email',
       name: 'emailVerification',
       component: EmailVerificationPage,
-      meta: { guestOnly: true },
     },
     {
       path: '/resend-verification',
       name: 'resendVerification',
       component: ResendVerificationPage,
-      meta: { guestOnly: true },
     },
   ],
 })

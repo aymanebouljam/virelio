@@ -6,6 +6,7 @@ import AuthFrame from '@/components/auth/AuthFrame.vue'
 import { ApiError } from '@/lib/api'
 import { confirmEmailVerification } from '@/lib/auth/api'
 import { emailVerificationConfirmFormSchema } from '@/lib/auth/schema'
+import { currentUser, isAuthenticated } from '@/lib/auth/storage'
 
 const route = useRoute()
 const token = typeof route.query.token === 'string' ? route.query.token : ''
@@ -36,6 +37,12 @@ async function verifyEmail() {
     const response = await confirmEmailVerification(input)
     status.value = 'success'
     message.value = response.message
+    if (currentUser.value) {
+      currentUser.value = {
+        ...currentUser.value,
+        emailVerifiedAt: new Date().toISOString(),
+      }
+    }
   } catch (err) {
     status.value = 'error'
     message.value = normalizeError(err)
@@ -60,34 +67,38 @@ onMounted(verifyEmail)
         Verifying your email address...
       </p>
 
-      <div
-        v-else-if="status === 'success'"
-        role="status"
-        class="rounded-lg border border-success/25 bg-success-soft px-4 py-3 text-sm text-success"
-      >
-        {{ message }} You can now sign in.
+      <template v-else-if="status === 'success'">
+        <p
+          role="status"
+          class="rounded-lg border border-success/25 bg-success-soft px-4 py-3 text-sm text-success"
+        >
+          {{ message }}
+          {{ isAuthenticated ? 'Your email address is confirmed.' : 'You can now sign in.' }}
+        </p>
 
         <RouterLink
-          to="/login"
+          :to="isAuthenticated ? '/' : '/login'"
           class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
         >
-          Go to sign in
+          {{ isAuthenticated ? 'Return to dashboard' : 'Go to sign in' }}
         </RouterLink>
-      </div>
+      </template>
 
-      <div
-        v-else
-        role="alert"
-        class="rounded-lg border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
-      >
-        {{ message }}
+      <template v-else>
+        <p
+          role="alert"
+          class="rounded-lg border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
+        >
+          {{ message }}
+        </p>
+
         <RouterLink
           to="/resend-verification"
           class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
         >
           Resend verification email
         </RouterLink>
-      </div>
+      </template>
     </div>
   </AuthFrame>
 </template>
