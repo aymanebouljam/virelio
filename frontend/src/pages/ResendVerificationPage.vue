@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { ArrowRight } from '@lucide/vue'
 import { ZodError } from 'zod'
 import AuthFrame from '@/components/auth/AuthFrame.vue'
@@ -11,14 +12,16 @@ import {
 } from '@/lib/auth/schema'
 import { mapZodErrors } from '@/lib/zod'
 
+const route = useRoute()
 const form = ref<PasswordResetRequestFormValues>({
-  email: '',
+  email: typeof route.query.email === 'string' ? route.query.email : '',
 })
 
 const formErrors = ref<Record<string, string>>({})
 const submitError = ref('')
 const successMessage = ref('')
 const submitting = ref(false)
+const emailSent = ref(false)
 
 const accountBenefits = [
   'Your email confirms access to your workspace',
@@ -54,6 +57,7 @@ async function submit() {
     passwordResetRequestFormSchema.parse(form.value)
     const response = await resendEmailVerification(form.value)
     successMessage.value = response.message
+    emailSent.value = true
   } catch (err) {
     normalizeError(err)
   } finally {
@@ -80,6 +84,7 @@ async function submit() {
         <input
           id="resend-verification-email"
           v-model="form.email"
+          @update:model-value="emailSent = false"
           type="email"
           autocomplete="email"
           placeholder="you@example.com"
@@ -110,10 +115,16 @@ async function submit() {
 
       <button
         type="submit"
-        :disabled="submitting"
+        :disabled="submitting || emailSent"
         class="group inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {{ submitting ? 'Sending verification link...' : 'Send verification link' }}
+        {{
+          submitting
+            ? 'Sending verification link...'
+            : emailSent
+              ? 'Email sent'
+              : 'Send verification link'
+        }}
         <ArrowRight
           v-if="!submitting"
           :size="16"
