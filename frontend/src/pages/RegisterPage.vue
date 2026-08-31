@@ -89,7 +89,7 @@ async function submit() {
       </p>
 
       <RouterLink
-        to="/resend-verification"
+        :to="{ path: '/resend-verification', query: { email: registeredEmail } }"
         class="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
       >
         Resend verification email

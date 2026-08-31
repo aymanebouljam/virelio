@@ -223,7 +223,10 @@ watch(
               details up to date.
             </p>
             <RouterLink
-              to="/resend-verification"
+              :to="{
+                path: '/resend-verification',
+                query: { email: currentUser.email },
+              }"
               class="shrink-0 font-semibold text-brand underline-offset-4 hover:text-brand-strong hover:underline"
             >
               Resend email

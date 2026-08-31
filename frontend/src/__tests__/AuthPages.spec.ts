@@ -200,9 +200,10 @@ describe('login workflow', () => {
     await flushPromises()
 
     expect(wrapper.get('[role="alert"]').text()).toContain('Email address must be verified')
-    expect(wrapper.get('a[href="/resend-verification"]').text()).toBe(
+    expect(wrapper.get('a[href="/resend-verification?email=owner@example.test"]').text()).toBe(
       'Send a new verification link',
     )
+    expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeDefined()
   })
 })
 
@@ -260,7 +261,9 @@ describe('registration workflow', () => {
     })
     expect(router.currentRoute.value.path).toBe('/register')
     expect(wrapper.get('[role="status"]').text()).toContain('owner@example.test')
-    expect(wrapper.get('a[href="/resend-verification"]').text()).toBe('Resend verification email')
+    expect(wrapper.get('a[href="/resend-verification?email=owner@example.test"]').text()).toBe(
+      'Resend verification email',
+    )
   })
 
   it('shows registration validation errors', async () => {
@@ -345,6 +348,7 @@ describe('email verification workflow', () => {
     })
     expect(wrapper.get('[role="status"]').text()).toContain('Email verified successfully')
     expect(wrapper.get('a[href="/login"]').text()).toBe('Go to sign in')
+    expect(wrapper.get('[role="status"]').find('a').exists()).toBe(false)
     expect(wrapper.find('a[href="/resend-verification"]').exists()).toBe(false)
   })
 
@@ -357,6 +361,7 @@ describe('email verification workflow', () => {
     expect(wrapper.get('[role="alert"]').text()).toContain('This link is invalid or has expired')
     expect(wrapper.find('a[href="/login"]').exists()).toBe(false)
     expect(wrapper.get('a[href="/resend-verification"]').text()).toBe('Resend verification email')
+    expect(wrapper.get('[role="alert"]').find('a').exists()).toBe(false)
   })
 
   it('shows an error when the verification link has no token', async () => {
@@ -384,5 +389,21 @@ describe('email verification resend workflow', () => {
     expect(wrapper.get('[role="status"]').text()).toBe(
       'If an account exists for that email, a verification link has been sent.',
     )
+    expect(wrapper.get('button[type="submit"]').text()).toContain('Email sent')
+    expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeDefined()
+  })
+
+  it('prefills the requested email and enables another request after it changes', async () => {
+    const { wrapper } = await mountPage(
+      ResendVerificationPage,
+      '/resend-verification?email=owner@example.test',
+    )
+
+    expect((wrapper.get('#resend-verification-email').element as HTMLInputElement).value).toBe(
+      'owner@example.test',
+    )
+
+    await wrapper.get('#resend-verification-email').setValue('another@example.test')
+    expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeUndefined()
   })
 })

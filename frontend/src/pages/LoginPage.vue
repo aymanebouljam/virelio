@@ -149,7 +149,7 @@ async function submit() {
         {{ submitError }}
         <RouterLink
           v-if="showVerificationHelp"
-          to="/resend-verification"
+          :to="{ path: '/resend-verification', query: { email: form.email } }"
           class="ml-1 font-semibold underline-offset-4 hover:underline"
         >
           Send a new verification link
@@ -158,10 +158,16 @@ async function submit() {
 
       <button
         type="submit"
-        :disabled="submitting"
+        :disabled="submitting || showVerificationHelp"
         class="group inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {{ submitting ? 'Signing in...' : 'Sign in' }}
+        {{
+          submitting
+            ? 'Signing in...'
+            : showVerificationHelp
+              ? 'Verify email to sign in'
+              : 'Sign in'
+        }}
         <ArrowRight
           v-if="!submitting"
           :size="16"

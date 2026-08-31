@@ -99,6 +99,28 @@ describe('authentication route guard', () => {
     expect(auth.fetchCurrentUser).not.toHaveBeenCalled()
   })
 
+  it('allows signed-in users to open email verification links', async () => {
+    auth.isAuthenticated.value = true
+    auth.currentUser.value = testUser
+
+    const router = await navigate('/verify-email?token=verification-token')
+
+    expect(router.currentRoute.value.name).toBe('emailVerification')
+    expect(auth.fetchCurrentUser).not.toHaveBeenCalled()
+  })
+
+  it('allows signed-in users to open password reset links and resend verification', async () => {
+    auth.isAuthenticated.value = true
+    auth.currentUser.value = testUser
+
+    const router = await navigate('/reset-password?token=reset-token')
+    expect(router.currentRoute.value.name).toBe('passwordResetConfirm')
+
+    await router.push('/resend-verification?email=owner@example.test')
+    expect(router.currentRoute.value.name).toBe('resendVerification')
+    expect(auth.fetchCurrentUser).not.toHaveBeenCalled()
+  })
+
   it('clears invalid sessions and preserves the intended destination', async () => {
     const { ApiError } = await import('@/lib/api')
     auth.isAuthenticated.value = true

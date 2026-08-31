@@ -71,7 +71,9 @@ describe('App', () => {
 
     const reminder = wrapper.get('[data-email-verification-reminder]')
     expect(reminder.text()).toContain('needs verification')
-    expect(reminder.get('a[href="/resend-verification"]').text()).toBe('Resend email')
+    expect(reminder.get('a[href="/resend-verification?email=owner@example.test"]').text()).toBe(
+      'Resend email',
+    )
   })
 
   it('uses a single initial for a one-word account name', async () => {
