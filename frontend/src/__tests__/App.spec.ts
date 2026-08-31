@@ -118,7 +118,7 @@ describe('App', () => {
     expect(moreNavigation.text()).toContain('Vendors')
     expect(moreNavigation.text()).toContain('Categories')
     expect(moreNavigation.classes()).toContain('grid-cols-1')
-    expect(moreNavigation.get('a[href="/vendors"] span').classes()).toContain('break-words')
+    expect(moreNavigation.get('a[href="/vendors"] span').classes()).toContain('wrap-break-word')
     expect(wrapper.find('nav[aria-label="Mobile archived records"]').exists()).toBe(false)
     expect(wrapper.get('[data-mobile-account-link]').text()).toContain(user.email)
   })
