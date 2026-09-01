@@ -9,6 +9,7 @@ describe('apiConfig', () => {
   let confirmPasswordReset: typeof import('@/lib/auth/api').confirmPasswordReset
   let changePassword: typeof import('@/lib/auth/api').changePassword
   let confirmEmailVerification: typeof import('@/lib/auth/api').confirmEmailVerification
+  let getAccessToken: typeof import('@/lib/auth/storage').getAccessToken
   let setAccessToken: typeof import('@/lib/auth/storage').setAccessToken
 
   beforeEach(async () => {
@@ -23,6 +24,7 @@ describe('apiConfig', () => {
     confirmPasswordReset = authApi.confirmPasswordReset
     changePassword = authApi.changePassword
     confirmEmailVerification = authApi.confirmEmailVerification
+    getAccessToken = authStorage.getAccessToken
     setAccessToken = authStorage.setAccessToken
   })
 
@@ -163,6 +165,40 @@ describe('apiConfig', () => {
       },
       body: JSON.stringify({ name: 'Atlas' }),
     })
+  })
+
+  it('retries a 401 request once when the access token changed', async () => {
+    setAccessToken('stale-token')
+    fetchMock
+      .mockImplementationOnce(() => {
+        setAccessToken('refreshed-token')
+        return Promise.resolve(jsonResponse({ message: 'Invalid token' }, 401))
+      })
+      .mockResolvedValueOnce(jsonResponse({ id: 'vendor-1' }))
+
+    await expect(apiConfig({ path: 'vendors' })).resolves.toEqual({ id: 'vendor-1' })
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, new URL('vendors', testUrl), {
+      method: 'GET',
+      headers: { Accept: 'application/json', Authorization: 'Bearer stale-token' },
+    })
+    expect(fetchMock).toHaveBeenNthCalledWith(2, new URL('vendors', testUrl), {
+      method: 'GET',
+      headers: { Accept: 'application/json', Authorization: 'Bearer refreshed-token' },
+    })
+  })
+
+  it('clears auth and notifies the app when the current token receives a 401', async () => {
+    setAccessToken('invalid-token')
+    const onUnauthorized = vi.fn<() => void>()
+    window.addEventListener('auth:unauthorized', onUnauthorized)
+    fetchMock.mockResolvedValue(jsonResponse({ message: 'Invalid token' }, 401))
+
+    await expect(apiConfig({ path: 'vendors' })).rejects.toMatchObject({ status: 401 })
+
+    expect(getAccessToken()).toBeNull()
+    expect(onUnauthorized).toHaveBeenCalledOnce()
+    window.removeEventListener('auth:unauthorized', onUnauthorized)
   })
 
   it('sends form data without overriding its content type', async () => {

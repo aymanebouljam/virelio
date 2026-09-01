@@ -83,6 +83,17 @@ describe('App', () => {
     expect(wrapper.get('[data-mobile-workspace-bar]').classes()).toContain('bg-surface/95')
   })
 
+  it('returns to sign in after an unauthorized API response', async () => {
+    setAccessToken('test-token')
+    currentUser.value = user
+    const { router } = await mountWithRouter(App, routes, '/')
+
+    window.dispatchEvent(new Event('auth:unauthorized'))
+    await flushPromises()
+
+    expect(router.currentRoute.value.fullPath).toBe('/login?redirect=/')
+  })
+
   it('reminds users to verify a changed email address', async () => {
     authApi.resendEmailVerification.mockResolvedValue({
       message: 'If an account exists for that email, a verification link has been sent.',

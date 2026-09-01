@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   Building2,
@@ -95,6 +95,10 @@ async function logout() {
   await router.push('/login')
 }
 
+async function handleUnauthorized() {
+  await router.push({ path: '/login', query: { redirect: route.fullPath } })
+}
+
 async function resendVerificationEmail() {
   if (!currentUser.value) return
 
@@ -118,6 +122,14 @@ watch(
     mobileMoreOpen.value = false
   },
 )
+
+onMounted(() => {
+  window.addEventListener('auth:unauthorized', handleUnauthorized)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('auth:unauthorized', handleUnauthorized)
+})
 </script>
 
 <template>
