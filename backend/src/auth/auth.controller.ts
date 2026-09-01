@@ -16,6 +16,7 @@ import { RegisterDto } from './dto/register.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
 import { ConfirmPasswordResetDto } from './dto/confirm-password-reset.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { ConfirmEmailVerificationDto } from './dto/confirm-email-verification.dto';
 import { ResendEmailVerificationDto } from './dto/resend-email-verification.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -72,5 +73,14 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   updateProfile(@CurrentUser() user: JwtUser, @Body() body: UpdateProfileDto) {
     return this.authService.updateProfile(user.sub, body);
+  }
+
+  @Patch('me/password')
+  @UseGuards(JwtAuthGuard)
+  changePassword(
+    @CurrentUser() user: JwtUser,
+    @Body() body: ChangePasswordDto,
+  ) {
+    return this.authService.changePassword(user.sub, body);
   }
 }
