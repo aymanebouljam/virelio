@@ -7,6 +7,7 @@ describe('apiConfig', () => {
   let fetchMock: ReturnType<typeof installFetchMock>
   let apiConfig: typeof import('@/lib/api').apiConfig
   let confirmPasswordReset: typeof import('@/lib/auth/api').confirmPasswordReset
+  let changePassword: typeof import('@/lib/auth/api').changePassword
   let confirmEmailVerification: typeof import('@/lib/auth/api').confirmEmailVerification
   let setAccessToken: typeof import('@/lib/auth/storage').setAccessToken
 
@@ -20,6 +21,7 @@ describe('apiConfig', () => {
     const authStorage = await import('@/lib/auth/storage')
     apiConfig = apiModule.apiConfig
     confirmPasswordReset = authApi.confirmPasswordReset
+    changePassword = authApi.changePassword
     confirmEmailVerification = authApi.confirmEmailVerification
     setAccessToken = authStorage.setAccessToken
   })
@@ -94,6 +96,32 @@ describe('apiConfig', () => {
         }),
       },
     )
+  })
+
+  it('sends the current and new password for an authenticated password change', async () => {
+    setAccessToken('test-token')
+    fetchMock.mockResolvedValue(jsonResponse({ accessToken: 'refreshed-token' }))
+
+    await expect(
+      changePassword({
+        currentPassword: 'current-password',
+        password: 'new-password',
+        passwordConfirmation: 'new-password',
+      }),
+    ).resolves.toEqual({ accessToken: 'refreshed-token' })
+
+    expect(fetchMock).toHaveBeenCalledExactlyOnceWith(new URL('auth/me/password', testUrl), {
+      method: 'PATCH',
+      headers: {
+        Accept: 'application/json',
+        Authorization: 'Bearer test-token',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        currentPassword: 'current-password',
+        password: 'new-password',
+      }),
+    })
   })
 
   it('sends the verification token', async () => {

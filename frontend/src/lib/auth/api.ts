@@ -1,9 +1,12 @@
 import { apiConfig } from '../api'
 import {
+  authAccessTokenSchema,
   authMessageSchema,
   authSessionSchema,
   authUserSchema,
   type AuthMessage,
+  type AuthAccessToken,
+  type ChangePasswordFormValues,
   type AuthSession,
   type AuthUser,
   type EmailVerificationConfirmFormValues,
@@ -63,6 +66,20 @@ export async function confirmPasswordReset(input: PasswordResetConfirmFormValues
       },
     }),
   ) as AuthMessage
+}
+
+export async function changePassword(input: ChangePasswordFormValues) {
+  return authAccessTokenSchema.parse(
+    await apiConfig({
+      path: 'auth/me',
+      action: 'password',
+      method: 'PATCH',
+      input: {
+        currentPassword: input.currentPassword,
+        password: input.password,
+      },
+    }),
+  ) as AuthAccessToken
 }
 
 export async function confirmEmailVerification(input: EmailVerificationConfirmFormValues) {
