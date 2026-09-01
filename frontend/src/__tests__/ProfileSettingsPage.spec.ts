@@ -228,8 +228,37 @@ describe('profile settings workflow', () => {
     await wrapper.get('#new-password-confirmation').setValue('different-password')
     await getPasswordForm(wrapper).trigger('submit')
 
-    expect(wrapper.text()).toContain('Current password must be at least 8 characters')
-    expect(wrapper.text()).toContain('Passwords do not match')
+    expect(wrapper.get('#current-password-error').text()).toContain(
+      'Current password must be at least 8 characters',
+    )
+    expect(wrapper.get('#new-password-confirmation-error').text()).toContain(
+      'Passwords do not match',
+    )
     expect(authApi.changePassword).not.toHaveBeenCalled()
+  })
+
+  it('shows current password validation error', async () => {
+    authApi.changePassword.mockRejectedValue(
+      new ApiError('Validation failed', {
+        currentPassword: 'Current password is incorrect',
+      }),
+    )
+    const wrapper = mount(ProfileSettingsPage)
+
+    await openPasswordForm(wrapper)
+    expect(getPasswordForm(wrapper).get('button[type="submit"]').attributes()).toHaveProperty(
+      'disabled',
+    )
+    await wrapper.get('#current-password').setValue('incorrect-current-password')
+    await wrapper.get('#new-password').setValue('new-password')
+    await wrapper.get('#new-password-confirmation').setValue('new-password')
+    await getPasswordForm(wrapper).trigger('submit')
+
+    expect(wrapper.get('#current-password-error').text()).toContain('Current password is incorrect')
+    expect(authApi.changePassword).toHaveBeenCalledWith({
+      currentPassword: 'incorrect-current-password',
+      password: 'new-password',
+      passwordConfirmation: 'new-password',
+    })
   })
 })

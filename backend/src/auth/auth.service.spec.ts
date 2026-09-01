@@ -406,7 +406,17 @@ describe('AuthService', () => {
         password: 'new-password',
       }),
     ).rejects.toMatchObject({
-      response: { message: 'Current password is incorrect' },
+      response: {
+        message: 'Validation failed',
+        errors: [
+          {
+            field: 'currentPassword',
+            constraints: {
+              isNotValid: 'Current password is incorrect',
+            },
+          },
+        ],
+      },
     });
 
     expect(userUpdateMock).not.toHaveBeenCalled();

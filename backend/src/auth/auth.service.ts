@@ -286,8 +286,16 @@ export class AuthService {
     );
 
     if (!isValidPassword) {
-      throw new UnauthorizedException({
-        message: 'Current password is incorrect',
+      throw new BadRequestException({
+        message: 'Validation failed',
+        errors: [
+          {
+            field: 'currentPassword',
+            constraints: {
+              isNotValid: 'Current password is incorrect',
+            },
+          },
+        ],
       });
     }
 
