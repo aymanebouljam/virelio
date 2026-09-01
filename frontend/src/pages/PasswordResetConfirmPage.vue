@@ -2,16 +2,14 @@
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowRight, Eye, EyeOff } from '@lucide/vue'
-import { ZodError } from 'zod'
 import AuthFrame from '@/components/auth/AuthFrame.vue'
-import { ApiError } from '@/lib/api'
 import { confirmPasswordReset } from '@/lib/auth/api'
 import {
   passwordResetConfirmFormSchema,
   type PasswordResetConfirmFormValues,
 } from '@/lib/auth/schema'
 import { setAccessToken } from '@/lib/auth/storage'
-import { mapZodErrors } from '@/lib/zod'
+import { useFormErrors } from '@/lib/use-form-errors'
 
 const route = useRoute()
 const router = useRouter()
@@ -23,8 +21,7 @@ const form = ref<PasswordResetConfirmFormValues>({
   passwordConfirmation: '',
 })
 
-const formErrors = ref<Record<string, string>>({})
-const submitError = ref('')
+const { formErrors, submitError, clearErrors, setError } = useFormErrors()
 const submitting = ref(false)
 const showPasswords = ref(false)
 
@@ -34,27 +31,8 @@ const accountBenefits = [
   'Return to your expense record securely',
 ]
 
-function normalizeError(err: unknown) {
-  if (err instanceof ApiError) {
-    if (err.content) {
-      formErrors.value = err.content
-      return
-    }
-    submitError.value = err.message
-    return
-  }
-
-  if (err instanceof ZodError) {
-    formErrors.value = mapZodErrors(err.issues)
-    return
-  }
-
-  submitError.value = 'Something went wrong'
-}
-
 async function submit() {
-  formErrors.value = {}
-  submitError.value = ''
+  clearErrors()
   submitting.value = true
 
   try {
@@ -63,7 +41,7 @@ async function submit() {
     setAccessToken(accessToken)
     await router.replace('/')
   } catch (err) {
-    normalizeError(err)
+    setError(err)
   } finally {
     submitting.value = false
   }
