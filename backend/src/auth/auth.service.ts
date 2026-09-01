@@ -16,6 +16,7 @@ import { RegisterDto } from './dto/register.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
 import { ConfirmPasswordResetDto } from './dto/confirm-password-reset.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { ResendEmailVerificationDto } from './dto/resend-email-verification.dto';
 import { ConfirmEmailVerificationDto } from './dto/confirm-email-verification.dto';
 import { AuthMailService } from './auth-mail.service';
@@ -253,6 +254,52 @@ export class AuthService {
       }
       throw error;
     }
+  }
+
+  async changePassword(userId: string, body: ChangePasswordDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        passwordHash: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException({ message: 'Invalid token' });
+    }
+
+    const isValidPassword = await bcrypt.compare(
+      body.currentPassword,
+      user.passwordHash,
+    );
+
+    if (!isValidPassword) {
+      throw new UnauthorizedException({
+        message: 'Current password is incorrect',
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(body.password, 10);
+    const updatedUser = await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash,
+        sessionVersion: { increment: 1 },
+      },
+      select: {
+        email: true,
+        sessionVersion: true,
+      },
+    });
+    const accessToken = await this.jwtService.signAsync({
+      sub: user.id,
+      email: updatedUser.email,
+      sessionVersion: updatedUser.sessionVersion,
+    });
+
+    return { accessToken };
   }
 
   async sendEmailVerification(user: { id: string; email: string }) {

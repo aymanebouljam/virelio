@@ -1,12 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { ApiError } from '@/lib/api'
-import type { AuthUser, ProfileFormValues } from '@/lib/auth/schema'
-import { currentUser } from '@/lib/auth/storage'
+import type {
+  AuthAccessToken,
+  AuthMessage,
+  AuthUser,
+  ChangePasswordFormValues,
+  PasswordResetRequestFormValues,
+  ProfileFormValues,
+} from '@/lib/auth/schema'
+import { clearAccessToken, currentUser, getAccessToken } from '@/lib/auth/storage'
 import { formatDateTime } from '@/lib/helpers'
 import ProfileSettingsPage from '@/pages/ProfileSettingsPage.vue'
 
 const authApi = vi.hoisted(() => ({
+  changePassword: vi.fn<(input: ChangePasswordFormValues) => Promise<AuthAccessToken>>(),
+  requestPasswordReset: vi.fn<(input: PasswordResetRequestFormValues) => Promise<AuthMessage>>(),
   updateProfile: vi.fn<(input: ProfileFormValues) => Promise<AuthUser>>(),
 }))
 
@@ -28,6 +37,14 @@ function getForm(wrapper: VueWrapper) {
   return wrapper.get('form[aria-label="Profile settings form"]')
 }
 
+function getPasswordForm(wrapper: VueWrapper) {
+  return wrapper.get('form[aria-label="Password settings form"]')
+}
+
+async function openPasswordForm(wrapper: VueWrapper) {
+  await wrapper.get('[data-change-password]').trigger('click')
+}
+
 function expectInvalidField(wrapper: VueWrapper, selector: string, errorId: string) {
   expect(wrapper.get(selector).attributes()).toMatchObject({
     'aria-describedby': errorId,
@@ -44,7 +61,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks()
-  currentUser.value = null
+  clearAccessToken()
 })
 
 describe('profile settings workflow', () => {
@@ -60,6 +77,8 @@ describe('profile settings workflow', () => {
     expect(wrapper.get('#profile-full-name').attributes('name')).toBe('fullName')
     expect(wrapper.get('#profile-email').attributes('name')).toBe('email')
     expect(wrapper.get('button[type="submit"]').attributes()).toHaveProperty('disabled')
+    expect(wrapper.find('form[aria-label="Password settings form"]').exists()).toBe(false)
+    expect(wrapper.get('[data-change-password]').text()).toBe('Change password')
     expect(wrapper.get('[data-profile-initials]').text()).toBe('LO')
     expect(wrapper.get('[data-profile-initials]').attributes('aria-hidden')).toBe('true')
     expect(wrapper.get(`time[datetime="${createdAt}"]`).text()).toBe('1 month ago')
@@ -140,5 +159,77 @@ describe('profile settings workflow', () => {
     await flushPromises()
 
     expect(wrapper.get('[role="alert"]').text()).toBe('Service unavailable')
+  })
+
+  it('changes the password and replaces the current access token', async () => {
+    authApi.changePassword.mockResolvedValue({ accessToken: 'refreshed-token' })
+    const wrapper = mount(ProfileSettingsPage)
+
+    await openPasswordForm(wrapper)
+    await wrapper.get('#current-password').setValue('current-password')
+    await wrapper.get('#new-password').setValue('new-password')
+    await wrapper.get('#new-password-confirmation').setValue('new-password')
+    await getPasswordForm(wrapper).trigger('submit')
+    await flushPromises()
+
+    expect(authApi.changePassword).toHaveBeenCalledExactlyOnceWith({
+      currentPassword: 'current-password',
+      password: 'new-password',
+      passwordConfirmation: 'new-password',
+    })
+    expect(getAccessToken()).toBe('refreshed-token')
+    expect(wrapper.get('[role="status"]').text()).toBe('Password updated')
+    expect((wrapper.get('#current-password').element as HTMLInputElement).value).toBe('')
+  })
+
+  it('reveals and hides each password field independently', async () => {
+    const wrapper = mount(ProfileSettingsPage)
+
+    await openPasswordForm(wrapper)
+    expect(wrapper.get('#current-password').attributes('type')).toBe('password')
+    expect(wrapper.get('#new-password').attributes('type')).toBe('password')
+
+    await wrapper.get('[data-toggle-current-password]').trigger('click')
+    expect(wrapper.get('#current-password').attributes('type')).toBe('text')
+    expect(wrapper.get('#new-password').attributes('type')).toBe('password')
+
+    await wrapper.get('[data-toggle-new-password]').trigger('click')
+    expect(wrapper.get('#new-password').attributes('type')).toBe('text')
+
+    await wrapper.get('[data-toggle-password-confirmation]').trigger('click')
+    expect(wrapper.get('#new-password-confirmation').attributes('type')).toBe('text')
+  })
+
+  it('requests a password reset email for the current user', async () => {
+    authApi.requestPasswordReset.mockResolvedValue({
+      message: 'If an account exists for that email, a password reset link has been sent.',
+    })
+    const wrapper = mount(ProfileSettingsPage)
+
+    await openPasswordForm(wrapper)
+    await wrapper.get('[data-password-reset]').trigger('click')
+    await flushPromises()
+
+    expect(authApi.requestPasswordReset).toHaveBeenCalledExactlyOnceWith({
+      email: 'owner@example.test',
+    })
+    expect(wrapper.get('[role="status"]').text()).toContain('password reset link has been sent')
+  })
+
+  it('shows password validation errors before submitting', async () => {
+    const wrapper = mount(ProfileSettingsPage)
+
+    await openPasswordForm(wrapper)
+    expect(getPasswordForm(wrapper).get('button[type="submit"]').attributes()).toHaveProperty(
+      'disabled',
+    )
+    await wrapper.get('#current-password').setValue('short')
+    await wrapper.get('#new-password').setValue('new-password')
+    await wrapper.get('#new-password-confirmation').setValue('different-password')
+    await getPasswordForm(wrapper).trigger('submit')
+
+    expect(wrapper.text()).toContain('Current password must be at least 8 characters')
+    expect(wrapper.text()).toContain('Passwords do not match')
+    expect(authApi.changePassword).not.toHaveBeenCalled()
   })
 })

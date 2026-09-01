@@ -348,6 +348,71 @@ describe('AuthService', () => {
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
+  it('changes a password and refreshes the current session', async () => {
+    userFindUniqueMock.mockResolvedValueOnce({
+      id: 'user-1',
+      email: 'owner@local.dev',
+      passwordHash: 'current-hashed-password',
+    });
+    (bcrypt.compare as jest.Mock).mockResolvedValueOnce(true);
+    (bcrypt.hash as jest.Mock).mockResolvedValueOnce('new-hashed-password');
+    userUpdateMock.mockResolvedValueOnce({
+      email: 'owner@local.dev',
+      sessionVersion: 3,
+    });
+    signAsyncMock.mockResolvedValueOnce('refreshed-access-token');
+
+    await expect(
+      service.changePassword('user-1', {
+        currentPassword: 'current-password',
+        password: 'new-password',
+      }),
+    ).resolves.toEqual({ accessToken: 'refreshed-access-token' });
+
+    expect(bcrypt.compare).toHaveBeenCalledWith(
+      'current-password',
+      'current-hashed-password',
+    );
+    expect(bcrypt.hash).toHaveBeenCalledWith('new-password', 10);
+    expect(userUpdateMock).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: {
+        passwordHash: 'new-hashed-password',
+        sessionVersion: { increment: 1 },
+      },
+      select: {
+        email: true,
+        sessionVersion: true,
+      },
+    });
+    expect(signAsyncMock).toHaveBeenCalledWith({
+      sub: 'user-1',
+      email: 'owner@local.dev',
+      sessionVersion: 3,
+    });
+  });
+
+  it('rejects a password change when the current password is incorrect', async () => {
+    userFindUniqueMock.mockResolvedValueOnce({
+      id: 'user-1',
+      email: 'owner@local.dev',
+      passwordHash: 'current-hashed-password',
+    });
+    (bcrypt.compare as jest.Mock).mockResolvedValueOnce(false);
+
+    await expect(
+      service.changePassword('user-1', {
+        currentPassword: 'wrong-password',
+        password: 'new-password',
+      }),
+    ).rejects.toMatchObject({
+      response: { message: 'Current password is incorrect' },
+    });
+
+    expect(userUpdateMock).not.toHaveBeenCalled();
+    expect(signAsyncMock).not.toHaveBeenCalled();
+  });
+
   it('does not reveal whether a password reset email exists', async () => {
     userFindUniqueMock.mockResolvedValueOnce(null);
 
