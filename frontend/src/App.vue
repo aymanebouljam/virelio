@@ -37,7 +37,8 @@ const usesWorkspaceShell = computed(
   () =>
     isAuthenticated.value &&
     route.path !== '/verify-email' &&
-    route.path !== '/resend-verification',
+    route.path !== '/resend-verification' &&
+    route.path !== '/reset-password',
 )
 
 const primaryNavigationGroups = [

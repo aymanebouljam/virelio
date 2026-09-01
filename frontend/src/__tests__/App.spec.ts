@@ -56,6 +56,16 @@ describe('App', () => {
     expect(wrapper.find('nav').exists()).toBe(false)
   })
 
+  it('keeps password reset outside the workspace shell for authenticated users', async () => {
+    setAccessToken('test-token')
+    currentUser.value = user
+    const { wrapper } = await mountWithRouter(App, routes, '/reset-password?token=reset-token')
+
+    expect(wrapper.text()).toContain('Page')
+    expect(wrapper.find('header').exists()).toBe(false)
+    expect(wrapper.find('nav').exists()).toBe(false)
+  })
+
   it('renders grouped navigation for authenticated users', async () => {
     setAccessToken('test-token')
     currentUser.value = user
