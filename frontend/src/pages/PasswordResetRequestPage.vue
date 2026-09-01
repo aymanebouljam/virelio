@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { ArrowRight } from '@lucide/vue'
 import { ZodError } from 'zod'
 import AuthFrame from '@/components/auth/AuthFrame.vue'
@@ -11,8 +12,9 @@ import {
 } from '@/lib/auth/schema'
 import { mapZodErrors } from '@/lib/zod'
 
+const route = useRoute()
 const form = ref<PasswordResetRequestFormValues>({
-  email: '',
+  email: typeof route.query.email === 'string' ? route.query.email : '',
 })
 
 const formErrors = ref<Record<string, string>>({})

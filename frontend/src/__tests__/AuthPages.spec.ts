@@ -24,6 +24,7 @@ import {
 import LoginPage from '@/pages/LoginPage.vue'
 import EmailVerificationPage from '@/pages/EmailVerificationPage.vue'
 import PasswordResetConfirmPage from '@/pages/PasswordResetConfirmPage.vue'
+import PasswordResetRequestPage from '@/pages/PasswordResetRequestPage.vue'
 import RegisterPage from '@/pages/RegisterPage.vue'
 import ResendVerificationPage from '@/pages/ResendVerificationPage.vue'
 import { mountWithRouter } from './test-mount'
@@ -36,6 +37,7 @@ const authApi = vi.hoisted(() => ({
   login: vi.fn<(input: LoginFormValues) => Promise<AuthSession>>(),
   register: vi.fn<(input: RegisterFormValues) => Promise<AuthUser>>(),
   resendEmailVerification: vi.fn<(input: PasswordResetRequestFormValues) => Promise<AuthMessage>>(),
+  requestPasswordReset: vi.fn<(input: PasswordResetRequestFormValues) => Promise<AuthMessage>>(),
 }))
 
 vi.mock('@/lib/auth/api', () => authApi)
@@ -46,6 +48,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/login', name: 'login', component: LoginPage },
   { path: '/verify-email', name: 'emailVerification', component: EmailVerificationPage },
   { path: '/reset-password', name: 'passwordResetConfirm', component: PasswordResetConfirmPage },
+  { path: '/password-reset', name: 'passwordResetRequest', component: PasswordResetRequestPage },
   { path: '/register', name: 'register', component: RegisterPage },
   { path: '/resend-verification', name: 'resendVerification', component: ResendVerificationPage },
 ]
@@ -213,6 +216,16 @@ describe('login workflow', () => {
     )
     expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeDefined()
   })
+
+  it('carries the entered email to password reset', async () => {
+    const { router, wrapper } = await mountPage(LoginPage, '/login')
+
+    await wrapper.get('#login-email').setValue('owner@example.test')
+    await wrapper.get('a[href="/password-reset?email=owner@example.test"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.fullPath).toBe('/password-reset?email=owner@example.test')
+  })
 })
 
 describe('registration workflow', () => {
@@ -268,10 +281,31 @@ describe('registration workflow', () => {
       passwordConfirmation: 'test-password',
     })
     expect(router.currentRoute.value.path).toBe('/register')
-    expect(wrapper.get('[role="status"]').text()).toContain('owner@example.test')
-    expect(wrapper.get('a[href="/resend-verification?email=owner@example.test"]').text()).toBe(
-      'Resend verification email',
+    expect(wrapper.text()).toContain(
+      'Account created. Check owner@example.test to verify your email.',
     )
+    expect(wrapper.get('button[type="button"]').text()).toBe('Resend verification email')
+  })
+
+  it('resends the verification email directly after registration', async () => {
+    authApi.register.mockResolvedValue(user)
+    authApi.resendEmailVerification.mockResolvedValue({
+      message: 'If an account exists for that email, a verification link has been sent.',
+    })
+    const { wrapper } = await mountPage(RegisterPage, '/register')
+
+    await fillRegistrationForm(wrapper)
+    await getForm(wrapper, 'Registration form').trigger('submit')
+    await wrapper.get('button[type="button"]').trigger('click')
+    await flushPromises()
+
+    expect(authApi.resendEmailVerification).toHaveBeenCalledExactlyOnceWith({
+      email: 'owner@example.test',
+    })
+    expect(wrapper.get('[data-verification-resend-status]').text()).toBe(
+      'Verification email sent. Check your inbox.',
+    )
+    expect(wrapper.get('button[type="button"]').attributes('disabled')).toBeUndefined()
   })
 
   it('shows registration validation errors', async () => {
@@ -423,11 +457,11 @@ describe('email verification resend workflow', () => {
     expect(wrapper.get('[role="status"]').text()).toBe(
       'If an account exists for that email, a verification link has been sent.',
     )
-    expect(wrapper.get('button[type="submit"]').text()).toContain('Email sent')
-    expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('button[type="submit"]').text()).toContain('Send verification link')
+    expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeUndefined()
   })
 
-  it('prefills the requested email and enables another request after it changes', async () => {
+  it('prefills the requested email', async () => {
     const { wrapper } = await mountPage(
       ResendVerificationPage,
       '/resend-verification?email=owner@example.test',
@@ -436,8 +470,16 @@ describe('email verification resend workflow', () => {
     expect((wrapper.get('#resend-verification-email').element as HTMLInputElement).value).toBe(
       'owner@example.test',
     )
+  })
 
-    await wrapper.get('#resend-verification-email').setValue('another@example.test')
-    expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeUndefined()
+  it('prefills the password reset email from the login link', async () => {
+    const { wrapper } = await mountPage(
+      PasswordResetRequestPage,
+      '/password-reset?email=owner@example.test',
+    )
+
+    expect((wrapper.get('#password-reset-email').element as HTMLInputElement).value).toBe(
+      'owner@example.test',
+    )
   })
 })
