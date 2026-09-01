@@ -55,7 +55,7 @@ export async function requestPasswordReset(input: PasswordResetRequestFormValues
 }
 
 export async function confirmPasswordReset(input: PasswordResetConfirmFormValues) {
-  return authMessageSchema.parse(
+  return authAccessTokenSchema.parse(
     await apiConfig({
       path: 'auth/password-reset',
       action: 'confirm',
@@ -65,7 +65,7 @@ export async function confirmPasswordReset(input: PasswordResetConfirmFormValues
         password: input.password,
       },
     }),
-  ) as AuthMessage
+  ) as AuthAccessToken
 }
 
 export async function changePassword(input: ChangePasswordFormValues) {

@@ -152,18 +152,28 @@ export class AuthService {
     );
     const passwordHash = await bcrypt.hash(body.password, 10);
 
-    await this.prisma.$transaction([
+    const [user] = await this.prisma.$transaction([
       this.prisma.user.update({
         where: { id: authToken.userId },
         data: {
           passwordHash,
           sessionVersion: { increment: 1 },
         },
+        select: {
+          email: true,
+          sessionVersion: true,
+        },
       }),
       this.prisma.authToken.delete({ where: { id: authToken.id } }),
     ]);
 
-    return { message: 'Password reset successfully' };
+    const accessToken = await this.jwtService.signAsync({
+      sub: authToken.userId,
+      email: user.email,
+      sessionVersion: user.sessionVersion,
+    });
+
+    return { accessToken };
   }
 
   async resendEmailVerification(body: ResendEmailVerificationDto) {

@@ -447,14 +447,21 @@ describe('AuthService', () => {
       expiresAt: new Date('2026-12-01T00:00:00.000Z'),
     });
     (bcrypt.hash as jest.Mock).mockResolvedValueOnce('new-hashed-password');
-    transactionMock.mockResolvedValueOnce([]);
+    transactionMock.mockResolvedValueOnce([
+      {
+        email: 'owner@example.com',
+        sessionVersion: 3,
+      },
+      undefined,
+    ]);
+    signAsyncMock.mockResolvedValueOnce('refreshed-access-token');
 
     await expect(
       service.confirmPasswordReset({
         token: 'valid-reset-token',
         password: 'new-password',
       }),
-    ).resolves.toEqual({ message: 'Password reset successfully' });
+    ).resolves.toEqual({ accessToken: 'refreshed-access-token' });
 
     expect(userUpdateMock).toHaveBeenCalledWith({
       where: { id: 'user-1' },
@@ -462,9 +469,18 @@ describe('AuthService', () => {
         passwordHash: 'new-hashed-password',
         sessionVersion: { increment: 1 },
       },
+      select: {
+        email: true,
+        sessionVersion: true,
+      },
     });
     expect(authTokenDeleteMock).toHaveBeenCalledWith({
       where: { id: 'token-1' },
+    });
+    expect(signAsyncMock).toHaveBeenCalledWith({
+      sub: 'user-1',
+      email: 'owner@example.com',
+      sessionVersion: 3,
     });
   });
 

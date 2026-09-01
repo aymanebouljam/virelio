@@ -1,4 +1,4 @@
-import { getAccessToken } from './auth/storage'
+import { clearAccessToken, getAccessToken } from './auth/storage'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
@@ -104,6 +104,40 @@ type FetchConfig = {
   body?: string | FormData
 }
 
+function withAccessToken(config: FetchConfig, accessToken: string | null): FetchConfig {
+  const headers = { ...config.headers }
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`
+  }
+
+  return { ...config, headers }
+}
+
+async function request(
+  url: URL,
+  config: FetchConfig,
+  accessToken: string | null,
+  canRetryWithNewToken = true,
+) {
+  const response = await fetch(url, withAccessToken(config, accessToken))
+
+  if (response.status !== 401 || !accessToken) {
+    return response
+  }
+
+  const currentAccessToken = getAccessToken()
+  if (canRetryWithNewToken && currentAccessToken && currentAccessToken !== accessToken) {
+    return request(url, config, currentAccessToken, false)
+  }
+
+  if (currentAccessToken === accessToken) {
+    clearAccessToken()
+    window.dispatchEvent(new Event('auth:unauthorized'))
+  }
+
+  return response
+}
+
 export async function apiConfig({
   path = '',
   method = 'GET',
@@ -142,12 +176,7 @@ export async function apiConfig({
     }
   }
 
-  const accessToken = getAccessToken()
-  if (accessToken) {
-    config.headers['Authorization'] = `Bearer ${accessToken}`
-  }
-
-  const response = await fetch(url, config)
+  const response = await request(url, config, getAccessToken())
 
   if (!response.ok) {
     const body = (await validateResponse(response)) as ApiErrorResponse | null
