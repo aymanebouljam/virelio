@@ -72,7 +72,7 @@ describe('apiConfig', () => {
   })
 
   it('sends the reset token and new password', async () => {
-    fetchMock.mockResolvedValue(jsonResponse({ message: 'Password reset successfully' }))
+    fetchMock.mockResolvedValue(jsonResponse({ accessToken: 'refreshed-token' }))
 
     await expect(
       confirmPasswordReset({
@@ -80,7 +80,7 @@ describe('apiConfig', () => {
         password: 'new-password',
         passwordConfirmation: 'new-password',
       }),
-    ).resolves.toEqual({ message: 'Password reset successfully' })
+    ).resolves.toEqual({ accessToken: 'refreshed-token' })
 
     expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
       new URL('auth/password-reset/confirm', testUrl),

@@ -4,6 +4,7 @@ import type { Component } from 'vue'
 import type { RouteRecordRaw } from 'vue-router'
 import { ApiError } from '@/lib/api'
 import type {
+  AuthAccessToken,
   AuthMessage,
   AuthSession,
   AuthUser,
@@ -30,7 +31,8 @@ import { mountWithRouter } from './test-mount'
 const authApi = vi.hoisted(() => ({
   confirmEmailVerification:
     vi.fn<(input: EmailVerificationConfirmFormValues) => Promise<AuthMessage>>(),
-  confirmPasswordReset: vi.fn<(input: PasswordResetConfirmFormValues) => Promise<AuthMessage>>(),
+  confirmPasswordReset:
+    vi.fn<(input: PasswordResetConfirmFormValues) => Promise<AuthAccessToken>>(),
   login: vi.fn<(input: LoginFormValues) => Promise<AuthSession>>(),
   register: vi.fn<(input: RegisterFormValues) => Promise<AuthUser>>(),
   resendEmailVerification: vi.fn<(input: PasswordResetRequestFormValues) => Promise<AuthMessage>>(),
@@ -310,9 +312,9 @@ describe('registration workflow', () => {
 })
 
 describe('password reset confirmation workflow', () => {
-  it('resets the password from a valid link and confirms completion', async () => {
-    authApi.confirmPasswordReset.mockResolvedValue({ message: 'Password reset successfully' })
-    const { wrapper } = await mountPage(
+  it('resets the password from a valid link and signs the user in', async () => {
+    authApi.confirmPasswordReset.mockResolvedValue({ accessToken: 'refreshed-token' })
+    const { router, wrapper } = await mountPage(
       PasswordResetConfirmPage,
       '/reset-password?token=reset-token',
     )
@@ -326,8 +328,8 @@ describe('password reset confirmation workflow', () => {
       password: 'new-password',
       passwordConfirmation: 'new-password',
     })
-    expect(wrapper.get('[role="status"]').text()).toContain('Password reset successfully')
-    expect(wrapper.get('a[href="/login"]').text()).toBe('Go to sign in')
+    expect(getAccessToken()).toBe('refreshed-token')
+    expect(router.currentRoute.value.path).toBe('/')
   })
 
   it('shows an error when the reset link has no token', async () => {
