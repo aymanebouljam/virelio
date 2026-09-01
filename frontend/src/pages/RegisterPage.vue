@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { ArrowRight, Eye, EyeOff } from '@lucide/vue'
 import AuthFrame from '@/components/auth/AuthFrame.vue'
 import { ApiError } from '@/lib/api'
-import { register as registerUser } from '@/lib/auth/api'
+import { register as registerUser, resendEmailVerification } from '@/lib/auth/api'
 import { registerFormSchema, type RegisterFormValues } from '@/lib/auth/schema'
 import { ZodError } from 'zod'
 import { mapZodErrors } from '@/lib/zod'
@@ -21,6 +21,9 @@ const submitting = ref(false)
 const showPasswords = ref(false)
 const registrationComplete = ref(false)
 const registeredEmail = ref('')
+const resendingVerification = ref(false)
+const verificationResendMessage = ref('')
+const verificationResendError = ref('')
 
 const accountBenefits = [
   'A private ledger scoped to your account',
@@ -71,6 +74,25 @@ async function submit() {
     submitting.value = false
   }
 }
+
+async function resendVerificationEmail() {
+  verificationResendMessage.value = ''
+  verificationResendError.value = ''
+  resendingVerification.value = true
+
+  try {
+    await resendEmailVerification({ email: registeredEmail.value })
+    verificationResendMessage.value = 'Verification email sent. Check your inbox.'
+  } catch (err) {
+    if (err instanceof ApiError) {
+      verificationResendError.value = err.message
+    } else {
+      verificationResendError.value = 'Something went wrong'
+    }
+  } finally {
+    resendingVerification.value = false
+  }
+}
 </script>
 
 <template>
@@ -83,17 +105,37 @@ async function submit() {
     form-title="Create your account"
     form-description="Set up your private Virelio workspace in a moment."
   >
-    <div v-if="registrationComplete" role="status" class="mt-7 space-y-5">
-      <p class="rounded-lg border border-success/25 bg-success-soft px-4 py-3 text-sm text-success">
-        Your account is ready. We sent a verification link to {{ registeredEmail }}.
+    <div v-if="registrationComplete" class="mt-7 space-y-5">
+      <p
+        role="status"
+        class="rounded-lg border border-success/25 bg-success-soft px-4 py-3 text-sm text-success"
+      >
+        Account created. Check {{ registeredEmail }} to verify your email.
       </p>
 
-      <RouterLink
-        :to="{ path: '/resend-verification', query: { email: registeredEmail } }"
-        class="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
+      <p
+        v-if="verificationResendMessage"
+        data-verification-resend-status
+        role="status"
+        class="text-sm text-success"
       >
-        Resend verification email
-      </RouterLink>
+        {{ verificationResendMessage }}
+      </p>
+
+      <p v-if="verificationResendError" role="alert" class="text-sm text-danger">
+        {{ verificationResendError }}
+      </p>
+
+      <p class="text-sm text-ink-muted">Didn't receive the email?</p>
+
+      <button
+        type="button"
+        :disabled="resendingVerification"
+        class="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
+        @click="resendVerificationEmail"
+      >
+        {{ resendingVerification ? 'Sending verification email...' : 'Resend verification email' }}
+      </button>
     </div>
 
     <form v-else aria-label="Registration form" class="mt-7 space-y-4" @submit.prevent="submit">

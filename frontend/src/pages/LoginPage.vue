@@ -135,7 +135,7 @@ async function submit() {
       </div>
 
       <RouterLink
-        to="/password-reset"
+        :to="{ path: '/password-reset', query: { email: form.email } }"
         class="block w-fit text-sm font-medium text-brand underline-offset-4 hover:text-brand-strong hover:underline"
       >
         Forgot your password?
