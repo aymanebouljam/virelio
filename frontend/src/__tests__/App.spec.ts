@@ -1,15 +1,23 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import type { RouteRecordRaw } from 'vue-router'
 import App from '@/App.vue'
+import type { AuthMessage, PasswordResetRequestFormValues } from '@/lib/auth/schema'
 import { clearAccessToken, currentUser, isAuthenticated, setAccessToken } from '@/lib/auth/storage'
 import { mountWithRouter } from './test-mount'
+
+const authApi = vi.hoisted(() => ({
+  resendEmailVerification: vi.fn<(input: PasswordResetRequestFormValues) => Promise<AuthMessage>>(),
+}))
+
+vi.mock('@/lib/auth/api', () => authApi)
 
 const routes: RouteRecordRaw[] = [
   { path: '/', component: { template: '<p>Dashboard page</p>' } },
   { path: '/login', component: { template: '<p>Login page</p>' } },
   { path: '/register', component: { template: '<p>Register page</p>' } },
   { path: '/profile', component: { template: '<p>Profile page</p>' } },
+  { path: '/verify-email', component: { template: '<p>Verification page</p>' } },
   { path: '/:pathMatch(.*)*', component: { template: '<p>Page</p>' } },
 ]
 
@@ -25,6 +33,7 @@ const user = {
 describe('App', () => {
   afterEach(() => {
     clearAccessToken()
+    vi.resetAllMocks()
   })
 
   it('renders a focused shell for guest routes', async () => {
@@ -35,6 +44,16 @@ describe('App', () => {
     expect(wrapper.find('nav').exists()).toBe(false)
     expect(wrapper.get('main').attributes('id')).toBe('main-content')
     expect(wrapper.get('main').attributes('tabindex')).toBe('-1')
+  })
+
+  it('keeps email verification outside the workspace shell for authenticated users', async () => {
+    setAccessToken('test-token')
+    currentUser.value = user
+    const { wrapper } = await mountWithRouter(App, routes, '/verify-email?token=verification-token')
+
+    expect(wrapper.text()).toContain('Verification page')
+    expect(wrapper.find('header').exists()).toBe(false)
+    expect(wrapper.find('nav').exists()).toBe(false)
   })
 
   it('renders grouped navigation for authenticated users', async () => {
@@ -65,15 +84,26 @@ describe('App', () => {
   })
 
   it('reminds users to verify a changed email address', async () => {
+    authApi.resendEmailVerification.mockResolvedValue({
+      message: 'If an account exists for that email, a verification link has been sent.',
+    })
     setAccessToken('test-token')
     currentUser.value = { ...user, emailVerifiedAt: null }
     const { wrapper } = await mountWithRouter(App, routes)
 
     const reminder = wrapper.get('[data-email-verification-reminder]')
     expect(reminder.text()).toContain('needs verification')
-    expect(reminder.get('a[href="/resend-verification?email=owner@example.test"]').text()).toBe(
-      'Resend email',
-    )
+    const resendButton = reminder.get('button')
+    expect(resendButton.text()).toBe('Resend email')
+
+    await resendButton.trigger('click')
+    await flushPromises()
+
+    expect(authApi.resendEmailVerification).toHaveBeenCalledExactlyOnceWith({
+      email: 'owner@example.test',
+    })
+    expect(resendButton.text()).toBe('Email sent')
+    expect(resendButton.attributes('disabled')).toBeDefined()
   })
 
   it('uses a single initial for a one-word account name', async () => {

@@ -13,7 +13,13 @@ import type {
   PasswordResetRequestFormValues,
   RegisterFormValues,
 } from '@/lib/auth/schema'
-import { clearAccessToken, getAccessToken, isAuthenticated } from '@/lib/auth/storage'
+import {
+  clearAccessToken,
+  currentUser,
+  getAccessToken,
+  isAuthenticated,
+  setAccessToken,
+} from '@/lib/auth/storage'
 import LoginPage from '@/pages/LoginPage.vue'
 import EmailVerificationPage from '@/pages/EmailVerificationPage.vue'
 import PasswordResetConfirmPage from '@/pages/PasswordResetConfirmPage.vue'
@@ -352,6 +358,20 @@ describe('email verification workflow', () => {
     expect(wrapper.find('a[href="/resend-verification"]').exists()).toBe(false)
   })
 
+  it('shows signed-in users a dashboard return action after confirming a valid link', async () => {
+    setAccessToken('test-token')
+    currentUser.value = { ...user, emailVerifiedAt: null }
+    authApi.confirmEmailVerification.mockResolvedValue({ message: 'Email verified successfully' })
+    const { wrapper } = await mountPage(
+      EmailVerificationPage,
+      '/verify-email?token=verification-token',
+    )
+
+    expect(wrapper.get('[role="status"]').text()).toContain('Email verified successfully')
+    expect(wrapper.get('a[href="/"]').text()).toBe('Return to dashboard')
+    expect(currentUser.value?.emailVerifiedAt).not.toBeNull()
+  })
+
   it('shows the backend error for an invalid or expired link', async () => {
     authApi.confirmEmailVerification.mockRejectedValue(
       new ApiError('This link is invalid or has expired'),
@@ -362,6 +382,18 @@ describe('email verification workflow', () => {
     expect(wrapper.find('a[href="/login"]').exists()).toBe(false)
     expect(wrapper.get('a[href="/resend-verification"]').text()).toBe('Resend verification email')
     expect(wrapper.get('[role="alert"]').find('a').exists()).toBe(false)
+  })
+
+  it('lets signed-in users resend after an invalid link', async () => {
+    setAccessToken('test-token')
+    currentUser.value = { ...user, emailVerifiedAt: null }
+    authApi.confirmEmailVerification.mockRejectedValue(
+      new ApiError('This link is invalid or has expired'),
+    )
+    const { wrapper } = await mountPage(EmailVerificationPage, '/verify-email?token=invalid-token')
+
+    expect(wrapper.get('a[href="/resend-verification"]').text()).toBe('Resend verification email')
+    expect(wrapper.find('[aria-label="Account benefits"]').exists()).toBe(false)
   })
 
   it('shows an error when the verification link has no token', async () => {
