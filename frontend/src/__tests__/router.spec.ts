@@ -109,14 +109,22 @@ describe('authentication route guard', () => {
     expect(auth.fetchCurrentUser).not.toHaveBeenCalled()
   })
 
-  it('allows signed-in users to open password reset links and resend verification', async () => {
+  it('allows signed-in users to open password reset links', async () => {
     auth.isAuthenticated.value = true
     auth.currentUser.value = testUser
 
     const router = await navigate('/reset-password?token=reset-token')
     expect(router.currentRoute.value.name).toBe('passwordResetConfirm')
 
-    await router.push('/resend-verification?email=owner@example.test')
+    expect(auth.fetchCurrentUser).not.toHaveBeenCalled()
+  })
+
+  it('allows signed-in users to open the resend verification page', async () => {
+    auth.isAuthenticated.value = true
+    auth.currentUser.value = testUser
+
+    const router = await navigate('/resend-verification?email=owner@example.test')
+
     expect(router.currentRoute.value.name).toBe('resendVerification')
     expect(auth.fetchCurrentUser).not.toHaveBeenCalled()
   })

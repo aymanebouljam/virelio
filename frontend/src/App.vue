@@ -21,13 +21,24 @@ import {
   DialogTitle,
   DialogTrigger,
 } from 'reka-ui'
+import { ApiError } from '@/lib/api'
+import { resendEmailVerification } from '@/lib/auth/api'
 import { clearAccessToken, currentUser, isAuthenticated } from '@/lib/auth/storage'
 import { getInitials } from '@/lib/helpers'
 
 const route = useRoute()
 const router = useRouter()
 const mobileMoreOpen = ref(false)
+const resendingVerification = ref(false)
+const verificationEmailSent = ref(false)
+const verificationResendError = ref('')
 const accountInitials = computed(() => getInitials(currentUser.value?.fullName ?? ''))
+const usesWorkspaceShell = computed(
+  () =>
+    isAuthenticated.value &&
+    route.path !== '/verify-email' &&
+    route.path !== '/resend-verification',
+)
 
 const primaryNavigationGroups = [
   {
@@ -84,6 +95,23 @@ async function logout() {
   await router.push('/login')
 }
 
+async function resendVerificationEmail() {
+  if (!currentUser.value) return
+
+  verificationResendError.value = ''
+  resendingVerification.value = true
+
+  try {
+    await resendEmailVerification({ email: currentUser.value.email })
+    verificationEmailSent.value = true
+  } catch (error) {
+    verificationResendError.value =
+      error instanceof ApiError ? error.message : 'Something went wrong while sending the email'
+  } finally {
+    resendingVerification.value = false
+  }
+}
+
 watch(
   () => route.fullPath,
   () => {
@@ -94,7 +122,7 @@ watch(
 
 <template>
   <div class="min-h-screen bg-canvas text-ink">
-    <div v-if="isAuthenticated" class="min-h-screen lg:flex">
+    <div v-if="usesWorkspaceShell" class="min-h-screen lg:flex">
       <aside
         data-workspace-index
         class="hidden border-r border-line bg-surface-raised lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-62 lg:shrink-0 lg:flex-col"
@@ -222,15 +250,25 @@ watch(
               Your new email address needs verification. Check your inbox to keep your workspace
               details up to date.
             </p>
-            <RouterLink
-              :to="{
-                path: '/resend-verification',
-                query: { email: currentUser.email },
-              }"
-              class="shrink-0 font-semibold text-brand underline-offset-4 hover:text-brand-strong hover:underline"
-            >
-              Resend email
-            </RouterLink>
+            <div class="flex shrink-0 flex-col items-start gap-1 sm:items-end">
+              <button
+                type="button"
+                :disabled="resendingVerification || verificationEmailSent"
+                class="shrink-0 font-semibold text-brand underline-offset-4 hover:text-brand-strong hover:underline"
+                @click="resendVerificationEmail"
+              >
+                {{
+                  resendingVerification
+                    ? 'Sending email...'
+                    : verificationEmailSent
+                      ? 'Email sent'
+                      : 'Resend email'
+                }}
+              </button>
+              <p v-if="verificationResendError" role="alert" class="text-danger">
+                {{ verificationResendError }}
+              </p>
+            </div>
           </section>
 
           <RouterView />

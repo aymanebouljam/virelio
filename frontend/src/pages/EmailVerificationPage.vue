@@ -2,7 +2,6 @@
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ZodError } from 'zod'
-import AuthFrame from '@/components/auth/AuthFrame.vue'
 import { ApiError } from '@/lib/api'
 import { confirmEmailVerification } from '@/lib/auth/api'
 import { emailVerificationConfirmFormSchema } from '@/lib/auth/schema'
@@ -12,12 +11,6 @@ const route = useRoute()
 const token = typeof route.query.token === 'string' ? route.query.token : ''
 const status = ref<'verifying' | 'success' | 'error'>('verifying')
 const message = ref('')
-
-const accountBenefits = [
-  'Your email confirms access to your workspace',
-  'Verification links can only be used once',
-  'Your expense record stays private to you',
-]
 
 function normalizeError(err: unknown) {
   if (err instanceof ApiError) {
@@ -35,14 +28,14 @@ async function verifyEmail() {
   try {
     const input = emailVerificationConfirmFormSchema.parse({ token })
     const response = await confirmEmailVerification(input)
-    status.value = 'success'
-    message.value = response.message
     if (currentUser.value) {
       currentUser.value = {
         ...currentUser.value,
         emailVerifiedAt: new Date().toISOString(),
       }
     }
+    status.value = 'success'
+    message.value = response.message
   } catch (err) {
     status.value = 'error'
     message.value = normalizeError(err)
@@ -53,16 +46,16 @@ onMounted(verifyEmail)
 </script>
 
 <template>
-  <AuthFrame
-    panel-eyebrow="Secure your workspace"
-    panel-title="Confirm the email connected to your record."
-    panel-description="Email verification helps keep your workspace and expense history available only to you."
-    :benefits="accountBenefits"
-    form-eyebrow="Email verification"
-    form-title="Verifying your email"
-    form-description="We're confirming your verification link now."
+  <section
+    class="mx-auto w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-lifted sm:p-8"
   >
-    <div class="mt-7 space-y-5">
+    <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
+      Email verification
+    </p>
+    <h1 class="font-display mt-2 text-2xl font-semibold tracking-tight text-ink">
+      {{ status === 'verifying' ? 'Verifying your email' : 'Email verification' }}
+    </h1>
+    <div class="mt-6 space-y-4">
       <p v-if="status === 'verifying'" role="status" class="text-sm text-ink-muted">
         Verifying your email address...
       </p>
@@ -73,7 +66,6 @@ onMounted(verifyEmail)
           class="rounded-lg border border-success/25 bg-success-soft px-4 py-3 text-sm text-success"
         >
           {{ message }}
-          {{ isAuthenticated ? 'Your email address is confirmed.' : 'You can now sign in.' }}
         </p>
 
         <RouterLink
@@ -100,5 +92,5 @@ onMounted(verifyEmail)
         </RouterLink>
       </template>
     </div>
-  </AuthFrame>
+  </section>
 </template>
