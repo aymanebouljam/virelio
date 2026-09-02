@@ -140,13 +140,17 @@ onBeforeUnmount(() => {
         data-workspace-index
         class="hidden border-r border-line bg-surface-raised lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-62 lg:shrink-0 lg:flex-col"
       >
-        <div class="flex items-center gap-3 border-b border-line px-6 py-6">
-          <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface">
-            <img src="/logo-mark.svg" alt="" class="size-9" />
+        <div class="flex items-center gap-1 border-b border-line px-6 py-6">
+          <span class="flex size-10 shrink-0 items-center justify-center rounded-lg">
+            <img src="/logo-mark.svg" alt="" class="size-10" />
           </span>
           <div>
-            <p class="text-[10px] font-semibold tracking-[0.12em] text-evidence">Evidence ledger</p>
-            <p class="font-display mt-0.5 text-xl font-semibold tracking-tight text-ink">Virelio</p>
+            <p class="text-[10px] font-semibold leading-none tracking-[0.12em] text-evidence">
+              Evidence ledger
+            </p>
+            <p class="font-display mt-0 text-xl font-semibold leading-none tracking-tight text-ink">
+              Virelio
+            </p>
           </div>
         </div>
 
@@ -228,11 +232,9 @@ onBeforeUnmount(() => {
         data-mobile-workspace-bar
         class="fixed inset-x-0 top-0 z-30 flex min-h-14 items-center border-b border-line bg-surface/95 px-5 text-ink backdrop-blur lg:hidden"
       >
-        <RouterLink to="/" class="flex items-center gap-2.5" aria-label="Virelio dashboard">
-          <span
-            class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-raised"
-          >
-            <img src="/logo-mark.svg" alt="" class="size-8" />
+        <RouterLink to="/" class="flex items-center gap-1" aria-label="Virelio dashboard">
+          <span class="flex size-9 shrink-0 items-center justify-center rounded-lg">
+            <img src="/logo-mark.svg" alt="" class="size-9" />
           </span>
           <span>
             <span
@@ -240,7 +242,7 @@ onBeforeUnmount(() => {
             >
               Evidence ledger
             </span>
-            <span class="font-display mt-1 block text-base font-semibold leading-none text-ink">
+            <span class="font-display mt-px block text-base font-semibold leading-none text-ink">
               Virelio
             </span>
           </span>

@@ -16,18 +16,20 @@ defineProps<{
   >
     <aside
       aria-label="Account benefits"
-      class="relative hidden flex-col border-r border-line bg-surface-raised px-8 py-10 lg:flex lg:min-h-[560px] lg:px-10"
+      class="relative hidden flex-col border-r border-line bg-surface-raised px-8 py-10 lg:flex lg:min-h-140 lg:px-10"
     >
-      <div aria-label="Virelio brand" class="flex items-center gap-3">
-        <span class="flex size-10 items-center justify-center rounded-lg bg-surface">
-          <img src="/logo-mark.svg" alt="" class="size-9" />
+      <div aria-label="Virelio brand" class="flex items-center gap-1">
+        <span class="flex size-10 items-center justify-center rounded-lg">
+          <img src="/logo-mark.svg" alt="" class="size-10" />
         </span>
         <span>
-          <span class="block text-[10px] font-semibold tracking-[0.12em] text-evidence">
+          <span
+            class="block text-[10px] font-semibold leading-none tracking-[0.12em] text-evidence"
+          >
             Evidence ledger
           </span>
           <span
-            class="font-display mt-0.5 block text-xl font-semibold tracking-[-0.025em] text-ink"
+            class="font-display mt-px block text-xl font-semibold leading-none tracking-tight text-ink"
           >
             Virelio
           </span>
@@ -53,7 +55,7 @@ defineProps<{
       >
         <li v-for="benefit in benefits" :key="benefit" class="relative leading-5">
           <span
-            class="absolute -left-[23px] top-1.5 size-1 rounded-full bg-evidence"
+            class="absolute -left-5.75 top-1.5 size-1 rounded-full bg-evidence"
             aria-hidden="true"
           />
           {{ benefit }}
@@ -62,16 +64,18 @@ defineProps<{
     </aside>
 
     <div class="flex flex-col justify-center px-6 py-8 sm:p-10 lg:px-12 lg:py-12">
-      <div data-auth-compact-brand class="mb-7 flex items-center gap-3 lg:hidden">
+      <div data-auth-compact-brand class="mb-7 flex items-center gap-1 lg:hidden">
         <span class="flex size-12 items-center justify-center rounded-lg">
           <img src="/logo-mark.svg" alt="" class="size-12" />
         </span>
         <span>
-          <span class="block text-[10px] font-semibold tracking-[0.12em] text-evidence">
+          <span
+            class="block text-[10px] font-semibold leading-none tracking-[0.12em] text-evidence"
+          >
             Evidence ledger
           </span>
           <span
-            class="font-display mt-0.5 block text-xl font-semibold tracking-[-0.025em] text-ink"
+            class="font-display mt-px block text-xl font-semibold leading-none tracking-tight text-ink"
           >
             Virelio
           </span>
