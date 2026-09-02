@@ -4,7 +4,7 @@
   "description": "Multi-tenant expense tracking, proof management, reporting, and recurring expenses",
   "author": "Aymane Bouljam",
   "private": true,
-  "packageManager": "pnpm@11.24.0",
+  "packageManager": "pnpm@11.25.0",
   "engines": {
     "node": ">=24 <26"
   },
