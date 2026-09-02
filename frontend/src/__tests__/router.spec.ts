@@ -16,6 +16,15 @@ const auth = vi.hoisted(() => {
   }
 })
 
+vi.mock('vue-router', async (importOriginal) => {
+  const vueRouter = await importOriginal<typeof import('vue-router')>()
+
+  return {
+    ...vueRouter,
+    createWebHistory: vueRouter.createMemoryHistory,
+  }
+})
+
 vi.mock('@/lib/auth/storage', () => ({
   clearAccessToken: auth.clearAccessToken,
   currentUser: auth.currentUser,
