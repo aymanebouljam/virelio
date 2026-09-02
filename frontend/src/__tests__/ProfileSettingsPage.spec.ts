@@ -216,6 +216,19 @@ describe('profile settings workflow', () => {
     expect(wrapper.get('[role="status"]').text()).toContain('password reset link has been sent')
   })
 
+  it('shows a friendly message when the password reset request is rate limited', async () => {
+    authApi.requestPasswordReset.mockRejectedValue(
+      new ApiError('Please wait a moment before trying again.', null, 429),
+    )
+    const wrapper = mount(ProfileSettingsPage)
+
+    await openPasswordForm(wrapper)
+    await wrapper.get('[data-password-reset]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Please wait a moment before trying again.')
+  })
+
   it('shows password validation errors before submitting', async () => {
     const wrapper = mount(ProfileSettingsPage)
 

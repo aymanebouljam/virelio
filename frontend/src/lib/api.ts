@@ -59,7 +59,9 @@ function parseError(body: ApiErrorResponse | null, status: number) {
   let message = 'Something went wrong'
   if (body === null) throw new ApiError(message, null, status)
   if (!Array.isArray(body.errors) || body.errors.length === 0) {
-    if (typeof body.message === 'string' && body.message.length > 0) {
+    if (status === 429) {
+      message = 'Please wait a moment before trying again.'
+    } else if (typeof body.message === 'string' && body.message.length > 0) {
       message = body.message
     }
     throw new ApiError(message, null, status)
