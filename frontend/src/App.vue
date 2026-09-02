@@ -141,7 +141,7 @@ onBeforeUnmount(() => {
         class="hidden border-r border-line bg-surface-raised lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-62 lg:shrink-0 lg:flex-col"
       >
         <div class="flex items-center gap-3 border-b border-line px-6 py-6">
-          <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface">
+          <span class="flex size-10 shrink-0 items-center justify-center rounded-lg">
             <img src="/logo-mark.svg" alt="" class="size-9" />
           </span>
           <div>
@@ -229,9 +229,7 @@ onBeforeUnmount(() => {
         class="fixed inset-x-0 top-0 z-30 flex min-h-14 items-center border-b border-line bg-surface/95 px-5 text-ink backdrop-blur lg:hidden"
       >
         <RouterLink to="/" class="flex items-center gap-2.5" aria-label="Virelio dashboard">
-          <span
-            class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-raised"
-          >
+          <span class="flex size-9 shrink-0 items-center justify-center rounded-lg">
             <img src="/logo-mark.svg" alt="" class="size-8" />
           </span>
           <span>
