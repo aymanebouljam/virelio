@@ -5,8 +5,7 @@ import AuthFrame from '@/components/auth/AuthFrame.vue'
 import { ApiError } from '@/lib/api'
 import { register as registerUser, resendEmailVerification } from '@/lib/auth/api'
 import { registerFormSchema, type RegisterFormValues } from '@/lib/auth/schema'
-import { ZodError } from 'zod'
-import { mapZodErrors } from '@/lib/zod'
+import { useFormErrors } from '@/lib/use-form-errors'
 
 const form = ref<RegisterFormValues>({
   fullName: '',
@@ -15,8 +14,7 @@ const form = ref<RegisterFormValues>({
   passwordConfirmation: '',
 })
 
-const formErrors = ref<Record<string, string>>({})
-const submitError = ref('')
+const { formErrors, submitError, clearErrors, setError } = useFormErrors()
 const submitting = ref(false)
 const showPasswords = ref(false)
 const registrationComplete = ref(false)
@@ -38,29 +36,11 @@ function resetForm() {
     password: '',
     passwordConfirmation: '',
   }
-  submitError.value = ''
-  formErrors.value = {}
-}
-
-function normalizeError(err: unknown) {
-  if (err instanceof ApiError) {
-    if (err.content) {
-      formErrors.value = err.content
-      return
-    }
-    submitError.value = err.message
-    return
-  }
-  if (err instanceof ZodError) {
-    formErrors.value = mapZodErrors(err.issues)
-    return
-  }
-  submitError.value = 'Something went wrong'
+  clearErrors()
 }
 
 async function submit() {
-  formErrors.value = {}
-  submitError.value = ''
+  clearErrors()
   submitting.value = true
   try {
     registerFormSchema.parse(form.value)
@@ -69,7 +49,7 @@ async function submit() {
     resetForm()
     registrationComplete.value = true
   } catch (err) {
-    normalizeError(err)
+    setError(err)
   } finally {
     submitting.value = false
   }
