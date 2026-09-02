@@ -324,7 +324,7 @@ async function requestPasswordResetEmail() {
     </div>
 
     <LedgerSurface aria-label="Password settings" class="overflow-hidden">
-      <header class="flex min-w-0 items-center gap-3 px-5 py-4 sm:px-6">
+      <header class="flex min-w-0 flex-wrap items-center gap-3 px-5 py-4 sm:px-6">
         <span
           class="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand"
           aria-hidden="true"
@@ -354,7 +354,7 @@ async function requestPasswordResetEmail() {
         class="border-t border-line"
         @submit.prevent="submitPasswordChange"
       >
-        <div class="grid gap-5 p-5 sm:p-6 md:grid-cols-3">
+        <div class="grid gap-5 p-5 sm:p-6 lg:grid-cols-3">
           <div class="space-y-1.5">
             <label for="current-password" class="text-sm font-medium text-ink"
               >Current password</label
