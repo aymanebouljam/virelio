@@ -48,7 +48,6 @@ const testUser: AuthUser = {
 async function navigate(path: string) {
   const { default: router } = await import('@/router')
   await router.push(path)
-  await router.isReady()
   return router
 }
 
