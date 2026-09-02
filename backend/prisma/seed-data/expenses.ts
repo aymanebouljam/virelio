@@ -1,10 +1,12 @@
+import { relativeDate } from './dates';
+
 export const expenses = [
   {
     vendorName: 'Atlas Office Supplies',
     categoryName: 'Office',
     description: 'Printer paper and stationery restock',
     amount: '1250.50',
-    expenseDate: new Date('2026-01-15T00:00:00.000Z'),
+    expenseDate: relativeDate(-150),
     notes: 'Monthly office supply purchase.',
   },
   {
@@ -12,7 +14,7 @@ export const expenses = [
     categoryName: 'Software',
     description: 'Team collaboration software renewal',
     amount: '3499.00',
-    expenseDate: new Date('2026-01-20T00:00:00.000Z'),
+    expenseDate: relativeDate(-143),
     notes: 'Quarterly SaaS subscription payment.',
   },
   {
@@ -20,7 +22,7 @@ export const expenses = [
     categoryName: 'Food',
     description: 'Pantry and refreshments restock',
     amount: '680.25',
-    expenseDate: new Date('2026-01-22T00:00:00.000Z'),
+    expenseDate: relativeDate(-137),
     notes: 'Snacks, coffee, and bottled water.',
   },
   {
@@ -28,15 +30,16 @@ export const expenses = [
     categoryName: 'Printing',
     description: 'Business cards and event flyers',
     amount: '940.00',
-    expenseDate: new Date('2026-01-25T00:00:00.000Z'),
+    expenseDate: relativeDate(-131),
     notes: 'Printed collateral for local event.',
+    archivedAt: relativeDate(-45),
   },
   {
     vendorName: 'Urban Delivery Co',
     categoryName: 'Travel',
     description: 'Same-day package deliveries',
     amount: '310.75',
-    expenseDate: new Date('2026-01-27T00:00:00.000Z'),
+    expenseDate: relativeDate(-125),
     notes: 'Client document and sample deliveries.',
   },
   {
@@ -44,7 +47,7 @@ export const expenses = [
     categoryName: 'Utilities',
     description: 'Cloud hosting invoice',
     amount: '2190.00',
-    expenseDate: new Date('2026-02-01T00:00:00.000Z'),
+    expenseDate: relativeDate(-118),
     notes: 'Monthly infrastructure and storage costs.',
   },
   {
@@ -52,7 +55,7 @@ export const expenses = [
     categoryName: 'Marketing',
     description: 'Social media campaign design',
     amount: '1750.00',
-    expenseDate: new Date('2026-02-04T00:00:00.000Z'),
+    expenseDate: relativeDate(-111),
     notes: 'Creative assets for seasonal promotion.',
   },
   {
@@ -60,7 +63,7 @@ export const expenses = [
     categoryName: 'Maintenance',
     description: 'Air conditioning maintenance visit',
     amount: '890.00',
-    expenseDate: new Date('2026-02-07T00:00:00.000Z'),
+    expenseDate: relativeDate(-104),
     notes: 'Routine preventive maintenance.',
   },
   {
@@ -68,7 +71,7 @@ export const expenses = [
     categoryName: 'Fuel',
     description: 'Vehicle fuel card top-up',
     amount: '1450.00',
-    expenseDate: new Date('2026-02-10T00:00:00.000Z'),
+    expenseDate: relativeDate(-97),
     notes: 'Operations vehicle monthly fuel budget.',
   },
   {
@@ -76,7 +79,7 @@ export const expenses = [
     categoryName: 'Cleaning',
     description: 'Cleaning products replenishment',
     amount: '560.40',
-    expenseDate: new Date('2026-02-12T00:00:00.000Z'),
+    expenseDate: relativeDate(-90),
     notes: 'Sanitizer, soap, and surface cleaner restock.',
   },
   {
@@ -84,15 +87,15 @@ export const expenses = [
     categoryName: 'Office',
     description: 'Meeting room booking',
     amount: '750.00',
-    expenseDate: new Date('2026-03-05T00:00:00.000Z'),
+    expenseDate: relativeDate(-83),
     notes: 'Half-day planning session for the product team.',
   },
   {
-    vendorName: 'Riad Business Travel',
+    vendorName: 'Harbor Business Travel',
     categoryName: 'Travel',
     description: 'Client visit accommodation',
     amount: '2860.00',
-    expenseDate: new Date('2026-03-18T00:00:00.000Z'),
+    expenseDate: relativeDate(-76),
     notes: 'Two-night stay for an on-site client workshop.',
   },
   {
@@ -100,7 +103,7 @@ export const expenses = [
     categoryName: 'Software',
     description: 'Endpoint security licenses',
     amount: '4200.00',
-    expenseDate: new Date('2026-04-02T00:00:00.000Z'),
+    expenseDate: relativeDate(-69),
     notes: 'Annual protection for twelve workstations.',
   },
   {
@@ -108,7 +111,7 @@ export const expenses = [
     categoryName: 'Office',
     description: 'Ergonomic office chairs',
     amount: '7350.00',
-    expenseDate: new Date('2026-04-21T00:00:00.000Z'),
+    expenseDate: relativeDate(-62),
     notes: 'Five adjustable chairs for the main workspace.',
   },
   {
@@ -116,7 +119,7 @@ export const expenses = [
     categoryName: 'Marketing',
     description: 'Customer workshop venue',
     amount: '5100.00',
-    expenseDate: new Date('2026-05-14T00:00:00.000Z'),
+    expenseDate: relativeDate(-55),
     notes: 'Room hire and audiovisual equipment.',
   },
   {
@@ -124,7 +127,7 @@ export const expenses = [
     categoryName: 'Utilities',
     description: 'Cloud hosting invoice',
     amount: '2245.00',
-    expenseDate: new Date('2026-05-31T00:00:00.000Z'),
+    expenseDate: relativeDate(-48),
     notes: 'Monthly infrastructure and storage costs.',
   },
   {
@@ -132,7 +135,7 @@ export const expenses = [
     categoryName: 'Marketing',
     description: 'Product launch photography',
     amount: '3200.00',
-    expenseDate: new Date('2026-06-11T00:00:00.000Z'),
+    expenseDate: relativeDate(-41),
     notes: 'Studio session and edited product photographs.',
   },
   {
@@ -140,7 +143,7 @@ export const expenses = [
     categoryName: 'Travel',
     description: 'Regional sample deliveries',
     amount: '485.50',
-    expenseDate: new Date('2026-06-24T00:00:00.000Z'),
+    expenseDate: relativeDate(-34),
     notes: 'Samples delivered to three prospective clients.',
   },
   {
@@ -148,16 +151,16 @@ export const expenses = [
     categoryName: 'Office',
     description: 'Archive storage boxes',
     amount: '420.00',
-    expenseDate: new Date('2026-07-03T00:00:00.000Z'),
+    expenseDate: relativeDate(-27),
     notes: 'Supplies for the records retention cleanup.',
-    archivedAt: new Date('2026-07-18T09:30:00.000Z'),
+    archivedAt: relativeDate(-18),
   },
   {
     vendorName: 'SafeBuild Maintenance',
     categoryName: 'Maintenance',
     description: 'Emergency plumbing repair',
     amount: '1325.75',
-    expenseDate: new Date('2026-07-16T00:00:00.000Z'),
+    expenseDate: relativeDate(-20),
     notes: 'After-hours repair in the office kitchen.',
   },
   {
@@ -165,7 +168,7 @@ export const expenses = [
     categoryName: 'Food',
     description: 'Team planning lunch',
     amount: '845.20',
-    expenseDate: new Date('2026-07-29T00:00:00.000Z'),
+    expenseDate: relativeDate(-13),
     notes: 'Lunch during the quarterly planning workshop.',
   },
   {
@@ -173,7 +176,7 @@ export const expenses = [
     categoryName: 'Printing',
     description: 'Updated service brochures',
     amount: '1180.00',
-    expenseDate: new Date('2026-08-04T00:00:00.000Z'),
+    expenseDate: relativeDate(-6),
     notes: 'Short print run for the revised service catalog.',
   },
 ];
