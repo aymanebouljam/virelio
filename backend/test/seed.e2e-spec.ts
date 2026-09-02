@@ -45,6 +45,9 @@ describe('Development seed e2e', () => {
     expect(firstSnapshot.categories).toHaveLength(categorySeeds.length);
     expect(firstSnapshot.expenses).toHaveLength(expenseSeeds.length);
     expect(firstSnapshot.proofs).toHaveLength(proofSeeds.length);
+    expect(
+      new Set(firstSnapshot.proofs.map((proof) => proof.expenseId)),
+    ).toEqual(new Set(firstSnapshot.expenses.map((expense) => expense.id)));
 
     await runSeed();
 
