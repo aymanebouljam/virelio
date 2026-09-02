@@ -201,6 +201,19 @@ describe('apiConfig', () => {
     window.removeEventListener('auth:unauthorized', onUnauthorized)
   })
 
+  it('replaces the throttler message for rate-limited requests', async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse({ message: 'ThrottlerException: Too Many Requests' }, 429),
+    )
+
+    await expect(
+      apiConfig({ path: 'auth/password-reset/request', method: 'POST' }),
+    ).rejects.toMatchObject({
+      message: 'Please wait a moment before trying again.',
+      status: 429,
+    })
+  })
+
   it('sends form data without overriding its content type', async () => {
     fetchMock.mockResolvedValue(jsonResponse({ id: 'proof-1' }))
     const input = new FormData()
