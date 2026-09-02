@@ -9,12 +9,58 @@ import { categories } from './seed-data/categories';
 import { expenses } from './seed-data/expenses';
 import { proofs } from './seed-data/proofs';
 import { createSeedUser, seedUserEmail } from './seed-data/user';
+import { relativeDate } from './seed-data/dates';
 
 const adapter = new PrismaPg({
   connectionString: process.env['DATABASE_URL'],
 });
 
 const prisma = new PrismaClient({ adapter });
+
+const recurringExpenseTemplates = [
+  {
+    vendorName: 'CloudPoint Hosting',
+    categoryName: 'Utilities',
+    description: 'Cloud infrastructure subscription',
+    amount: '2245.00',
+    currency: 'USD',
+    frequency: 'MONTHLY' as const,
+    nextDueDate: relativeDate(-2),
+    notes: 'Monthly hosting, storage, and infrastructure services.',
+  },
+  {
+    vendorName: 'Green Market Foods',
+    categoryName: 'Food',
+    description: 'Office pantry delivery',
+    amount: '680.25',
+    currency: 'USD',
+    frequency: 'MONTHLY' as const,
+    nextDueDate: relativeDate(5),
+    notes: 'Monthly snacks, coffee, and refreshments delivery.',
+  },
+  {
+    vendorName: 'Legacy Telecom Services',
+    categoryName: 'Legacy communications',
+    description: 'Office telephone service',
+    amount: '980.00',
+    currency: 'USD',
+    frequency: 'MONTHLY' as const,
+    nextDueDate: relativeDate(-45),
+    notes: 'Retired telephone service agreement.',
+    archivedAt: relativeDate(-30),
+  },
+  {
+    vendorName: 'PixelCraft Agency',
+    categoryName: 'Marketing',
+    description: 'Seasonal campaign retainer',
+    amount: '1500.00',
+    currency: 'USD',
+    frequency: 'MONTHLY' as const,
+    nextDueDate: relativeDate(-60),
+    notes: 'Retired campaign support arrangement.',
+    archivedAt: relativeDate(-21),
+  },
+];
 
 async function main() {
   const existingUser = await prisma.user.findUnique({
@@ -90,6 +136,30 @@ async function main() {
     };
   });
 
+  const recurringExpenseRows = recurringExpenseTemplates.map((template) => {
+    const { vendorName, categoryName, ...data } = template;
+    const vendorId = vendorIdByName.get(vendorName);
+    const categoryId = categoryIdByName.get(categoryName);
+
+    if (!vendorId) {
+      throw new Error(
+        `Missing vendor for recurring expense seed: ${vendorName}`,
+      );
+    }
+
+    if (!categoryId) {
+      throw new Error(
+        `Missing category for recurring expense seed: ${categoryName}`,
+      );
+    }
+
+    return {
+      vendorId,
+      categoryId,
+      ...data,
+    };
+  });
+
   for (const expense of expenseRows) {
     const existingExpense = await prisma.expense.findFirst({
       where: {
@@ -110,6 +180,31 @@ async function main() {
         data: {
           userId: user.id,
           ...expense,
+        },
+      });
+    }
+  }
+
+  for (const template of recurringExpenseRows) {
+    const existingTemplate = await prisma.recurringExpenseTemplate.findFirst({
+      where: {
+        userId: user.id,
+        vendorId: template.vendorId,
+        categoryId: template.categoryId,
+        description: template.description,
+        amount: template.amount,
+        frequency: template.frequency,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!existingTemplate) {
+      await prisma.recurringExpenseTemplate.create({
+        data: {
+          userId: user.id,
+          ...template,
         },
       });
     }

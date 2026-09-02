@@ -1,3 +1,5 @@
+import { relativeDate } from './dates';
+
 export const categories = [
   {
     name: 'Office',
@@ -38,5 +40,15 @@ export const categories = [
   {
     name: 'Printing',
     color: '#4f46e5',
+  },
+  {
+    name: 'Legacy communications',
+    color: '#475569',
+    archivedAt: relativeDate(-28),
+  },
+  {
+    name: 'Events',
+    color: '#b45309',
+    archivedAt: relativeDate(-20),
   },
 ];
