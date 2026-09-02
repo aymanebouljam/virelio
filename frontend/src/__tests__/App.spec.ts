@@ -123,8 +123,9 @@ describe('App', () => {
     expect(authApi.resendEmailVerification).toHaveBeenCalledExactlyOnceWith({
       email: 'owner@example.test',
     })
-    expect(resendButton.text()).toBe('Email sent')
-    expect(resendButton.attributes('disabled')).toBeDefined()
+    expect(resendButton.text()).toBe('Resend email')
+    expect(resendButton.attributes('disabled')).toBeUndefined()
+    expect(reminder.get('[role="status"]').text()).toBe('Email sent')
   })
 
   it('uses a single initial for a one-word account name', async () => {

@@ -268,18 +268,13 @@ onBeforeUnmount(() => {
             <div class="flex shrink-0 flex-col items-start gap-1 sm:items-end">
               <button
                 type="button"
-                :disabled="resendingVerification || verificationEmailSent"
+                :disabled="resendingVerification"
                 class="shrink-0 font-semibold text-brand underline-offset-4 hover:text-brand-strong hover:underline"
                 @click="resendVerificationEmail"
               >
-                {{
-                  resendingVerification
-                    ? 'Sending email...'
-                    : verificationEmailSent
-                      ? 'Email sent'
-                      : 'Resend email'
-                }}
+                {{ resendingVerification ? 'Sending email...' : 'Resend email' }}
               </button>
+              <p v-if="verificationEmailSent" role="status" class="text-success">Email sent</p>
               <p v-if="verificationResendError" role="alert" class="text-danger">
                 {{ verificationResendError }}
               </p>
