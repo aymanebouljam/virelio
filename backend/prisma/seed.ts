@@ -8,59 +8,14 @@ import { vendors } from './seed-data/vendors';
 import { categories } from './seed-data/categories';
 import { expenses } from './seed-data/expenses';
 import { proofs } from './seed-data/proofs';
+import { recurringExpenseTemplates } from './seed-data/recurring-expenses';
 import { createSeedUser, seedUserEmail } from './seed-data/user';
-import { relativeDate } from './seed-data/dates';
 
 const adapter = new PrismaPg({
   connectionString: process.env['DATABASE_URL'],
 });
 
 const prisma = new PrismaClient({ adapter });
-
-const recurringExpenseTemplates = [
-  {
-    vendorName: 'CloudPoint Hosting',
-    categoryName: 'Utilities',
-    description: 'Cloud infrastructure subscription',
-    amount: '2245.00',
-    currency: 'USD',
-    frequency: 'MONTHLY' as const,
-    nextDueDate: relativeDate(-2),
-    notes: 'Monthly hosting, storage, and infrastructure services.',
-  },
-  {
-    vendorName: 'Green Market Foods',
-    categoryName: 'Food',
-    description: 'Office pantry delivery',
-    amount: '680.25',
-    currency: 'USD',
-    frequency: 'MONTHLY' as const,
-    nextDueDate: relativeDate(5),
-    notes: 'Monthly snacks, coffee, and refreshments delivery.',
-  },
-  {
-    vendorName: 'Legacy Telecom Services',
-    categoryName: 'Legacy communications',
-    description: 'Office telephone service',
-    amount: '980.00',
-    currency: 'USD',
-    frequency: 'MONTHLY' as const,
-    nextDueDate: relativeDate(-45),
-    notes: 'Retired telephone service agreement.',
-    archivedAt: relativeDate(-30),
-  },
-  {
-    vendorName: 'PixelCraft Agency',
-    categoryName: 'Marketing',
-    description: 'Seasonal campaign retainer',
-    amount: '1500.00',
-    currency: 'USD',
-    frequency: 'MONTHLY' as const,
-    nextDueDate: relativeDate(-60),
-    notes: 'Retired campaign support arrangement.',
-    archivedAt: relativeDate(-21),
-  },
-];
 
 async function main() {
   const existingUser = await prisma.user.findUnique({
@@ -119,13 +74,17 @@ async function main() {
   const expenseRows = expenses.map((expense) => {
     const { vendorName, categoryName, ...data } = expense;
     const vendorId = vendorIdByName.get(vendorName);
-    const categoryId = categoryIdByName.get(categoryName);
+    const categoryId = categoryName ? categoryIdByName.get(categoryName) : null;
+
+    if ('includeProof' in data) {
+      delete data.includeProof;
+    }
 
     if (!vendorId) {
       throw new Error(`Missing vendor for expense seed: ${vendorName}`);
     }
 
-    if (!categoryId) {
+    if (categoryName && !categoryId) {
       throw new Error(`Missing category for expense seed: ${categoryName}`);
     }
 

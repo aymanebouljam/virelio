@@ -26,6 +26,7 @@
     "prisma:validate": "pnpm --filter backend exec prisma validate",
     "prisma:migrate:dev": "pnpm --filter backend exec prisma migrate dev",
     "prisma:migrate:deploy": "pnpm --filter backend exec prisma migrate deploy",
+    "prisma:migrate:reset": "pnpm --filter backend exec prisma migrate reset --force",
     "prisma:migrate:test": "pnpm --filter backend prisma:migrate:test",
     "seed": "pnpm --filter backend seed",
     "database:setup": "pnpm prisma:format && pnpm prisma:validate && pnpm prisma:generate && pnpm prisma:migrate:dev && pnpm prisma:migrate:test && pnpm seed",
