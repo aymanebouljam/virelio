@@ -134,6 +134,27 @@ describe('RecurringExpenseTemplatesService', () => {
     );
   });
 
+  it('filters templates due in the next seven days', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-09-03T12:00:00.000Z'));
+    findManyMock.mockResolvedValue([]);
+    countMock.mockResolvedValue(0);
+
+    await service.findPage(userId, { due: 'next-7-days' });
+
+    const where = {
+      userId,
+      archivedAt: null,
+      nextDueDate: {
+        gte: new Date('2026-09-03T00:00:00.000Z'),
+        lte: new Date('2026-09-10T00:00:00.000Z'),
+      },
+    };
+    expect(findManyMock).toHaveBeenCalledWith(
+      expect.objectContaining({ where }),
+    );
+    expect(countMock).toHaveBeenCalledWith({ where });
+  });
+
   it('returns archived templates ordered by archive time', async () => {
     const archivedTemplates = [template({ archivedAt: new Date() })];
     findManyMock.mockResolvedValue(archivedTemplates);
