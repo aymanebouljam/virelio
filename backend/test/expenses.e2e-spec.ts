@@ -69,6 +69,7 @@ describe('Expenses e2e', () => {
   let http: Server;
   let prisma: PrismaService;
   let authHeaders: Record<string, string>;
+  let userId: string;
 
   beforeAll(async () => {
     ({ app, http, prisma } = await createTestApp());
@@ -76,7 +77,7 @@ describe('Expenses e2e', () => {
 
   beforeEach(async () => {
     await resetDatabase(prisma);
-    ({ authHeaders } = await createAuth(http));
+    ({ authHeaders, userId } = await createAuth(http));
   });
 
   afterAll(async () => {
@@ -275,11 +276,82 @@ describe('Expenses e2e', () => {
       });
     });
 
+    it('filters active expenses that are missing a proof or category', async () => {
+      const vendor = await createVendor();
+      const category = await createCategory();
+      const prooflessUncategorized = await prisma.expense.create({
+        data: {
+          userId,
+          vendorId: vendor.id,
+          description: 'Uncategorized expense without proof',
+          amount: 100,
+          expenseDate: new Date('2026-01-15T00:00:00.000Z'),
+        },
+      });
+      const categorizedWithoutProof = await prisma.expense.create({
+        data: {
+          userId,
+          vendorId: vendor.id,
+          categoryId: category.id,
+          description: 'Categorized expense without proof',
+          amount: 200,
+          expenseDate: new Date('2026-01-16T00:00:00.000Z'),
+        },
+      });
+      const categorizedWithProof = await prisma.expense.create({
+        data: {
+          userId,
+          vendorId: vendor.id,
+          categoryId: category.id,
+          description: 'Categorized expense with proof',
+          amount: 300,
+          expenseDate: new Date('2026-01-17T00:00:00.000Z'),
+        },
+      });
+      await prisma.proofDocument.create({
+        data: {
+          expenseId: categorizedWithProof.id,
+          originalName: 'receipt.pdf',
+          mimeType: 'application/pdf',
+          sizeBytes: 1,
+          storagePath: '/tmp/receipt.pdf',
+        },
+      });
+
+      const missingProofResponse = await request(http)
+        .get('/expenses')
+        .query({ proofStatus: 'missing' })
+        .set(authHeaders)
+        .expect(HttpStatus.OK);
+      const missingProofPage = missingProofResponse.body as ExpensePageResponse;
+
+      expect(missingProofPage.items.map(({ id }) => id)).toEqual([
+        categorizedWithoutProof.id,
+        prooflessUncategorized.id,
+      ]);
+      expect(missingProofPage.pagination.totalItems).toBe(2);
+
+      const missingCategoryResponse = await request(http)
+        .get('/expenses')
+        .query({ categoryStatus: 'missing' })
+        .set(authHeaders)
+        .expect(HttpStatus.OK);
+      const missingCategoryPage =
+        missingCategoryResponse.body as ExpensePageResponse;
+
+      expect(missingCategoryPage.items.map(({ id }) => id)).toEqual([
+        prooflessUncategorized.id,
+      ]);
+      expect(missingCategoryPage.pagination.totalItems).toBe(1);
+    });
+
     it.each([
       ['page', '0'],
       ['page', '1.5'],
       ['pageSize', '0'],
       ['pageSize', '101'],
+      ['proofStatus', 'present'],
+      ['categoryStatus', 'assigned'],
     ])('rejects invalid %s=%s', async (field, value) => {
       const response = await request(http)
         .get('/expenses')

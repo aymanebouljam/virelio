@@ -124,6 +124,27 @@ describe('ExpensesService', () => {
     expect(expenseCountMock).toHaveBeenCalledWith({ where });
   });
 
+  it('findAll filters expenses with missing proofs or categories', async () => {
+    expenseFindManyMock.mockResolvedValue([]);
+    expenseCountMock.mockResolvedValue(0);
+
+    await service.findAll(userId, { proofStatus: 'missing' });
+
+    expect(expenseFindManyMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        where: { userId, archivedAt: null, proofs: { none: {} } },
+      }),
+    );
+
+    await service.findAll(userId, { categoryStatus: 'missing' });
+
+    expect(expenseFindManyMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        where: { userId, archivedAt: null, categoryId: null },
+      }),
+    );
+  });
+
   it('findAll rejects an inverted date range', async () => {
     await expect(
       service.findAll(userId, {

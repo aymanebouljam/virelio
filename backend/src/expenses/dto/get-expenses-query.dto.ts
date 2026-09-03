@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   IsDateString,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -23,6 +24,14 @@ export class GetExpensesQueryDto {
   @IsOptional()
   @IsUUID('4')
   categoryId?: string;
+
+  @IsOptional()
+  @IsIn(['missing'])
+  proofStatus?: 'missing';
+
+  @IsOptional()
+  @IsIn(['missing'])
+  categoryStatus?: 'missing';
 
   @IsOptional()
   @IsDateString()

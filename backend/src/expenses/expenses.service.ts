@@ -308,6 +308,8 @@ export class ExpensesService {
       archivedAt: null,
       ...(query.vendorId && { vendorId: query.vendorId }),
       ...(query.categoryId && { categoryId: query.categoryId }),
+      ...(query.categoryStatus === 'missing' && { categoryId: null }),
+      ...(query.proofStatus === 'missing' && { proofs: { none: {} } }),
       ...(expenseDate && { expenseDate }),
       ...(search && {
         OR: [
