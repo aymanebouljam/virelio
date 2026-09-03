@@ -69,6 +69,8 @@ const filters = reactive({
   search: readQueryValue('search'),
   vendorId: readQueryValue('vendorId'),
   categoryId: readQueryValue('categoryId'),
+  proofStatus: readMissingStatusQuery('proofStatus'),
+  categoryStatus: readMissingStatusQuery('categoryStatus'),
   dateFrom: readQueryValue('dateFrom'),
   dateTo: readQueryValue('dateTo'),
 })
@@ -81,11 +83,17 @@ function readQueryValue(key: string) {
   return typeof value === 'string' ? value : ''
 }
 
+function readMissingStatusQuery(key: string): '' | 'missing' {
+  return readQueryValue(key) === 'missing' ? 'missing' : ''
+}
+
 function readRouteFilters() {
   return {
     search: readQueryValue('search') || undefined,
     vendorId: readQueryValue('vendorId') || undefined,
     categoryId: readQueryValue('categoryId') || undefined,
+    proofStatus: readMissingStatusQuery('proofStatus') || undefined,
+    categoryStatus: readMissingStatusQuery('categoryStatus') || undefined,
     dateFrom: readQueryValue('dateFrom') || undefined,
     dateTo: readQueryValue('dateTo') || undefined,
   }
@@ -103,6 +111,8 @@ function syncFiltersFromRoute() {
   filters.search = readQueryValue('search')
   filters.vendorId = readQueryValue('vendorId')
   filters.categoryId = readQueryValue('categoryId')
+  filters.proofStatus = readMissingStatusQuery('proofStatus')
+  filters.categoryStatus = readMissingStatusQuery('categoryStatus')
   filters.dateFrom = readQueryValue('dateFrom')
   filters.dateTo = readQueryValue('dateTo')
 }
@@ -122,6 +132,8 @@ async function clearFilters() {
     search: '',
     vendorId: '',
     categoryId: '',
+    proofStatus: '',
+    categoryStatus: '',
     dateFrom: '',
     dateTo: '',
   })
@@ -621,6 +633,12 @@ onMounted(loadExpensesPage)
           />
         </label>
       </div>
+
+      <p v-if="filters.proofStatus || filters.categoryStatus" class="mt-3 text-xs text-ink-muted">
+        Showing expenses {{ filters.proofStatus ? 'without receipts' : ''
+        }}{{ filters.proofStatus && filters.categoryStatus ? ' and ' : ''
+        }}{{ filters.categoryStatus ? 'without a category' : '' }}.
+      </p>
 
       <div class="mt-4 flex justify-end border-t border-line pt-4">
         <button

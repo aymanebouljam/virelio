@@ -246,7 +246,7 @@ onMounted(loadSummary)
       >
         <RouterLink
           v-if="summary.dueRecurringExpenses"
-          to="/recurring-expenses"
+          :to="{ path: '/recurring-expenses', query: { due: 'next-7-days' } }"
           class="group flex min-h-28 items-center gap-4 px-5 py-5 transition hover:bg-surface-muted"
           :class="attentionItemCount > 1 ? 'border-b border-line sm:border-b-0 sm:border-r' : ''"
         >
@@ -270,7 +270,7 @@ onMounted(loadSummary)
 
         <RouterLink
           v-if="summary.missingProofExpenses"
-          to="/expenses"
+          :to="{ path: '/expenses', query: { proofStatus: 'missing' } }"
           class="group flex min-h-28 items-center gap-4 px-5 py-5 transition hover:bg-surface-muted"
           :class="
             summary.uncategorizedExpenses ? 'border-b border-line sm:border-b-0 sm:border-r' : ''
@@ -296,7 +296,7 @@ onMounted(loadSummary)
 
         <RouterLink
           v-if="summary.uncategorizedExpenses"
-          to="/expenses"
+          :to="{ path: '/expenses', query: { categoryStatus: 'missing' } }"
           class="group flex min-h-28 items-center gap-4 px-5 py-5 transition hover:bg-surface-muted"
         >
           <span

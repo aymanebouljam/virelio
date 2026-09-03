@@ -5,6 +5,8 @@ export type ExpenseFilters = {
   search?: string
   vendorId?: string
   categoryId?: string
+  proofStatus?: 'missing'
+  categoryStatus?: 'missing'
   dateFrom?: string
   dateTo?: string
   page?: number

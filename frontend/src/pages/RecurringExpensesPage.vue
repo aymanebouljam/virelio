@@ -69,6 +69,11 @@ const pagination = ref({
   totalPages: 0,
 })
 
+const dueFilter = computed(() =>
+  route.query.due === 'next-7-days' ? ('next-7-days' as const) : undefined,
+)
+const hasDueFilter = computed(() => dueFilter.value !== undefined)
+
 const emptyForm = (): RecurringExpenseFormValues => ({
   vendorId: '',
   categoryId: '',
@@ -100,6 +105,13 @@ async function changePage(page: number) {
     query.page = String(page)
   }
 
+  await router.replace({ query })
+}
+
+async function clearDueFilter() {
+  const query = { ...route.query }
+  delete query.due
+  delete query.page
   await router.replace({ query })
 }
 
@@ -207,7 +219,11 @@ function validatedItems(items: unknown[]) {
 
 async function fetchValidatedPage() {
   const requestedPage = readPageQuery()
-  const response = await fetchRecurringExpenses({ page: requestedPage, pageSize: PAGE_SIZE })
+  const response = await fetchRecurringExpenses({
+    due: dueFilter.value,
+    page: requestedPage,
+    pageSize: PAGE_SIZE,
+  })
   const lastPage = Math.max(response.pagination.totalPages, 1)
 
   if (requestedPage > lastPage) {
@@ -356,7 +372,7 @@ async function generate(template: RecurringExpenseTemplate) {
 }
 
 watch(
-  () => readPageQuery(),
+  () => route.fullPath,
   () => {
     loading.value = true
     void reloadPage()
@@ -401,6 +417,20 @@ onMounted(loadPage)
       >
         {{ actionError }}
       </div>
+    </div>
+
+    <div
+      v-if="hasDueFilter"
+      class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-evidence/25 bg-evidence-soft px-4 py-3 text-sm text-ink"
+    >
+      <p>Showing schedules due in the next seven days.</p>
+      <button
+        type="button"
+        class="min-h-10 rounded-lg px-3 text-sm font-semibold text-evidence transition hover:bg-surface/70"
+        @click="clearDueFilter"
+      >
+        Clear
+      </button>
     </div>
 
     <div v-if="showForm" data-recurring-expense-form-panel>
