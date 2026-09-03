@@ -54,7 +54,6 @@ async function navigate(path: string) {
 describe('authentication route guard', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.resetModules()
     auth.currentUser.value = null
     auth.isAuthenticated.value = false
   })

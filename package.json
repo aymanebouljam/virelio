@@ -1,6 +1,6 @@
 {
   "name": "virelio",
-  "version": "0.9.0",
+  "version": "1.0.0",
   "description": "Multi-tenant expense tracking, proof management, reporting, and recurring expenses",
   "author": "Aymane Bouljam",
   "private": true,

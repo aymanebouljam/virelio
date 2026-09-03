@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-09-03
+
+### Added
+
+- First stable Virelio release, bringing tenant-scoped vendor, category, expense, proof-document, dashboard, reporting, and recurring-expense workflows together in one application.
+- Account registration, JWT authentication, email verification, password-reset, profile-management, and session-invalidation flows.
+- Accessible, responsive Evidence Ledger workspace design with dashboard charting, validated forms, keyboard navigation, and audit timestamps.
+
+### Security
+
+- Ownership-checked access to every user resource and private proof download.
+- Strict request validation, tenant-scoped uniqueness, protected routes, rate-limited authentication flows, and spreadsheet-safe CSV exports.
+
 ## [0.9.0] - 2026-08-22
 
 ### Added
