@@ -27,7 +27,7 @@ export const expenses = [
   },
   {
     vendorName: 'Bright Print Studio',
-    categoryName: 'Printing',
+    categoryName: null,
     description: 'Business cards and event flyers',
     amount: '940.00',
     expenseDate: relativeDate(-131),
@@ -116,7 +116,8 @@ export const expenses = [
   },
   {
     vendorName: 'Harbor Conference Center',
-    categoryName: 'Marketing',
+    categoryName: null,
+    includeProof: false,
     description: 'Customer workshop venue',
     amount: '5100.00',
     expenseDate: relativeDate(-55),
@@ -157,7 +158,8 @@ export const expenses = [
   },
   {
     vendorName: 'SafeBuild Maintenance',
-    categoryName: 'Maintenance',
+    categoryName: null,
+    includeProof: false,
     description: 'Emergency plumbing repair',
     amount: '1325.75',
     expenseDate: relativeDate(-20),
@@ -165,7 +167,8 @@ export const expenses = [
   },
   {
     vendorName: 'Green Market Foods',
-    categoryName: 'Food',
+    categoryName: null,
+    includeProof: false,
     description: 'Team planning lunch',
     amount: '845.20',
     expenseDate: relativeDate(-13),
@@ -173,10 +176,21 @@ export const expenses = [
   },
   {
     vendorName: 'Bright Print Studio',
-    categoryName: 'Printing',
+    categoryName: null,
+    includeProof: false,
     description: 'Updated service brochures',
     amount: '1180.00',
     expenseDate: relativeDate(-6),
     notes: 'Short print run for the revised service catalog.',
+    archivedAt: relativeDate(-2),
+  },
+  {
+    vendorName: 'Nova Tech Solutions',
+    categoryName: null,
+    includeProof: false,
+    description: 'Monitor stand purchase',
+    amount: '189.99',
+    expenseDate: relativeDate(-3),
+    notes: 'Pending category assignment and receipt upload.',
   },
 ];

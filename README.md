@@ -59,6 +59,7 @@ By default, the API listens on `http://localhost:3000` and Vite serves the front
 | `pnpm database:setup` | Generate Prisma, migrate both databases, and seed development data |
 | `pnpm test:e2e` | Run backend end-to-end tests |
 | `pnpm prisma:migrate:dev` | Create and apply a development migration |
+| `pnpm prisma:migrate:reset` | Reset the development database and apply all migrations (destructive) |
 | `pnpm --filter frontend exec vitest run src/__tests__/router.spec.ts` | Run one frontend test file |
 | `pnpm --filter backend cleanup:auth-tokens` | Remove expired authentication tokens |
 

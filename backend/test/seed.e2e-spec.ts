@@ -6,7 +6,6 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 import type { PrismaService } from '../prisma/prisma.service';
 import { categories as categorySeeds } from '../prisma/seed-data/categories';
-import { expenses as expenseSeeds } from '../prisma/seed-data/expenses';
 import { proofs as proofSeeds } from '../prisma/seed-data/proofs';
 import { seedUserEmail } from '../prisma/seed-data/user';
 import { vendors as vendorSeeds } from '../prisma/seed-data/vendors';
@@ -43,11 +42,36 @@ describe('Development seed e2e', () => {
 
     expect(firstSnapshot.vendors).toHaveLength(vendorSeeds.length);
     expect(firstSnapshot.categories).toHaveLength(categorySeeds.length);
-    expect(firstSnapshot.expenses).toHaveLength(expenseSeeds.length);
-    expect(firstSnapshot.proofs).toHaveLength(proofSeeds.length);
+    expect(firstSnapshot.expenses).toHaveLength(23);
     expect(
-      new Set(firstSnapshot.proofs.map((proof) => proof.expenseId)),
-    ).toEqual(new Set(firstSnapshot.expenses.map((expense) => expense.id)));
+      firstSnapshot.expenses.filter((expense) => expense.archivedAt === null),
+    ).toHaveLength(20);
+    expect(
+      firstSnapshot.expenses.filter((expense) => expense.categoryId !== null),
+    ).toHaveLength(17);
+    expect(firstSnapshot.proofs).toHaveLength(18);
+    const dueToday = new Date();
+    dueToday.setUTCHours(0, 0, 0, 0);
+    const dueSoon = new Date(dueToday);
+    dueSoon.setUTCDate(dueSoon.getUTCDate() + 7);
+    expect(
+      firstSnapshot.recurringExpenseTemplates.filter(
+        (template) =>
+          template.archivedAt === null &&
+          template.nextDueDate >= dueToday &&
+          template.nextDueDate <= dueSoon,
+      ),
+    ).toHaveLength(2);
+    const proofExpenseIds = new Set(
+      firstSnapshot.proofs.map((proof) => proof.expenseId),
+    );
+    expect(proofExpenseIds.size).toBe(proofSeeds.length);
+    expect(
+      firstSnapshot.expenses.filter(
+        (expense) =>
+          expense.categoryId === null && !proofExpenseIds.has(expense.id),
+      ),
+    ).toHaveLength(5);
 
     await runSeed();
 
@@ -73,24 +97,29 @@ describe('Development seed e2e', () => {
     const user = await prisma.user.findUniqueOrThrow({
       where: { email: seedUserEmail },
     });
-    const [vendors, categories, expenses, proofs] = await Promise.all([
-      prisma.vendor.findMany({
-        where: { userId: user.id },
-        orderBy: { id: 'asc' },
-      }),
-      prisma.expenseCategory.findMany({
-        where: { userId: user.id },
-        orderBy: { id: 'asc' },
-      }),
-      prisma.expense.findMany({
-        where: { userId: user.id },
-        orderBy: { id: 'asc' },
-      }),
-      prisma.proofDocument.findMany({
-        where: { expense: { userId: user.id } },
-        orderBy: { id: 'asc' },
-      }),
-    ]);
+    const [vendors, categories, expenses, recurringExpenseTemplates, proofs] =
+      await Promise.all([
+        prisma.vendor.findMany({
+          where: { userId: user.id },
+          orderBy: { id: 'asc' },
+        }),
+        prisma.expenseCategory.findMany({
+          where: { userId: user.id },
+          orderBy: { id: 'asc' },
+        }),
+        prisma.expense.findMany({
+          where: { userId: user.id },
+          orderBy: { id: 'asc' },
+        }),
+        prisma.recurringExpenseTemplate.findMany({
+          where: { userId: user.id },
+          orderBy: { id: 'asc' },
+        }),
+        prisma.proofDocument.findMany({
+          where: { expense: { userId: user.id } },
+          orderBy: { id: 'asc' },
+        }),
+      ]);
     const proofFiles = await Promise.all(
       proofs.map(async (proof) => ({
         storagePath: proof.storagePath,
@@ -99,6 +128,14 @@ describe('Development seed e2e', () => {
       })),
     );
 
-    return { user, vendors, categories, expenses, proofs, proofFiles };
+    return {
+      user,
+      vendors,
+      categories,
+      expenses,
+      recurringExpenseTemplates,
+      proofs,
+      proofFiles,
+    };
   }
 });
