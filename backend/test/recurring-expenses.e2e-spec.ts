@@ -43,6 +43,13 @@ type ErrorResponse = {
   errors?: Array<{ field: string }>;
 };
 
+function relativeDate(daysFromToday: number) {
+  const date = new Date();
+  date.setUTCHours(0, 0, 0, 0);
+  date.setUTCDate(date.getUTCDate() + daysFromToday);
+  return date.toISOString().slice(0, 10);
+}
+
 describe('Recurring expenses e2e', () => {
   let app: INestApplication;
   let http: Server;
@@ -144,6 +151,7 @@ describe('Recurring expenses e2e', () => {
     ['page', '1.5'],
     ['pageSize', '0'],
     ['pageSize', '101'],
+    ['due', 'overdue'],
   ])('rejects invalid %s values', async (field, value) => {
     const response = await request(http)
       .get('/recurring-expenses')
@@ -198,6 +206,36 @@ describe('Recurring expenses e2e', () => {
 
     expect(secondPage.items).toHaveLength(1);
     expect(secondPage.items[0]?.description).toBe('Template 7');
+  });
+
+  it('filters templates due in the next seven days', async () => {
+    const vendor = await createVendor();
+    const dueToday = await createTemplate(vendor.id, undefined, {
+      description: 'Due today',
+      nextDueDate: relativeDate(0),
+    });
+    const dueSoon = await createTemplate(vendor.id, undefined, {
+      description: 'Due in seven days',
+      nextDueDate: relativeDate(7),
+    });
+    await createTemplate(vendor.id, undefined, {
+      description: 'Due later',
+      nextDueDate: relativeDate(8),
+    });
+    await createTemplate(vendor.id, undefined, {
+      description: 'Already due',
+      nextDueDate: relativeDate(-1),
+    });
+
+    const response = await request(http)
+      .get('/recurring-expenses')
+      .query({ due: 'next-7-days' })
+      .set(authHeaders)
+      .expect(HttpStatus.OK);
+    const page = response.body as RecurringExpenseTemplatePage;
+
+    expect(page.items.map(({ id }) => id)).toEqual([dueToday.id, dueSoon.id]);
+    expect(page.pagination.totalItems).toBe(2);
   });
 
   it('supports the complete template lifecycle', async () => {
