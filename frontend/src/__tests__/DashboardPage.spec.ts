@@ -21,6 +21,11 @@ const routes: RouteRecordRaw[] = [
     component: { template: '<p>Expenses</p>' },
   },
   {
+    path: '/recurring-expenses',
+    name: 'recurringExpenses',
+    component: { template: '<p>Recurring expenses</p>' },
+  },
+  {
     path: '/expenses/:id',
     name: 'expenseDetails',
     component: { template: '<p>Expense details</p>' },
@@ -126,6 +131,9 @@ describe('dashboard workflows', () => {
     expect(wrapper.text()).toContain('Due this week')
     expect(wrapper.text()).toContain('Missing receipts')
     expect(wrapper.text()).toContain('Need a category')
+    expect(wrapper.find('a[href="/recurring-expenses?due=next-7-days"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/expenses?proofStatus=missing"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/expenses?categoryStatus=missing"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('Client-site flight')
     expect(wrapper.text()).toContain('receipt.pdf')
     expect(wrapper.findAll('a[href="/expenses/expense-1"]')).toHaveLength(2)
