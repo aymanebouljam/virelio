@@ -1,7 +1,11 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
 
 export class GetRecurringExpenseTemplatesQueryDto {
+  @IsOptional()
+  @IsIn(['next-7-days'])
+  due?: 'next-7-days';
+
   @IsOptional()
   @Type(() => Number)
   @IsInt()

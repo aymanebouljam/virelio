@@ -21,7 +21,13 @@ export class RecurringExpenseTemplatesService {
   ) {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 6;
-    const where = { userId, archivedAt: null };
+    const where: Prisma.RecurringExpenseTemplateWhereInput = {
+      userId,
+      archivedAt: null,
+      ...(query.due === 'next-7-days' && {
+        nextDueDate: this.getNextSevenDaysFilter(),
+      }),
+    };
 
     const [items, totalItems] = await Promise.all([
       this.prisma.recurringExpenseTemplate.findMany({
@@ -244,6 +250,15 @@ export class RecurringExpenseTemplatesService {
     } catch (error) {
       this.handleNotFound(error);
     }
+  }
+
+  private getNextSevenDaysFilter(): Prisma.DateTimeFilter {
+    const dueToday = new Date();
+    dueToday.setUTCHours(0, 0, 0, 0);
+    const dueSoon = new Date(dueToday);
+    dueSoon.setUTCDate(dueSoon.getUTCDate() + 7);
+
+    return { gte: dueToday, lte: dueSoon };
   }
 
   private async assertRelations(
