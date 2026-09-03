@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { ArchiveRestore, ArrowLeft, EllipsisVertical, Tags, Trash2 } from '@lucide/vue'
 import { ApiError } from '@/lib/api'
+import { requestConfirmation } from '@/lib/confirmation'
 import { formatDateTime } from '@/lib/helpers'
 import {
   fetchArchivedExpenseCategories,
@@ -52,7 +53,7 @@ async function restore(category: ExpenseCategory) {
   restoringId.value = category.id
 
   try {
-    if (!confirm('Are you sure you want to restore this category?')) {
+    if (!(await requestConfirmation('Are you sure you want to restore this category?'))) {
       return
     }
 
@@ -75,7 +76,7 @@ async function remove(category: ExpenseCategory) {
   removingId.value = category.id
 
   try {
-    if (!confirm('Are you sure you want to remove this category?')) {
+    if (!(await requestConfirmation('Are you sure you want to remove this category?'))) {
       return
     }
 

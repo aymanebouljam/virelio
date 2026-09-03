@@ -16,6 +16,7 @@ import {
   Tags,
 } from '@lucide/vue'
 import { ApiError } from '@/lib/api'
+import { requestConfirmation } from '@/lib/confirmation'
 import { fetchExpenseCategories } from '@/lib/expense-categories/api'
 import { expenseCategorySchema, type ExpenseCategory } from '@/lib/expense-categories/schema'
 import { expenseSchema } from '@/lib/expenses/schema'
@@ -308,7 +309,8 @@ async function submitForm() {
 
 async function archive(template: RecurringExpenseTemplate) {
   actionError.value = ''
-  if (!confirm('Are you sure you want to archive this recurring expense?')) return
+  if (!(await requestConfirmation('Are you sure you want to archive this recurring expense?')))
+    return
 
   try {
     recurringExpenseRecordSchema.parse(await archiveRecurringExpense(template.id))

@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { ArchiveRestore, ArrowLeft, Building2, EllipsisVertical, Trash2 } from '@lucide/vue'
 import { fetchArchivedVendors, removeVendor, restoreVendor } from '@/lib/vendors/api'
 import { ApiError } from '@/lib/api'
+import { requestConfirmation } from '@/lib/confirmation'
 import { formatDateTime } from '@/lib/helpers'
 import { vendorSchema, type Vendor } from '@/lib/vendors/schema'
 import LedgerSurface from '@/components/ui/LedgerSurface.vue'
@@ -48,7 +49,7 @@ async function restore(vendor: Vendor) {
   restoringId.value = vendor.id
 
   try {
-    if (confirm('Are you sure you want to restore this vendor?')) {
+    if (await requestConfirmation('Are you sure you want to restore this vendor?')) {
       const result = vendorSchema.safeParse(await restoreVendor(vendor.id))
       if (!result.success) {
         actionError.value = 'Failed to fetch restored vendor'
@@ -70,7 +71,7 @@ async function remove(vendor: Vendor) {
   removingId.value = vendor.id
 
   try {
-    if (confirm('Are you sure you want to remove this vendor?')) {
+    if (await requestConfirmation('Are you sure you want to remove this vendor?')) {
       await removeVendor(vendor.id)
       vendors.value = vendors.value.filter((vendor) => vendor.id !== removingId.value)
     }

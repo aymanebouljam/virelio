@@ -18,6 +18,7 @@ import {
 import { archiveVendor, createVendor, fetchVendorsPage, updateVendor } from '@/lib/vendors/api'
 
 import { ApiError } from '@/lib/api'
+import { requestConfirmation } from '@/lib/confirmation'
 import {
   vendorFormSchema,
   vendorSchema,
@@ -344,7 +345,7 @@ async function submitVendorForm() {
 async function archive({ id }: Vendor) {
   actionError.value = ''
   try {
-    if (confirm('Are you sure you want to archive this vendor?')) {
+    if (await requestConfirmation('Are you sure you want to archive this vendor?')) {
       vendorSchema.parse(await archiveVendor(id))
       loading.value = true
       await loadVendors()
