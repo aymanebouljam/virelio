@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-09-03
+
+### Added
+
+- Dashboard attention cards now open the matching filtered expense or recurring-schedule list.
+- Missing-receipt, missing-category, and next-seven-days recurring due-date API filters.
+- Custom in-app confirmation dialogs for destructive actions.
+
 ## [1.0.0] - 2026-09-03
 
 ### Added
