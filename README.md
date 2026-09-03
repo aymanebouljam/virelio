@@ -1,6 +1,6 @@
 # Virelio
 
-Virelio is a multi-tenant expense tracker for vendors, expenses, receipts, recurring costs, and spending reports. Current stable release: `v1.0.0`.
+Virelio is a multi-tenant expense tracker for vendors, expenses, receipts, recurring costs, and spending reports. Current stable release: `v1.1.0`.
 
 ## Features
 
@@ -18,12 +18,10 @@ Virelio is a multi-tenant expense tracker for vendors, expenses, receipts, recur
 
 ```bash
 pnpm install
-cp backend/.env.example backend/.env
-cp backend/.env.example backend/.env.test
-cp frontend/.env.example frontend/.env
+pnpm env:setup
 ```
 
-Set a PostgreSQL connection string and JWT secret in both backend files. `backend/.env.test` must use a dedicated database because end-to-end tests erase its data. Set `VITE_API_BASE_URL` in `frontend/.env`.
+`pnpm env:setup` copies the example files and replaces existing local environment files. Set a PostgreSQL connection string and JWT secret in both backend files. `backend/.env.test` must use a dedicated database because end-to-end tests erase its data. Set `VITE_API_BASE_URL` in `frontend/.env`.
 
 With both databases available, generate the Prisma client, apply the development and test migrations, and load the development seed data:
 
@@ -54,6 +52,7 @@ By default, the API listens on `http://localhost:3000` and Vite serves the front
 | Command | Purpose |
 | --- | --- |
 | `pnpm dev` | Start API and frontend |
+| `pnpm env:setup` | Create local environment files from the example templates (replaces existing files) |
 | `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build` | Run an individual quality check |
 | `pnpm qa` | Run the complete release gate |
 | `pnpm database:setup` | Generate Prisma, migrate both databases, and seed development data |
