@@ -1,135 +1,75 @@
 # Virelio
 
-Virelio is a multi-tenant expense tracker for managing vendors, business expenses, receipts, recurring costs, and spending reports. The current pre-release is `v0.9.0`.
+Virelio is a multi-tenant expense tracker for vendors, expenses, receipts, recurring costs, and spending reports. Current stable release: `v1.0.0`.
 
 ## Features
 
-- Registration, JWT authentication, protected routes, and profile settings
-- Tenant-isolated vendors, expense categories, expenses, proofs, dashboards, and reports
-- Vendor, category, and expense creation, editing, archiving, restoration, and removal
-- Search, filters, stable pagination, and URL-persisted list state
-- Private receipt and invoice uploads with authenticated downloads
-- Date-filtered dashboard summaries and recent activity
-- Monthly, vendor, and category-comparison reporting
-- Spreadsheet-safe CSV expense exports
-- Weekly, monthly, and yearly recurring expense templates with due-expense generation
-- Keyboard navigation, accessible validation feedback, and visible audit timestamps
+- Authenticated, tenant-isolated vendor, category, expense, proof, dashboard, report, and recurring-expense management
+- Search, filters, URL-backed pagination, archival, restoration, and removal workflows
+- Private proof uploads, CSV export, email verification, password reset, profile settings, reporting, and accessible forms
 
 ## Technology
 
-Virelio is a pnpm workspace containing:
-
-- `backend/` — NestJS 11 REST API, Prisma 7, and PostgreSQL
-- `frontend/` — Vue 3, Vue Router, Vite, Tailwind CSS, and Zod
-
-The backend is organized into domain modules for authentication, vendors, expense categories, expenses, proofs, dashboard summaries, reports, and recurring expenses. Prisma migrations define the data model, and each user-owned resource is scoped by the authenticated user ID.
-
-## Requirements
-
-- Node.js `>=24 <26`
-- pnpm `11.x`
-- PostgreSQL
+- `backend/` — NestJS 11, Prisma 7, PostgreSQL, Jest
+- `frontend/` — Vue 3, Vite, Tailwind CSS, Zod, Vitest
+- Requires Node.js `>=24 <26`, pnpm `11.x`, and PostgreSQL
 
 ## Local Setup
 
-Install dependencies from the repository root:
-
 ```bash
 pnpm install
-```
-
-Create the local environment files:
-
-```bash
 cp backend/.env.example backend/.env
+cp backend/.env.example backend/.env.test
 cp frontend/.env.example frontend/.env
 ```
 
-Configure `backend/.env` with a PostgreSQL connection string and a strong local JWT secret. `BACKEND_ROOT` identifies the backend directory for file storage, and `UPLOADS_DIR` is resolved relative to it.
+Set a PostgreSQL connection string and JWT secret in both backend files. `backend/.env.test` must use a dedicated database because end-to-end tests erase its data. Set `VITE_API_BASE_URL` in `frontend/.env`.
 
-### Email flows for local demos
-
-Virelio sends verification and password-reset links through a configurable SMTP provider. Set `AUTH_MAIL_TRANSPORT=smtp` and provide the `MAIL_*` settings in `backend/.env`; [Mailtrap](https://mailtrap.io/) is one compatible testing-inbox option.
-
-For a no-account local demo, set `AUTH_MAIL_TRANSPORT=file`. Links are then appended to `backend/.local/auth-emails.log`, so you can open that file and use the newest link. The directory is Git-ignored because those links contain authentication tokens. Use file delivery only for local development.
-
-Apply the migrations and optionally load development data:
+With both databases available, generate the Prisma client, apply the development and test migrations, and load the development seed data:
 
 ```bash
-pnpm prisma:migrate:dev
-pnpm seed
+pnpm database:setup
 ```
 
-Start the API and frontend in separate terminals:
+For local verification and password-reset links, open `backend/.local/auth-emails.log` and use the link in the newest message:
+
+```text
+From: Virelio <noreply@virelio.test>
+To: owner@example.test
+Subject: Verify your email
+
+http://localhost:5173/verify-email?token=example-token
+```
+
+Start the app:
 
 ```bash
-pnpm dev:backend
-pnpm dev:frontend
+pnpm dev
 ```
 
 By default, the API listens on `http://localhost:3000` and Vite serves the frontend on `http://localhost:5173`.
 
 ## Commands
 
-Run repository-wide checks from the root:
+| Command | Purpose |
+| --- | --- |
+| `pnpm dev` | Start API and frontend |
+| `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build` | Run an individual quality check |
+| `pnpm qa` | Run the complete release gate |
+| `pnpm database:setup` | Generate Prisma, migrate both databases, and seed development data |
+| `pnpm test:e2e` | Run backend end-to-end tests |
+| `pnpm prisma:migrate:dev` | Create and apply a development migration |
+| `pnpm --filter frontend exec vitest run src/__tests__/router.spec.ts` | Run one frontend test file |
+| `pnpm --filter backend cleanup:auth-tokens` | Remove expired authentication tokens |
 
-```bash
-pnpm format:check
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm build
-```
+Run token cleanup daily in production.
 
-Useful development commands:
+## Deployment notes
 
-```bash
-pnpm format
-pnpm lint:fix
-pnpm seed
-pnpm test:e2e
-```
+Resources are scoped to the authenticated user; proof downloads require ownership checks; validation rejects unknown input; and CSV exports guard against spreadsheet formulas.
 
-Prisma commands:
+Proof metadata lives in PostgreSQL, but files use local disk. Before production deployment, provide durable storage, backups, monitoring, and a security review.
 
-```bash
-pnpm prisma:format
-pnpm prisma:generate
-pnpm prisma:validate
-pnpm prisma:migrate:dev
-pnpm prisma:migrate:deploy
-pnpm prisma:migrate:test
-```
+## Testing and release
 
-Remove expired password-reset and email-verification tokens with:
-
-```bash
-pnpm --filter backend cleanup:auth-tokens
-```
-
-Run this command daily through your production platform's scheduler or cron job.
-
-Backend end-to-end tests use `backend/.env.test` and require its dedicated PostgreSQL database to be available. They run serially because the suites reset shared test data.
-
-## Data and Security Model
-
-- API validation strips unknown properties and rejects non-whitelisted input.
-- Business resources are tenant-scoped and inaccessible across users.
-- Vendor and category uniqueness is enforced per user.
-- Proof metadata is stored in PostgreSQL while files are stored on local disk for the current pre-release.
-- Proof files are delivered only through authenticated, ownership-checked endpoints; there is no public uploads route.
-- Permanent removal is generally restricted to records that have first been archived.
-
-Local proof storage is suitable for development and the current pre-release, but production deployment still requires durable storage, backups, monitoring, and a security review.
-
-## Testing and CI
-
-The test suite includes backend service tests, database-backed API end-to-end tests, frontend unit tests, and page-level workflow tests. Tenant-isolation coverage verifies that users cannot access one another's records or proof documents.
-
-CI runs formatting, linting, typechecking, unit and component tests, PostgreSQL migrations, end-to-end tests, and production builds. The PostgreSQL service and third-party CI actions are pinned for reproducibility.
-
-## Release Status
-
-Virelio uses pre-`1.0` minor releases for complete user-facing milestones. Releases through `v0.9.0` cover the MVP, search and pagination, profile settings, accessibility and audit history, reporting insights, category comparisons, recurring expenses, authentication error handling, hardened proof uploads, and a cohesive application-wide design system with dashboard charting.
-
-The application is feature-complete for its current pre-release scope, but it is not yet described as production-ready. See [CHANGELOG.md](CHANGELOG.md) for release details.
+CI runs formatting, linting, typechecking, unit tests, migrations, end-to-end tests, and production builds. See [CHANGELOG.md](CHANGELOG.md) for release details.
