@@ -8,17 +8,19 @@ import type {
 } from './schema'
 
 export type RecurringExpensePageParams = {
+  due?: 'next-7-days'
   page?: number
   pageSize?: number
 }
 
 export async function fetchRecurringExpenses({
+  due,
   page = 1,
   pageSize = 6,
 }: RecurringExpensePageParams = {}) {
   return (await apiConfig({
     path: 'recurring-expenses',
-    queryParams: { page, pageSize },
+    queryParams: { ...(due && { due }), page, pageSize },
   })) as PaginatedResponse<RecurringExpenseTemplate>
 }
 

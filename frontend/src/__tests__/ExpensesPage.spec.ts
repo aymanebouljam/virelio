@@ -89,6 +89,8 @@ function expenseRequest(filters: ExpenseFilters = {}): ExpenseFilters {
     search: undefined,
     vendorId: undefined,
     categoryId: undefined,
+    proofStatus: undefined,
+    categoryStatus: undefined,
     dateFrom: undefined,
     dateTo: undefined,
     page: 1,
@@ -259,6 +261,15 @@ describe('expense listing and filters', () => {
     expect(getFilterField(wrapper, 'To').element).toHaveProperty('value', '2026-08-31')
     expect(wrapper.text()).toContain('5 active')
     expect(wrapper.text()).toContain('No matching expenses')
+  })
+
+  it('loads and identifies missing proof and category filters', async () => {
+    const { wrapper } = await mountPage('/expenses?proofStatus=missing&categoryStatus=missing')
+
+    expect(expensesApi.fetchExpenses).toHaveBeenCalledWith(
+      expenseRequest({ proofStatus: 'missing', categoryStatus: 'missing' }),
+    )
+    expect(wrapper.text()).toContain('Showing expenses without receipts and without a category.')
   })
 
   it('applies trimmed filters to the URL and reloads the list', async () => {

@@ -291,6 +291,27 @@ describe('recurring expense management', () => {
     expect(wrapper.text()).toContain(monthlyTemplate.description)
   })
 
+  it('loads and clears the next-seven-days due filter', async () => {
+    const { router, wrapper } = await mountActive('/recurring-expenses?due=next-7-days')
+
+    expect(recurringApi.fetchRecurringExpenses).toHaveBeenCalledWith({
+      due: 'next-7-days',
+      page: 1,
+      pageSize: 6,
+    })
+    expect(wrapper.text()).toContain('Showing schedules due in the next seven days.')
+
+    await getButton(wrapper, 'Clear').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({})
+    expect(recurringApi.fetchRecurringExpenses).toHaveBeenLastCalledWith({
+      due: undefined,
+      page: 1,
+      pageSize: 6,
+    })
+  })
+
   it('creates a recurring expense from validated form values', async () => {
     recurringApi.fetchRecurringExpenses
       .mockResolvedValueOnce(templatePage([]))
