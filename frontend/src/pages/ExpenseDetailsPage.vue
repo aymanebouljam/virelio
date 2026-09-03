@@ -6,6 +6,7 @@ import RecordActionSheet, { type RecordActionItem } from '@/components/ui/Record
 import LedgerSurface from '@/components/ui/LedgerSurface.vue'
 import WorkspaceHeader from '@/components/ui/WorkspaceHeader.vue'
 import { ApiError } from '@/lib/api'
+import { requestConfirmation } from '@/lib/confirmation'
 import { fetchExpense } from '@/lib/expenses/api'
 import { expenseDetailSchema, type ExpenseDetail } from '@/lib/expenses/schema'
 import { formatAmount, formatDate, formatDateTime, formatFileSize } from '@/lib/helpers'
@@ -113,7 +114,7 @@ async function removeProof(proofId: string) {
     return
   }
 
-  if (!confirm('Are you sure you want to remove this proof document?')) {
+  if (!(await requestConfirmation('Are you sure you want to remove this proof document?'))) {
     return
   }
 

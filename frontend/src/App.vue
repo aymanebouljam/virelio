@@ -22,6 +22,7 @@ import {
   DialogTrigger,
 } from 'reka-ui'
 import { ApiError } from '@/lib/api'
+import ConfirmationDialog from '@/components/ui/ConfirmationDialog.vue'
 import { resendEmailVerification } from '@/lib/auth/api'
 import { clearAccessToken, currentUser, isAuthenticated } from '@/lib/auth/storage'
 import { getInitials } from '@/lib/helpers'
@@ -416,5 +417,6 @@ onBeforeUnmount(() => {
         <RouterView />
       </main>
     </div>
+    <ConfirmationDialog />
   </div>
 </template>

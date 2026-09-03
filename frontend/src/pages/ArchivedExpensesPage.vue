@@ -5,6 +5,7 @@ import LedgerSurface from '@/components/ui/LedgerSurface.vue'
 import RecordActionSheet, { type RecordActionItem } from '@/components/ui/RecordActionSheet.vue'
 import WorkspaceHeader from '@/components/ui/WorkspaceHeader.vue'
 import { ApiError } from '@/lib/api'
+import { requestConfirmation } from '@/lib/confirmation'
 import { fetchExpenseCategories } from '@/lib/expense-categories/api'
 import { expenseCategorySchema, type ExpenseCategory } from '@/lib/expense-categories/schema'
 import { fetchArchivedExpenses, removeExpense, restoreExpense } from '@/lib/expenses/api'
@@ -74,7 +75,7 @@ async function restore(expense: Expense) {
   restoringId.value = expense.id
 
   try {
-    if (!confirm('Are you sure you want to restore this expense?')) {
+    if (!(await requestConfirmation('Are you sure you want to restore this expense?'))) {
       return
     }
 
@@ -98,7 +99,7 @@ async function remove(expense: Expense) {
   removingId.value = expense.id
 
   try {
-    if (!confirm('Are you sure you want to remove this expense?')) {
+    if (!(await requestConfirmation('Are you sure you want to remove this expense?'))) {
       return
     }
 

@@ -5,6 +5,7 @@ import LedgerSurface from '@/components/ui/LedgerSurface.vue'
 import RecordActionSheet, { type RecordActionItem } from '@/components/ui/RecordActionSheet.vue'
 import WorkspaceHeader from '@/components/ui/WorkspaceHeader.vue'
 import { ApiError } from '@/lib/api'
+import { requestConfirmation } from '@/lib/confirmation'
 import { formatAmount, formatDate, formatDateTime } from '@/lib/helpers'
 import {
   fetchArchivedRecurringExpenses,
@@ -47,7 +48,8 @@ async function loadArchivedTemplates() {
 
 async function restore(template: RecurringExpenseTemplate) {
   actionError.value = ''
-  if (!confirm('Are you sure you want to restore this recurring expense?')) return
+  if (!(await requestConfirmation('Are you sure you want to restore this recurring expense?')))
+    return
 
   restoringId.value = template.id
   try {
@@ -62,7 +64,12 @@ async function restore(template: RecurringExpenseTemplate) {
 
 async function remove(template: RecurringExpenseTemplate) {
   actionError.value = ''
-  if (!confirm('Are you sure you want to permanently remove this recurring expense?')) return
+  if (
+    !(await requestConfirmation(
+      'Are you sure you want to permanently remove this recurring expense?',
+    ))
+  )
+    return
 
   removingId.value = template.id
   try {

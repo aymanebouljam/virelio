@@ -6,6 +6,7 @@ import LedgerSurface from '@/components/ui/LedgerSurface.vue'
 import WorkspaceHeader from '@/components/ui/WorkspaceHeader.vue'
 import { fetchVendor, archiveVendor } from '@/lib/vendors/api'
 import { ApiError } from '@/lib/api'
+import { requestConfirmation } from '@/lib/confirmation'
 import { formatDateTime } from '@/lib/helpers'
 import { vendorSchema, type Vendor } from '@/lib/vendors/schema'
 
@@ -44,7 +45,7 @@ async function archiveCurrentVendor() {
   archiving.value = true
 
   try {
-    if (!confirm('Are you sure you want to archive this vendor?')) {
+    if (!(await requestConfirmation('Are you sure you want to archive this vendor?'))) {
       return
     }
 

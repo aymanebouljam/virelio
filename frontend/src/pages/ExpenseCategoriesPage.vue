@@ -13,6 +13,7 @@ import {
   Tags,
 } from '@lucide/vue'
 import { ApiError } from '@/lib/api'
+import { requestConfirmation } from '@/lib/confirmation'
 import { mapZodErrors } from '@/lib/zod'
 import {
   archiveExpenseCategory,
@@ -258,7 +259,7 @@ async function archive(category: ExpenseCategory) {
   actionError.value = ''
 
   try {
-    if (!confirm('Are you sure you want to archive this category?')) {
+    if (!(await requestConfirmation('Are you sure you want to archive this category?'))) {
       return
     }
 

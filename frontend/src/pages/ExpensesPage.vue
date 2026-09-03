@@ -17,6 +17,7 @@ import {
   Tags,
 } from '@lucide/vue'
 import { ApiError } from '@/lib/api'
+import { requestConfirmation } from '@/lib/confirmation'
 import { useRoute, useRouter } from 'vue-router'
 import { archiveExpense, createExpense, fetchExpenses, updateExpense } from '@/lib/expenses/api'
 import {
@@ -415,7 +416,7 @@ async function archive(expense: Expense) {
   actionError.value = ''
 
   try {
-    if (!confirm('Are you sure you want to archive this expense?')) {
+    if (!(await requestConfirmation('Are you sure you want to archive this expense?'))) {
       return
     }
 
