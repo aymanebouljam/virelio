@@ -10,9 +10,9 @@ Virelio is a multi-tenant expense tracker for vendors, expenses, receipts, recur
 
 ## Technology
 
-- `backend/` — NestJS 11, Prisma 7, PostgreSQL, Jest
-- `frontend/` — Vue 3, Vite, Tailwind CSS, Zod, Vitest
-- Requires Node.js `>=24 <26`, pnpm `11.x`, and PostgreSQL
+* **Backend:** NestJS 11, Prisma 7, PostgreSQL, Jest
+* **Frontend:** Vue 3, Vite, Tailwind CSS, Zod, Vitest
+* **Requirements:** Node.js `>=24 <26`, pnpm `11.x`, PostgreSQL
   
 ## Project Demo
 
